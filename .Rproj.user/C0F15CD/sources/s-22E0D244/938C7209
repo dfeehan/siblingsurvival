@@ -1,0 +1,24 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1552089048632.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "938C7209",
+    "lastKnownWriteTime" : 1552089479,
+    "last_content_update" : 1552089479355,
+    "path" : "~/Dropbox/library/siblingsurvival/R/get_esc_reports.R",
+    "project_path" : "R/get_esc_reports.R",
+    "properties" : {
+        "cursorPosition" : "7,101",
+        "marks" : "<:0,0\n>:0,0",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
