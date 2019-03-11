@@ -16,5 +16,127 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r}
+library(siblingsurvival)
+library(tidyverse)
+```
 
+
+We'll open up the demo datsets. First, here's a dataset that has information about survey respondents. (We'll refer to these survey respondents as 'ego':
+
+```{r}
+data(ex.ego)
+ex.ego
+```
+
+And here's a long-form version of the sibling history data -- there's one row for each reported sibling
+
+```{r}
+data(ex.sib)
+ex.sib
+```
+
+## Overview
+
+It will be helpful to define a few important terms before we start our analysis:
+
+* `ego` - an ego is a survey respondent
+* `cell` - a cell is a generic group for which we wish to produce estimates. Usually, a cell is defined by a time period, an age range, and a sex. So, for example, a cell might be women who were age 30-34 in 2015.
+
+We'll calculate estimates from the sibling histories in three main steps:
+
+1. Create an **esc** dataset, so called because there is  row for each **e**go X **s**ibling X **c**ell
+2. Aggregate this esc dataset up into an **ec** dataset, which has a row for the reports made by each ego for each cell
+3. Aggregate this ec dataset up into estimates for death rates, using either the individual or aggregate visibility approach (or both)
+
+### Laying the groundwork
+
+First, we'll need to
+
+* add an indicator for frame population membership
+* create an object that describes the cells we wish to generate reports for
+
+TODO DESCRIBE
+
+```{r}
+ex.sib <- ex.sib %>% 
+  mutate(in.F = as.numeric((alive==1) & (age >= 15) & (age <= 49) & (sex == 'f')))
+```
+
+TODO DESCRIBE
+
+```{r}
+with(ex.sib, table(in.F, useNA='ifany'))
+```
+
+These sibs with missing `in.F` turn out not to have ages recorded, Since we 
+need to be able to determine whether or not each sibling is on in the frame population, we will
+drop them.
+
+```{r}
+ex.sib <- ex.sib %>% filter(! is.na(in.F))
+``
+
+
+TODO DESCRIBE
+
+```{r}
+cc <- cell_config(age.groups='5yr', 
+                  time.periods='5yr_beforeinterview',
+                  start.obs='dob',
+                  end.obs='endobs',
+                  event='death.date',
+                  age.offset='dob',
+                  time.offset='doi',
+                  exp.scale=1/12)
+```
+
+
+
+### Estimating death rates
+
+To make these three steps reasonably straightforward, we've written a function, `sibling_estimator`, that takes care of all three of them.
+
+```{r}
+ex_ests <- sibling_estimator(sib.dat = ex.sib %>% mutate(const_weight = 1, sib.sex=sex),
+                             ego.id = 'caseid',
+                             sib.id = 'sibid',
+                             sib.frame.indicator = 'in.F',
+                             sib.sex = 'sib.sex',
+                             cell.config=cc,
+                             weights='wwgt')
+
+ex_ests$asdr.ind
+```
+
+```{r}
+ggplot(ex_ests$asdr.ind) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+  theme_minimal() +
+  scale_y_log10() + 
+  ggtitle('individual estimator')
+```
+
+
+
+```{r}
+ggplot(ex_ests$asdr.agg) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+  theme_minimal() +
+  scale_y_log10() + 
+  ggtitle('aggregate estimator')
+```
+
+```{r}
+compare <- bind_rows(ex_ests$asdr.ind, ex_ests$asdr.agg)
+
+ggplot(compare) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, linetype=estimator, group=interaction(estimator, sib.sex))) +
+  theme_minimal() +
+  #facet_grid(sib.sex ~ .) +
+  facet_grid(. ~ sib.sex) +
+  scale_y_log10() + 
+  ggtitle('both estimators')
+
+```
 

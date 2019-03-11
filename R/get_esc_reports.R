@@ -16,14 +16,7 @@ get_esc_reports <- function(sib.dat,
                             ego.id,
                             ###
                             # these are all passed into occ.exp; see that fn for more details
-                            start.obs,
-                            end.obs,
-                            event,
-                            age.groups,
-                            age.offset,
-                            time.periods,
-                            time.offset,
-                            exp.scale) {
+                            cell.config) {
 
   # create .ego.id
   sib.dat <- sib.dat %>%
@@ -40,10 +33,10 @@ get_esc_reports <- function(sib.dat,
                          event=cell.config$event,
                          age.groups=cell.config$age.groups,
                          age.offset=cell.config$age.offset,
-                         time.periods=cell.config$time.periods.beforeint,
+                         time.periods=cell.config$time.periods,
                          time.offset=cell.config$time.offset,
                          weights='.const_weight',
-                         exp.scale=exp.scale)
+                         exp.scale=cell.config$exp.scale)
 
   ## TODO - map .ego.id and .sib.id back to original values?
   esc.reports <- esc.reports %>%

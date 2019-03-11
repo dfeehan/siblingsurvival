@@ -20,6 +20,7 @@ sibling_estimator <- function(sib.dat,
                               # variable for sibling's sex
                               sib.sex = 'sex',
                               cell.config,
+                              weights,
                               # by default, we report continuous exposure (ie, number of months of exposure)
                               # but the formal results are based on exposed/not exposed; use this setting to
                               # discretize exposure
@@ -42,14 +43,15 @@ sibling_estimator <- function(sib.dat,
   esc.dat <- get_esc_reports(sib.dat=sib.dat,
                              ego.id='.ego.id',
                              sib.id='.sib.id',
-                             start.obs=cell.config$start.obs,
-                             end.obs=cell.config$end.obs,
-                             event=cell.config$event,
-                             age.groups=cell.config$age.groups,
-                             age.offset=cell.config$age.offset,
-                             time.periods=cell.config$time.periods,
-                             time.offset=cell.config$time.offset,
-                             exp.scale=cell.config$exp.scale)
+                             cell.config)
+                             #start.obs=cell.config$start.obs,
+                             #end.obs=cell.config$end.obs,
+                             #event=cell.config$event,
+                             #age.groups=cell.config$age.groups,
+                             #age.offset=cell.config$age.offset,
+                             #time.periods=cell.config$time.periods,
+                             #time.offset=cell.config$time.offset,
+                             #exp.scale=cell.config$exp.scale)
 
   # add covariates for the siblings
   esc.dat <- esc.dat %>%
