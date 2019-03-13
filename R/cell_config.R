@@ -63,7 +63,7 @@ agenames <- function(aw, min.age, max.age) {
 
   vals.lhs <- seq(from=min.age, to=(max.age-aw), by=aw)
   vals.rhs <- seq(from=(min.age+aw), to=max.age, by=aw)
-  return(glue::glue('[{vals.lhs},{vals.rhs})'))
+  return(as.character(glue::glue('[{vals.lhs},{vals.rhs})')))
 }
 
 ############################################################

@@ -19,6 +19,13 @@ knitr::opts_chunk$set(
 ```{r}
 library(siblingsurvival)
 library(tidyverse)
+# be sure you have at least version 0.0.2.9000
+# run devtools::install_github('dfeehan/surveybootstrap')
+# for the most recent version
+library(surveybootstrap)  
+
+# TEMP - for timing
+library(tictoc)
 ```
 
 
@@ -75,8 +82,7 @@ drop them.
 
 ```{r}
 ex.sib <- ex.sib %>% filter(! is.na(in.F))
-``
-
+```
 
 TODO DESCRIBE
 
@@ -98,6 +104,7 @@ cc <- cell_config(age.groups='5yr',
 To make these three steps reasonably straightforward, we've written a function, `sibling_estimator`, that takes care of all three of them.
 
 ```{r}
+load_all()
 ex_ests <- sibling_estimator(sib.dat = ex.sib %>% mutate(const_weight = 1, sib.sex=sex),
                              ego.id = 'caseid',
                              sib.id = 'sibid',
@@ -114,7 +121,7 @@ ggplot(ex_ests$asdr.ind) +
   geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
   theme_minimal() +
   scale_y_log10() + 
-  ggtitle('individual estimator')
+  ggtitle('individual visibility estimator')
 ```
 
 
@@ -124,7 +131,7 @@ ggplot(ex_ests$asdr.agg) +
   geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
   theme_minimal() +
   scale_y_log10() + 
-  ggtitle('aggregate estimator')
+  ggtitle('aggregate visibility estimator')
 ```
 
 ```{r}
@@ -140,3 +147,61 @@ ggplot(compare) +
 
 ```
 
+## Variance estimates
+
+We'll use the rescaled bootstrap to estimate sampling uncertainty. We'll do this using the `surveybootstrap` package.
+
+In this example dataset, we have a stratified survey design with multistage sampling. So we'll specify the column that identifies each
+respondent's primary sampling unit and stratum.
+
+```{r}
+tic('running bootstrap')
+## this will take a little while
+bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu + stratum(stratum),
+                                                           # a high number is good here, though that will obviously
+                                                           # make everything take longer
+                                                           #num.reps=10,
+                                                           num.reps=1000,
+                                                           idvar='caseid',
+                                                           weights='indweight',
+                                                           survey.data=ex.ego)
+toc()
+```
+
+TODO DESCRIBE
+
+NB: this is pretty slow; it takes about 30 minutes or so on a 2018 MBP
+
+```{r}
+load_all()
+tic('calculating estimates with bootstrap')
+ex_boot_ests <- sibling_estimator(sib.dat = ex.sib %>% mutate(const_weight = 1, sib.sex=sex),
+                                  ego.id = 'caseid',
+                                  sib.id = 'sibid',
+                                  sib.frame.indicator = 'in.F',
+                                  sib.sex = 'sib.sex',
+                                  cell.config=cc,
+                                  boot.weights=bootweights,
+                                  return.boot=TRUE,
+                                  weights='wwgt')
+toc()
+```
+
+```{r}
+ggplot(ex_boot_ests$asdr.ind) +
+  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sib.sex, group=sib.sex), alpha=.2) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+  theme_minimal() +
+  scale_y_log10() + 
+  ggtitle('individual visibility estimator')
+```
+
+
+```{r}
+ggplot(ex_boot_ests$asdr.agg) +
+  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sib.sex, group=sib.sex), alpha=.2) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+  theme_minimal() +
+  scale_y_log10() + 
+  ggtitle('aggregate visibility estimator')
+```
