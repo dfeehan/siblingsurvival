@@ -139,7 +139,7 @@ ex_ests <- sibling_estimator(sib.dat = ex.sib,
                              ego.id = 'caseid',            # column with the respondent id
                              sib.id = 'sibid',             # column with sibling id (unique for each reported sibling)
                              sib.frame.indicator = 'in.F', # indicator for sibling frame population membership
-                             sib.sex = 'sib.sex',          # column with sibling's sex
+                             sib.sex = 'sex',              # column with sibling's sex
                              cell.config=cc,               # cell configuration we created above
                              weights='wwgt')               # column with the respondents' sampling weights
 

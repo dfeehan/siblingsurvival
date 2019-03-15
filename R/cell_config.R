@@ -26,6 +26,7 @@
 ##'   this is usually 1/12, since the DHS reports times by month (eg Dec 2010 or Sept 1995). Differences
 ##'   in dates are thus denominated in months, and need to be multiplied by 1/12 to convert them into years.
 ##'
+##' @export
 cell_config <- function(age.groups,
                         time.periods,
                         start.obs,
