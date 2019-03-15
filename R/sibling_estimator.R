@@ -9,6 +9,8 @@
 ##' @param discretize.exp Boolean for whether or not expsoure should be discretized. Not yet implemented.
 ##' @param method Which method to use - not yet implemented (currently we just return ind and agg, both without the respondent)
 ##' @return a list with two entries: \code{asdr.ind}, individual visibility asdr estimates; and \code{asdr.agg}, aggregate visibility asdr estimates
+##'
+##' @export
 sibling_estimator <- function(sib.dat,
                               # the name of the id of the ego in the sibling histories
                               ego.id,
@@ -42,14 +44,7 @@ sibling_estimator <- function(sib.dat,
   esc.dat <- get_esc_reports(sib.dat=sib.dat,
                              ego.id='.ego.id',
                              sib.id='.sib.id',
-                             start.obs=cell.config$start.obs,
-                             end.obs=cell.config$end.obs,
-                             event=cell.config$event,
-                             age.groups=cell.config$age.groups,
-                             age.offset=cell.config$age.offset,
-                             time.periods=cell.config$time.periods,
-                             time.offset=cell.config$time.offset,
-                             exp.scale=cell.config$exp.scale)
+                             cell.config)
 
   # add covariates for the siblings
   esc.dat <- esc.dat %>%
