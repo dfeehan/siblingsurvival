@@ -9,6 +9,7 @@ TODO
   i.e., creating sibling dataset
 - write a function to conduct IC checks for ind and agg (see get_ec_reports)
 - handle discretizing exposure
+- add unit tests
 
 WISHLIST
 
