@@ -7,13 +7,17 @@ TODO
 
 - maybe also move `attributes.to.long` to this package? then show that step,
   i.e., creating sibling dataset
-- figure out how to get bootstrap to play well with sibling estimates
-- `cell_config` should be generalized w/ helper functions of various kinds
 - write a function to conduct IC checks for ind and agg (see get_ec_reports)
-- write vignette for estimates
+- handle discretizing exposure
 
 WISHLIST
 
 - shiny widget for sensitivity analysis?
 - unit tests
+
+VIGNETTES
+
+- producing estimates (mostly done)
+- making a sibling dataset from a survey dataset
+- IC checks
 

@@ -207,7 +207,7 @@ In this example dataset, we have a stratified, multistage design. So we'll need 
 the strata and the primary sampling units. In this example data, these are indicated by the 'stratum' and 'psu'
 columns of the dataset.
 
-(NOTE: this is a little slow; it takes about 30 minutes or so on a 2018 MBP for 1000 resamples.)
+(NOTE: this takes about a minute or so on a 2018 MBP for 1000 resamples.)
 
 ```{r}
 set.seed(101010)
@@ -234,7 +234,7 @@ The variation across the estimates is then an estimator for the sampling variati
 To make this easier, the `sibling_estimator` function can take a dataset with bootstrap resampled weights; it will
 then calculate and summarize the estimates for you.
 
-(NOTE: this is also slow; it takes about TODO minutes or so on a 2018 MBP when `bootweights` has 1000 resamples.)
+(NOTE: this is slow; it takes about 35 minutes or so on a 2018 MBP when `bootweights` has 1000 resamples.)
 
 ```{r}
 tic('calculating estimates with bootstrap')
