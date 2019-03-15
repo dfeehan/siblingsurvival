@@ -1,3 +1,31 @@
+############################################################
+##' Specify the cells (age groups, time period) to produce estimates for
+##'
+##' @param age.groups see Details
+##' @param time.periods see Details
+##' @param start.obs the column name with the time observation started
+##' @param end.obs the column name with the time observation ended
+##' @param event the column name with the time of the event (e.g. date of death)
+##' @param age.offset the column name with each sibling's offset for age (typically the date of birth)
+##' @param time.offset the column name with each sibling's offset for time (often the date of the survey interview)
+##' @param exp.scale defaults to 1/12; see Details
+##' @return A \code{cell_config} object that can be passed into estimation functions to describe
+##' the cells that estimates should be produced for.
+##'
+##' @section Details:
+##' * Note that all of the parameters that require column names are expecting strings. These
+##'   column names refer to the dataset with one row for each reported sibling. This
+##'   isn't passed into this function, so this function can't check that these column names are valid.
+##' * \code{age.groups} can either be the output of one of the helper functions for creating age groups
+##'   (\code{make.age.groups} or \code{make.even.age.groups}), or it can be '5yr', or '10yr' for standard
+##'   5 or 10-year age groups ranging from 15 to 65
+##' * \code{time.periods} can either be the output of \code{make.time.periods}, or it can be
+##'   '12mo_beforeinterview', '5yr_beforeinterview', or '7yr_beforeinterview' for time periods one,
+##'   five, or seven years before the interview date
+##' * \code{exp.scale} is a factor that is used to convert differences between dates into years;
+##'   this is usually 1/12, since the DHS reports times by month (eg Dec 2010 or Sept 1995). Differences
+##'   in dates are thus denominated in months, and need to be multiplied by 1/12 to convert them into years.
+##'
 cell_config <- function(age.groups,
                         time.periods,
                         start.obs,
@@ -6,8 +34,6 @@ cell_config <- function(age.groups,
                         age.offset,
                         time.offset,
                         exp.scale=1/12) {
-  # TODO - eventually, we'll make this function more useful by
-  #        having it come with a bunch of pre-specified options, age groups, etc
 
   cell_config_res <- list()
 
@@ -15,7 +41,11 @@ cell_config <- function(age.groups,
     if (age.groups == '5yr') {
       min.age <- 15
       max.age <- 65
-      age.groups <- age.gps5 <- make.even.age.groups(5, min.age=min.age, max.age=max.age)
+      age.groups <- make.even.age.groups(5, min.age=min.age, max.age=max.age)
+    } else if (age.groups == '10yr') {
+      min.age <- 15
+      max.age <- 65
+      age.groups <- make.even.age.groups(10, min.age=min.age, max.age=max.age)
     } else {
       stop(glue("No setting found for age.groups {age.groups}."))
     }
@@ -27,7 +57,15 @@ cell_config <- function(age.groups,
     if(time.periods == '5yr_beforeinterview') {
       time.periods <- make.time.periods(start=-12*5,
                                         durations=12*5,
-                                        names=c("0-4"))
+                                        names=c("5yr_beforeint"))
+    } else if (time.periods == '7yr_beforeinterview') {
+      time.periods <- make.time.periods(start=-12*7,
+                                        durations=12*7,
+                                        names=c("7yr_beforeint"))
+    } else if (time.periods == '12mo_beforeinterview') {
+      time.periods <- make.time.periods(start=-12,
+                                        durations=12,
+                                        names=c("12mo_beforeint"))
     } else {
       stop(glue("No setting found for time.periods {time.periods}."))
     }

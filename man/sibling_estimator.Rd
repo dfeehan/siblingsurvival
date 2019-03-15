@@ -6,7 +6,7 @@
 \usage{
 sibling_estimator(sib.dat, ego.id, sib.id, sib.frame.indicator,
   sib.sex = "sex", cell.config, weights, boot.weights = NULL,
-  discretize.exp = FALSE, method = "individual")
+  return.boot = FALSE, discretize.exp = FALSE, method = "individual")
 }
 \arguments{
 \item{sib.dat}{The long-form sibling history dataset (likely produced by TODO)}
@@ -25,6 +25,8 @@ sibling_estimator(sib.dat, ego.id, sib.id, sib.frame.indicator,
 
 \item{boot.weights}{Optional dataframe with bootstrap resampled weights. See Details for more info.}
 
+\item{return.boot}{If TRUE, and if \code{boot.weights} is specified, then return each bootstrap estimate}
+
 \item{discretize.exp}{Boolean for whether or not expsoure should be discretized. Not yet implemented.}
 
 \item{method}{Which method to use - not yet implemented (currently we just return ind and agg, both without the respondent)}
@@ -37,6 +39,8 @@ Estimate death rates from sibling history data
 }
 \section{Details}{
 
-If you want estimated sampling variances, you can pass in a data frame \code{boot.weights}
+If you want estimated sampling variances, you can pass in a data frame \code{boot.weights}.
+\code{boot.weights} is assumed to have a column that is named whatever the \code{ego.id} is,
+and then a series of columns named \code{boot_weight_1}, ..., \code{boot_weight_M}.
 }
 
