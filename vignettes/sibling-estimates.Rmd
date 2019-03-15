@@ -168,7 +168,7 @@ We'll make some plots showing the results
 
 ```{r}
 ggplot(ex_ests$asdr.ind) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sex, group=sex)) +
   theme_minimal() +
   scale_y_log10() + 
   ggtitle('individual visibility estimator, 5yr before survey')
@@ -177,7 +177,7 @@ ggplot(ex_ests$asdr.ind) +
 
 ```{r}
 ggplot(ex_ests$asdr.agg) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sex, group=sex)) +
   theme_minimal() +
   scale_y_log10() + 
   ggtitle('aggregate visibility estimator, 5yr before survey')
@@ -187,10 +187,10 @@ ggplot(ex_ests$asdr.agg) +
 compare <- bind_rows(ex_ests$asdr.ind, ex_ests$asdr.agg)
 
 ggplot(compare) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, linetype=estimator, group=interaction(estimator, sib.sex))) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sex, linetype=estimator, group=interaction(estimator, sex))) +
   theme_minimal() +
-  #facet_grid(sib.sex ~ .) +
-  facet_grid(. ~ sib.sex) +
+  #facet_grid(sex ~ .) +
+  facet_grid(. ~ sex) +
   scale_y_log10() + 
   ggtitle('both estimators, 5yr before survey')
 
@@ -242,7 +242,7 @@ ex_boot_ests <- sibling_estimator(sib.dat = ex.sib,
                                   ego.id = 'caseid',
                                   sib.id = 'sibid',
                                   sib.frame.indicator = 'in.F',
-                                  sib.sex = 'sib.sex',
+                                  sib.sex = 'sex',
                                   cell.config=cc,
                                   boot.weights=bootweights,  # to get sampling uncertainty, we pass boot.weights into sibling_estimator
                                   return.boot=TRUE,          # when TRUE, return all of the resampled estimates (not just summaries)
@@ -254,8 +254,8 @@ Finally, let's plot the estimated death rates along with their sampling uncertai
 
 ```{r}
 ggplot(ex_boot_ests$asdr.ind) +
-  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sib.sex, group=sib.sex), alpha=.2) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sex, group=sex), alpha=.2) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sex, group=sex)) +
   theme_minimal() +
   scale_y_log10() + 
   ggtitle('individual visibility estimator, 5yr before survey')
@@ -263,8 +263,8 @@ ggplot(ex_boot_ests$asdr.ind) +
 
 ```{r}
 ggplot(ex_boot_ests$asdr.agg) +
-  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sib.sex, group=sib.sex), alpha=.2) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sex, group=sex), alpha=.2) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sex, group=sex)) +
   theme_minimal() +
   scale_y_log10() + 
   ggtitle('aggregate visibility estimator, 5yr before survey')
