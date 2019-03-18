@@ -16,7 +16,7 @@ get_ec_reports(esc.dat, ego.id, sib.dat, sib.frame.indicator, cell.vars,
 
 \item{sib.frame.indicator}{String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population}
 
-\item{cell.vars}{TODO}
+\item{cell.vars}{a vector with Strings containing the names of columns in \code{esc.dat} identifying the cells to group reports by (typically age group, sex, time period)}
 
 \item{weights}{String with the name of the column in \code{esc.dat} that has the survey weights}
 

@@ -5,8 +5,8 @@
 \title{Estimate death rates from sibling history data}
 \usage{
 sibling_estimator(sib.dat, ego.id, sib.id, sib.frame.indicator,
-  sib.sex = "sex", cell.config, discretize.exp = FALSE,
-  method = "individual")
+  sib.sex = "sex", cell.config, weights, boot.weights = NULL,
+  return.boot = FALSE, discretize.exp = FALSE)
 }
 \arguments{
 \item{sib.dat}{The long-form sibling history dataset (likely produced by TODO)}
@@ -21,9 +21,13 @@ sibling_estimator(sib.dat, ego.id, sib.id, sib.frame.indicator,
 
 \item{cell.config}{An object containing the configuration of cells; see TODO for more information}
 
-\item{discretize.exp}{Boolean for whether or not expsoure should be discretized. Not yet implemented.}
+\item{weights}{String with the name of the column of \code{sib.dat} that has the sampling weight}
 
-\item{method}{Which method to use - not yet implemented (currently we just return ind and agg, both without the respondent)}
+\item{boot.weights}{Optional dataframe with bootstrap resampled weights. See Details for more info.}
+
+\item{return.boot}{If TRUE, and if \code{boot.weights} is specified, then return each bootstrap estimate}
+
+\item{discretize.exp}{Boolean for whether or not expsoure should be discretized. Not yet implemented.}
 }
 \value{
 a list with two entries: \code{asdr.ind}, individual visibility asdr estimates; and \code{asdr.agg}, aggregate visibility asdr estimates
@@ -31,3 +35,10 @@ a list with two entries: \code{asdr.ind}, individual visibility asdr estimates; 
 \description{
 Estimate death rates from sibling history data
 }
+\section{Details}{
+
+If you want estimated sampling variances, you can pass in a data frame \code{boot.weights}.
+\code{boot.weights} is assumed to have a column that is named whatever the \code{ego.id} is,
+and then a series of columns named \code{boot_weight_1}, ..., \code{boot_weight_M}.
+}
+

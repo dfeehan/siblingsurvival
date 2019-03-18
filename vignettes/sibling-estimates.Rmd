@@ -81,7 +81,7 @@ were in order to produce estimates from sibling histories
 
 ```{r}
 ex.sib <- ex.sib %>% 
-  mutate(in.F = as.numeric((alive==1) & (age >= 15) & (age <= 49) & (sex == 'f')))
+  mutate(in.F = as.numeric((sib.alive==1) & (sib.age >= 15) & (sib.age <= 49) & (sib.sex == 'f')))
 ```
 
 Let's look at the distribution of frame population membership
@@ -110,19 +110,19 @@ We'll use the helper function `cell_config` to do this:
 
 ```{r}
 cc <- cell_config(age.groups='5yr', 
-                  time.periods='5yr_beforeinterview',
-                  start.obs='dob',    # date of birth
-                  end.obs='endobs',   # either the date respondent was interviewed (if sib is alive) or date of death (if sib is dead)
-                  event='death.date', # date of death (for sibs who died)
-                  age.offset='dob',   # date of birth
-                  time.offset='doi',  # date of interview
+                  time.periods='7yr_beforeinterview',
+                  start.obs='sib.dob',    # date of birth
+                  end.obs='sib.endobs',   # either the date respondent was interviewed (if sib is alive) or date of death (if sib is dead)
+                  event='sib.death.date', # date of death (for sibs who died)
+                  age.offset='sib.dob',   # date of birth
+                  time.offset='doi',      # date of interview
                   exp.scale=1/12)
 ```
 
 We're specifying that we want
 
 * 5-year age groups, starting from 15 and ending at 65
-* to produce estimates for the 5-year window before each survey interview (so, slightly different for each respondent)
+* to produce estimates for the 7-year window before each survey interview (so, slightly different for each respondent)
 * the `dob` column of our sibling dataset has the time siblings start being observed (their birthdate)
 * the `endobs` column of our sibling dataset has the time siblings stop being observed (the interview or, if they're dead, the date of death)
 * the `death.date` column of our sibling dataset has the date the sibling died (if the sibling died)
@@ -139,9 +139,9 @@ ex_ests <- sibling_estimator(sib.dat = ex.sib,
                              ego.id = 'caseid',            # column with the respondent id
                              sib.id = 'sibid',             # column with sibling id (unique for each reported sibling)
                              sib.frame.indicator = 'in.F', # indicator for sibling frame population membership
-                             sib.sex = 'sex',              # column with sibling's sex
+                             sib.sex = 'sib.sex',          # column with sibling's sex
                              cell.config=cc,               # cell configuration we created above
-                             weights='wwgt')               # column with the respondents' sampling weights
+                             weights='ego.weight')         # column with the respondents' sampling weights
 
 names(ex_ests)
 ```
@@ -168,31 +168,31 @@ We'll make some plots showing the results
 
 ```{r}
 ggplot(ex_ests$asdr.ind) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sex, group=sex)) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
   theme_minimal() +
   scale_y_log10() + 
-  ggtitle('individual visibility estimator, 5yr before survey')
+  ggtitle('individual visibility estimator, 7yr before survey')
 ```
 
 
 ```{r}
 ggplot(ex_ests$asdr.agg) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sex, group=sex)) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
   theme_minimal() +
   scale_y_log10() + 
-  ggtitle('aggregate visibility estimator, 5yr before survey')
+  ggtitle('aggregate visibility estimator, 7yr before survey')
 ```
 
 ```{r}
 compare <- bind_rows(ex_ests$asdr.ind, ex_ests$asdr.agg)
 
 ggplot(compare) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sex, linetype=estimator, group=interaction(estimator, sex))) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, linetype=estimator, group=interaction(estimator, sib.sex))) +
   theme_minimal() +
   #facet_grid(sex ~ .) +
-  facet_grid(. ~ sex) +
+  facet_grid(. ~ sib.sex) +
   scale_y_log10() + 
-  ggtitle('both estimators, 5yr before survey')
+  ggtitle('both estimators, 7yr before survey')
 
 ```
 
@@ -213,14 +213,14 @@ columns of the dataset.
 set.seed(101010)
 
 tic('running bootstrap')
-## this will take a little while -- for 1000 reps, it takes about 30 minutes on a 2018 Macbook Pro
+## this will take a little while -- for 1000 reps, it takes about 1 minutes on a 2018 Macbook Pro
 num.boot.reps <- 1000
 bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu + stratum(stratum),
                                                            # a high number is good here, though that will obviously
                                                            # make everything take longer
                                                            num.reps=num.boot.reps,
                                                            idvar='caseid',       # column with the respondent ids
-                                                           weights='indweight',  # column with the sampling weight
+                                                           weights='ego.weight', # column with the sampling weight
                                                            survey.data=ex.ego    # note that we pass in the respondent data, NOT the sibling data
                                                            )
 toc()
@@ -237,16 +237,20 @@ then calculate and summarize the estimates for you.
 (NOTE: this is slow; it takes about 35 minutes or so on a 2018 MBP when `bootweights` has 1000 resamples.)
 
 ```{r}
+# to save time, we'll only use a subset of the bootstrap replicates
+
+short.bootweights <- bootweights %>% select(1:11)
+
 tic('calculating estimates with bootstrap')
 ex_boot_ests <- sibling_estimator(sib.dat = ex.sib,
                                   ego.id = 'caseid',
                                   sib.id = 'sibid',
                                   sib.frame.indicator = 'in.F',
-                                  sib.sex = 'sex',
+                                  sib.sex = 'sib.sex',
                                   cell.config=cc,
-                                  boot.weights=bootweights,  # to get sampling uncertainty, we pass boot.weights into sibling_estimator
-                                  return.boot=TRUE,          # when TRUE, return all of the resampled estimates (not just summaries)
-                                  weights='wwgt')
+                                  boot.weights=short.bootweights,  # to get sampling uncertainty, we pass boot.weights into sibling_estimator
+                                  return.boot=TRUE,                # when TRUE, return all of the resampled estimates (not just summaries)
+                                  weights='ego.weight')
 toc()
 ```
 
@@ -254,18 +258,66 @@ Finally, let's plot the estimated death rates along with their sampling uncertai
 
 ```{r}
 ggplot(ex_boot_ests$asdr.ind) +
-  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sex, group=sex), alpha=.2) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sex, group=sex)) +
+  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sib.sex, group=sib.sex), alpha=.2) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
   theme_minimal() +
   scale_y_log10() + 
-  ggtitle('individual visibility estimator, 5yr before survey')
+  ggtitle('individual visibility estimator, 7yr before survey')
 ```
 
 ```{r}
 ggplot(ex_boot_ests$asdr.agg) +
-  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sex, group=sex), alpha=.2) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sex, group=sex)) +
+  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sib.sex, group=sib.sex), alpha=.2) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
   theme_minimal() +
   scale_y_log10() + 
-  ggtitle('aggregate visibility estimator, 5yr before survey')
+  ggtitle('aggregate visibility estimator, 7yr before survey')
 ```
+
+## Internal consistency checks
+
+TODO - overview of IC check idea
+
+NOTE: The IC checks can take a while -- about 36 minutes for 1000 bootstrap reps on a 2018 MBP
+```{r}
+devtools::load_all()
+test.esc.dat <- ex_boot_ests$esc.dat
+
+# toggle between short bootweights (faster, for coding) and long bootweights (for realism)
+#ic.bootweights <- short.bootweights
+ic.bootweights <- bootweights
+
+tic("Internal consistency checks")
+ic.checks <- sib_ic_checks(test.esc.dat,
+                           ego.dat=ex.ego,
+                           ego.id='caseid',
+                           sib.id='sibid',
+                           sib.frame.indicator='in.F',
+                           sib.cell.vars=c('sib.age', 'sib.sex'),
+                           ego.cell.vars=c('ego.agecat5', 'ego.sex'),
+                           boot.weights=ic.bootweights)
+toc()
+
+names(ic.checks)
+```
+
+```{r}
+ggplot(ic.checks$ic.agg) +
+  geom_hline(yintercept=0) +
+  geom_pointrange(aes(x=ego.agecat5,
+                      y=diff_mean,
+                      ymin=diff_ci_low,
+                      ymax=diff_ci_high)) +
+  theme_minimal() +
+  ggtitle("Internal consistency checks") +
+  xlab("Age group") +
+  ylab(expression(Delta[alpha]))
+```
+
+
+TODO
+
+* more generally, sibling_estimator now has hard-coded 'agelabel' references -- but it shouldn't. need to fix
+* add normalization to IC checks
+* make it easier to calculate IC checks by single year of age?
+

@@ -137,6 +137,20 @@ sibling_estimator <- function(sib.dat,
     rename(!!sib.sex := .sib.sex,
            sib.age = agelabel)
 
+  ec.dat <- ec.dat %>%
+    rename(!!sib.sex := .sib.sex,
+           !!ego.id := .ego.id,
+           sib.age = agelabel,
+           !!weights := .ego.weight)
+
+  esc.dat <- esc.dat %>%
+    rename(!!sib.sex := .sib.sex,
+           !!ego.id := .ego.id,
+           !!sib.id := .sib.id,
+           sib.age = agelabel,
+           !!sib.frame.indicator := .sib.in.F,
+           !!weights := .ego.weight)
+
   res <- list(asdr.ind=asdr.ind.dat,
               asdr.agg=asdr.agg.dat,
               ec.dat=ec.dat,

@@ -6,7 +6,7 @@
 ##' @param ego.id  String with the name of the column in \code{esc.dat} containing the survey respondent's id
 ##' @param sib.dat Dataset with a row for each reported sibling, likely produced by TODO
 ##' @param sib.frame.indicator String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population
-##' @param cell.vars TODO
+##' @param cell.vars a vector with Strings containing the names of columns in \code{esc.dat} identifying the cells to group reports by (typically age group, sex, time period)
 ##' @param weights String with the name of the column in \code{esc.dat} that has the survey weights
 ##' @param discretize.exp Boolean for whether or not expsoure should be discretized. Not yet implemented.
 ##' @return A dataframe that has a row for each respondent X cell containing respondent's reported deaths and exposure among siblings in the cell.
@@ -46,6 +46,9 @@ get_ec_reports <- function(esc.dat,
                                  ego.id='.ego.id',
                                  sib.frame.indicator='.sib.in.F')
 
+
+
+
   #vdat <- res %>%
   #  group_by(.ego.id) %>%
   #  summarize(y.F = sum(y.Fcell),
@@ -57,6 +60,8 @@ get_ec_reports <- function(esc.dat,
                                slice(1) %>%
                                select(.ego.id, .ego.weight), by='.ego.id')
 
+  ## TODO - LEFT OFF HERE
+  ##   ... figuring this out; needed for IC checks...
   ## TODO - not yet calculating y.Fcell and y.Fnotcell
   ##        think this through once we get the other stuff working
   res <- res %>%
