@@ -29,8 +29,6 @@ library(tictoc)
 ```
 
 
-
-
 ## Overview
 
 It will be helpful to define a few important terms before we start our analysis:
@@ -276,19 +274,16 @@ ggplot(ex_boot_ests$asdr.agg) +
 
 ## Internal consistency checks
 
-TODO - overview of IC check idea
+In this section, we illustrate how to conduct internal consistency checks:
 
 NOTE: The IC checks can take a while -- about 36 minutes for 1000 bootstrap reps on a 2018 MBP
 ```{r}
-devtools::load_all()
-test.esc.dat <- ex_boot_ests$esc.dat
-
 # toggle between short bootweights (faster, for coding) and long bootweights (for realism)
-#ic.bootweights <- short.bootweights
-ic.bootweights <- bootweights
+ic.bootweights <- short.bootweights
+#ic.bootweights <- bootweights
 
 tic("Internal consistency checks")
-ic.checks <- sib_ic_checks(test.esc.dat,
+ic.checks <- sib_ic_checks(ex_boot_ests$esc.dat,
                            ego.dat=ex.ego,
                            ego.id='caseid',
                            sib.id='sibid',
@@ -300,6 +295,16 @@ toc()
 
 names(ic.checks)
 ```
+
+We can look at `ic.checks$ic.agg`, which has summarized output:
+
+```{r}
+ic.checks$ic.agg
+```
+
+
+
+It's often helpful to plot the results of the internal consistency checks:
 
 ```{r}
 ggplot(ic.checks$ic.agg) +
@@ -314,10 +319,10 @@ ggplot(ic.checks$ic.agg) +
   ylab(expression(Delta[alpha]))
 ```
 
+## TODO
 
-TODO
-
-* more generally, sibling_estimator now has hard-coded 'agelabel' references -- but it shouldn't. need to fix
+* right now, sibling_estimator now has hard-coded 'agelabel' references -- but it shouldn't? need to handle this more elegantly
 * add normalization to IC checks
 * make it easier to calculate IC checks by single year of age?
+
 
