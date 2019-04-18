@@ -177,13 +177,13 @@ attributes.to.long <- function(df,
                    numvar <- length(these.altercols)
 
                    these.alterdata <- mutate_(these.alterdata,
-                                              .misscount=interp(filter.cond))
+                                              .misscount=lazyeval::interp(filter.cond))
 
                    these.alterdata <- filter_(these.alterdata,
-                                              .dots=interp(~ .misscount < numvar))
+                                              .dots=lazyeval::interp(~ .misscount < numvar))
 
                    these.alterdata <- select_(these.alterdata,
-                                              .dots=interp(~ -.misscount))
+                                              .dots=lazyeval::interp(~ -.misscount))
 
 
                  }
