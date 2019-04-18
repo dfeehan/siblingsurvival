@@ -18,4 +18,4 @@ RoxygenNote: 6.1.1
 LinkingTo: 
     Rcpp
 Imports: 
-    Rcpp, tidyverse, glue, magrittr, dplyr, rlang
+    Rcpp, tidyverse, glue, magrittr, dplyr, rlang, plyr

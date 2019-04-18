@@ -124,8 +124,9 @@ attributes.to.long <- function(df,
   avmap <- data.frame('newname'=names(attribute.prefix),
                       'variable'=attribute.prefix)
 
-  varmat <- join(varmat, avmap,
-                 by='variable')
+  varmat <- plyr::join(varmat,
+                       avmap,
+                       by='variable')
 
   ## grab the idvar, if we were given one; otherwise,
   ## create one
@@ -146,7 +147,7 @@ attributes.to.long <- function(df,
 
   alternums <- unique(varmat$alternum)
 
-  res <- ldply(alternums,
+  res <- plyr::ldply(alternums,
                function(this.alternum) {
 
                  these.cols <- varmat[varmat[,'alternum']==this.alternum,]
