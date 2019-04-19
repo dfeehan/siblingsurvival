@@ -49,7 +49,26 @@ We'll then calculate estimates from the sibling histories in three main steps:
 
 ### Opening up the demo datasets
 
-Let's take a look at the demo datasets. First, here's a dataset that has information about survey respondents. (We'll refer to these survey respondents as 'ego'):
+We'll start by opening up the demonstration DHS dataset.
+
+```{r}
+data(model_dhs_dat)
+```
+
+Now we'll use `prep_dhs_sib_histories` to ready the sibling histories for analysis.
+(Please see the [Preparing Data](preparing-data.html) vignette for more details.)
+
+```{r}
+prepped <- prep_dhs_sib_histories(model_dhs_dat,
+                                  varmap = sibhist_varmap_dhs6,
+                                  keep_missing = FALSE)
+
+ex.ego <- prepped$ego.dat
+ex.sib <- prepped$sib.dat
+```
+
+
+Let's take a look at the datasets we've produced. First, here's a dataset that has information about survey respondents. (We'll refer to these survey respondents as 'ego'):
 
 ```{r}
 data(ex.ego)

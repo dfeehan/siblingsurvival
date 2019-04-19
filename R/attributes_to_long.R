@@ -112,7 +112,7 @@ attributes.to.long <- function(df,
                    ")(",
                    sep, ")(.+)")
 
-  varmat <- as.data.frame(str_match(cn, regexp), stringsAsFactors=FALSE)
+  varmat <- as.data.frame(stringr::str_match(cn, regexp), stringsAsFactors=FALSE)
   varmat <- varmat[! is.na(varmat[,1]),]
 
   if (varname.first) {

@@ -34,6 +34,11 @@ This vignette shows how to prepare a DHS-style dataset for analysis with the
 First, we'll open up the model DHS dataset, which is available
 [here](https://dhsprogram.com/customcf/legacy/data/sample_download_dataset.cfm?Filename=ZZIR62DT.ZIP&Tp=1&Ctry_Code=zz&survey_id=0&doctype=dhs);
 see also [this webpage](https://dhsprogram.com/data/Download-Model-Datasets.cfm).
+We're going to be using the **Individual Recode**, and, generally, it's easiest to start
+using the Stata-formatted version (neither an R version, nor an easy-to-use plain text format like .csv is provided).
+
+We'll assume that we've read the individual recode version of the dataset into R using `haven::read_dta`,
+and that we're calling it `model_dhs_dat`.
 
 ```{r}
 data(model_dhs_dat)
@@ -206,5 +211,20 @@ ex.ego <- ex.ego %>% select(!!!c(names(resp.attrib), 'sex', 'age.cat'))
 
 Now our two datasets, `ex.ego` and `ex.sib` are prepped and ready to go!
 
+# Using `prep_dhs_sib_histories`
+
+The package includes a function, `prep_dhs_sib_histories`, that can be used
+to load the sibling data, following the steps we just described. It works like this:
+
+```{r}
+data(model_dhs_dat)
+data(sibhist_varmap_dhs6)
+
+prepped <- prep_dhs_sib_histories(model_dhs_dat,
+                                  varmap = sibhist_varmap_dhs6,
+                                  keep_missing = FALSE)
+
+str(prepped)
+```
 
 
