@@ -71,14 +71,12 @@ ex.sib <- prepped$sib.dat
 Let's take a look at the datasets we've produced. First, here's a dataset that has information about survey respondents. (We'll refer to these survey respondents as 'ego'):
 
 ```{r}
-data(ex.ego)
 ex.ego
 ```
 
 And here's a long-form version of the sibling history data -- there's one row for each reported sibling.
 
 ```{r}
-data(ex.sib)
 ex.sib
 ```
 
