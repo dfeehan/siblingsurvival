@@ -19,6 +19,6 @@ WISHLIST
 VIGNETTES
 
 - producing estimates (mostly done)
-- making a sibling dataset from a survey dataset
-- IC checks
+- making a sibling dataset from a survey dataset (mostly done)
+- IC checks (now in 'producing estimates', but maybe make a separate vignette?)
 
