@@ -13,7 +13,8 @@ WISHLIST
 
 - shiny widget for sensitivity analysis?
 - unit tests
-- additional varmaps (right now, we only have DHS6)
+- additional varmaps (right now, we only have DHS6); an up-to-date list of DHS versions and recodes is available [here](https://www.dhsprogram.com/publications/publication-dhsg4-dhs-questionnaires-and-manuals.cfm)
+
 
 VIGNETTES
 

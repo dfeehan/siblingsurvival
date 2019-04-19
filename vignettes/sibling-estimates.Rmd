@@ -324,6 +324,7 @@ ggplot(ic.checks$ic.agg) +
 
 ## TODO
 
+* NEXT: make a vignette that shows how to load sibling data. (Or maybe incorporate that into this one?)
 * right now, sibling_estimator now has hard-coded 'agelabel' references -- but it shouldn't? need to handle this more elegantly
 * add normalization to IC checks
 * make it easier to calculate IC checks by single year of age?
