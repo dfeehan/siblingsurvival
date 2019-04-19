@@ -8,7 +8,7 @@ sib_ic_checks(esc.dat, ego.dat, ego.id, sib.id, sib.frame.indicator,
   sib.cell.vars, ego.cell.vars, boot.weights)
 }
 \arguments{
-\item{esc.dat}{The ego X sibling X cell dataset (see \link{\code{get_esc_reports}})}
+\item{esc.dat}{The ego X sibling X cell dataset (see \code{get_esc_reports})}
 
 \item{ego.dat}{The ego dataset, containing one row for each survey respondent}
 
@@ -34,7 +34,7 @@ get calculate internal consistency checks for sibling reports
 
 The \code{sib.cell.vars} and \code{ego.cell.vars} arguments should have a vector with Strings containing the names of
 columns in \code{esc.dat} identifying the cells to group reports by (typically age and sex, and possibly other variables).
-Note that, unlike the \code{cell.vars} argument in \link{\code{get_ec_reports}}, for this function \code{sib.cell.vars} and
+Note that, unlike the \code{cell.vars} argument in \code{get_ec_reports}, for this function \code{sib.cell.vars} and
 \code{ego.cell.vars} MUST have the age variable listed FIRST.
 The goal of \code{get_ic_reports} is to find the cell that each sibling was in at the time of the interview, meaning the oldest age group to which the
 sibling contributed any exposure.

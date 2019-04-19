@@ -88,12 +88,13 @@ Let's look at the distribution of frame population membership
 with(ex.sib, table(in.F, useNA='ifany'))
 ```
 
-These sibs with missing `in.F` turn out not to have ages recorded. 
+In this example dataset, one of the `in.F` values is missing.
+(In a real dataset, there could well be more.)
 Since we need to be able to determine whether or not each sibling is on in the
-frame population, we will drop them from the analysis.
+frame population, we would drop siblings missing `in.F` values from the analysis.
 
 ```{r}
-ex.sib <- ex.sib %>% filter(! is.na(in.F))
+ex.sib <- ex.sib %>% filter(! is.na(in.F)) 
 ```
 
 ### Specifying cells
@@ -135,11 +136,12 @@ death rates from the sibling histories for us.
 ```{r}
 ex_ests <- sibling_estimator(sib.dat = ex.sib,
                              ego.id = 'caseid',            # column with the respondent id
-                             sib.id = 'sibid',             # column with sibling id (unique for each reported sibling)
+                             sib.id = 'sibid',             # column with sibling id 
+                                                           # (unique for each reported sibling)
                              sib.frame.indicator = 'in.F', # indicator for sibling frame population membership
                              sib.sex = 'sib.sex',          # column with sibling's sex
                              cell.config=cc,               # cell configuration we created above
-                             weights='ego.weight')         # column with the respondents' sampling weights
+                             weights='wwgt')               # column with the respondents' sampling weights
 
 names(ex_ests)
 ```
@@ -213,12 +215,12 @@ set.seed(101010)
 tic('running bootstrap')
 ## this will take a little while -- for 1000 reps, it takes about 1 minutes on a 2018 Macbook Pro
 num.boot.reps <- 1000
-bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu + stratum(stratum),
+bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu + stratum(stratum_analysis),
                                                            # a high number is good here, though that will obviously
                                                            # make everything take longer
                                                            num.reps=num.boot.reps,
                                                            idvar='caseid',       # column with the respondent ids
-                                                           weights='ego.weight', # column with the sampling weight
+                                                           weights='wwgt', # column with the sampling weight
                                                            survey.data=ex.ego    # note that we pass in the respondent data, NOT the sibling data
                                                            )
 toc()
@@ -248,7 +250,7 @@ ex_boot_ests <- sibling_estimator(sib.dat = ex.sib,
                                   cell.config=cc,
                                   boot.weights=short.bootweights,  # to get sampling uncertainty, we pass boot.weights into sibling_estimator
                                   return.boot=TRUE,                # when TRUE, return all of the resampled estimates (not just summaries)
-                                  weights='ego.weight')
+                                  weights='wwgt')
 toc()
 ```
 
@@ -277,6 +279,7 @@ ggplot(ex_boot_ests$asdr.agg) +
 In this section, we illustrate how to conduct internal consistency checks:
 
 NOTE: The IC checks can take a while -- about 36 minutes for 1000 bootstrap reps on a 2018 MBP
+
 ```{r}
 # toggle between short bootweights (faster, for coding) and long bootweights (for realism)
 ic.bootweights <- short.bootweights
@@ -289,7 +292,7 @@ ic.checks <- sib_ic_checks(ex_boot_ests$esc.dat,
                            sib.id='sibid',
                            sib.frame.indicator='in.F',
                            sib.cell.vars=c('sib.age', 'sib.sex'),
-                           ego.cell.vars=c('ego.agecat5', 'ego.sex'),
+                           ego.cell.vars=c('age.cat', 'sex'),
                            boot.weights=ic.bootweights)
 toc()
 
@@ -309,7 +312,7 @@ It's often helpful to plot the results of the internal consistency checks:
 ```{r}
 ggplot(ic.checks$ic.agg) +
   geom_hline(yintercept=0) +
-  geom_pointrange(aes(x=ego.agecat5,
+  geom_pointrange(aes(x=age.cat,
                       y=diff_mean,
                       ymin=diff_ci_low,
                       ymax=diff_ci_high)) +
