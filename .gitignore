@@ -2,3 +2,5 @@ inst/doc
 .Rproj.user
 .Rhistory
 *-dev.*
+.DS_Store
+
