@@ -3,4 +3,5 @@ inst/doc
 .Rhistory
 *-dev.*
 .DS_Store
+.RData
 

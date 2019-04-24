@@ -38,8 +38,8 @@ Specify the cells (age groups, time period) to produce estimates for
 column names refer to the dataset with one row for each reported sibling. This
 isn't passed into this function, so this function can't check that these column names are valid.
 \item \code{age.groups} can either be the output of one of the helper functions for creating age groups
-(\code{make.age.groups} or \code{make.even.age.groups}), or it can be '5yr', or '10yr' for standard
-5 or 10-year age groups ranging from 15 to 65
+(\code{make.age.groups} or \code{make.even.age.groups}), or it can be '1yr', '5yr', or '10yr' for standard
+1, 5, or 10-year age groups ranging from 15 to 65
 \item \code{time.periods} can either be the output of \code{make.time.periods}, or it can be
 '12mo_beforeinterview', '5yr_beforeinterview', or '7yr_beforeinterview' for time periods one,
 five, or seven years before the interview date
