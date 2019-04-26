@@ -107,7 +107,7 @@ sib_ic_checks <- function(esc.dat,
 
   # check that the levels are the same
   if(! setequal(unique(ec.yf.dat$.ego.cell), unique(ec.yf.dat$.sib.cell))) {
-    stop("The cell values do not appear to be the same for ego and for sibs.")
+    warning("The cell values do not appear to be the same for ego and for sibs.")
   }
 
   cell.vals <- unique(ec.yf.dat$.ego.cell)
