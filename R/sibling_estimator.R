@@ -100,23 +100,36 @@ sibling_estimator <- function(sib.dat,
     boot.ind.ests <- bind_rows(map(boot.ests, ~.x$ind))
     boot.agg.ests <- bind_rows(map(boot.ests, ~.x$agg))
 
+    if (any(is.na(boot.ind.ests$asdr.hat))) {
+      n.na <- sum(is.na(boot.ind.ests$asdr.hat))
+      n.all <- length(boot.ind.ests$asdr.hat)
+      warning(glue::glue("Individual estimates have {n.na} out of {n.all} values missing. These have been removed in the summary statistics. Beware!\n"))
+    }
+
     # get estimated sampling uncertainty for the
     # individual and aggregate visibility estimates
     boot.ind.varest <- boot.ind.ests %>%
       ungroup() %>%
       group_by_at(cell.vars) %>%
-      summarise(asdr.hat.ci.low = quantile(asdr.hat, .025),
-                asdr.hat.ci.high = quantile(asdr.hat, 0.975),
-                asdr.hat.median = quantile(asdr.hat, 0.5),
-                asdr.hat.se = sd(asdr.hat))
+      summarise(asdr.hat.ci.low = quantile(asdr.hat, .025, na.rm=TRUE),
+                asdr.hat.ci.high = quantile(asdr.hat, 0.975, na.rm=TRUE),
+                asdr.hat.median = quantile(asdr.hat, 0.5, na.rm=TRUE),
+                asdr.hat.se = sd(asdr.hat, na.rm=TRUE))
+
+    if (any(is.na(boot.agg.ests$asdr.hat))) {
+      n.na <- sum(is.na(boot.agg.ests$asdr.hat))
+      n.all <- length(boot.agg.ests$asdr.hat)
+      warning(glue::glue("Aggregate estimates have {n.na} out of {n.all} values missing. These have been removed in the summary statistics. Beware!\n"))
+    }
+
 
     boot.agg.varest <- boot.agg.ests %>%
       ungroup() %>%
       group_by_at(cell.vars) %>%
-      summarise(asdr.hat.ci.low = quantile(asdr.hat, .025),
-                asdr.hat.ci.high = quantile(asdr.hat, 0.975),
-                asdr.hat.median = quantile(asdr.hat, 0.5),
-                asdr.hat.se = sd(asdr.hat))
+      summarise(asdr.hat.ci.low = quantile(asdr.hat, .025, na.rm=TRUE),
+                asdr.hat.ci.high = quantile(asdr.hat, 0.975, na.rm=TRUE),
+                asdr.hat.median = quantile(asdr.hat, 0.5, na.rm=TRUE),
+                asdr.hat.se = sd(asdr.hat, na.rm=TRUE))
 
     # and join the estimated sampling uncertainty onto the returned asdrs
     asdr.ind.dat <- asdr.ind.dat %>%
