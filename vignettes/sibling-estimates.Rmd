@@ -330,24 +330,35 @@ It's often helpful to plot the results of the internal consistency checks:
 ggplot(ic.checks$ic.agg) +
   geom_hline(yintercept=0) +
   geom_pointrange(aes(x=age.cat,
-                      y=agg_diff_mean,
-                      ymin=agg_diff_ci_low,
-                      ymax=agg_diff_ci_high)) +
+                      y=diff_mean,
+                      ymin=diff_ci_low,
+                      ymax=diff_ci_high)) +
   theme_minimal() +
-  ggtitle("Internal consistency checks (aggregate)") +
+  ggtitle("Internal consistency checks") +
   xlab("Age group") +
   ylab(expression(Delta[alpha]))
 
-ggplot(ic.checks$ic.agg) +
-  geom_hline(yintercept=0) +
-  geom_pointrange(aes(x=age.cat,
-                      y=ind_diff_mean,
-                      ymin=ind_diff_ci_low,
-                      ymax=ind_diff_ci_high)) +
-  theme_minimal() +
-  ggtitle("Internal consistency checks (individual)") +
-  xlab("Age group") +
-  ylab(expression(Delta[alpha]))
+#ggplot(ic.checks$ic.agg) +
+#  geom_hline(yintercept=0) +
+#  geom_pointrange(aes(x=age.cat,
+#                      y=agg_diff_mean,
+#                      ymin=agg_diff_ci_low,
+#                      ymax=agg_diff_ci_high)) +
+#  theme_minimal() +
+#  ggtitle("Internal consistency checks (aggregate)") +
+#  xlab("Age group") +
+#  ylab(expression(Delta[alpha]))
+#
+#ggplot(ic.checks$ic.agg) +
+#  geom_hline(yintercept=0) +
+#  geom_pointrange(aes(x=age.cat,
+#                      y=ind_diff_mean,
+#                      ymin=ind_diff_ci_low,
+#                      ymax=ind_diff_ci_high)) +
+#  theme_minimal() +
+#  ggtitle("Internal consistency checks (individual)") +
+#  xlab("Age group") +
+#  ylab(expression(Delta[alpha]))
 ```
 
 ## TODO
