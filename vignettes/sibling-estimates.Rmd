@@ -299,8 +299,8 @@ NOTE: The IC checks can take a while -- about 36 minutes for 1000 bootstrap reps
 
 ```{r}
 # toggle between short bootweights (faster, for coding) and long bootweights (for realism)
-ic.bootweights <- short.bootweights
-#ic.bootweights <- bootweights
+#ic.bootweights <- short.bootweights
+ic.bootweights <- bootweights
 
 tic("Internal consistency checks")
 ic.checks <- sib_ic_checks(ex_boot_ests$esc.dat,
@@ -330,11 +330,22 @@ It's often helpful to plot the results of the internal consistency checks:
 ggplot(ic.checks$ic.agg) +
   geom_hline(yintercept=0) +
   geom_pointrange(aes(x=age.cat,
-                      y=diff_mean,
-                      ymin=diff_ci_low,
-                      ymax=diff_ci_high)) +
+                      y=agg_diff_mean,
+                      ymin=agg_diff_ci_low,
+                      ymax=agg_diff_ci_high)) +
   theme_minimal() +
-  ggtitle("Internal consistency checks") +
+  ggtitle("Internal consistency checks (aggregate)") +
+  xlab("Age group") +
+  ylab(expression(Delta[alpha]))
+
+ggplot(ic.checks$ic.agg) +
+  geom_hline(yintercept=0) +
+  geom_pointrange(aes(x=age.cat,
+                      y=ind_diff_mean,
+                      ymin=ind_diff_ci_low,
+                      ymax=ind_diff_ci_high)) +
+  theme_minimal() +
+  ggtitle("Internal consistency checks (individual)") +
   xlab("Age group") +
   ylab(expression(Delta[alpha]))
 ```
