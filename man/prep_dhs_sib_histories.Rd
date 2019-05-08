@@ -5,7 +5,7 @@
 \title{prepare a DHS dataset for analysis}
 \usage{
 prep_dhs_sib_histories(df, varmap = sibhist_varmap_dhs6,
-  keep_missing = FALSE, verbose = TRUE)
+  keep_missing = FALSE, keep_varmap_only = FALSE, verbose = TRUE)
 }
 \arguments{
 \item{df}{the raw DHS dataset (indvidual recode)}
@@ -13,6 +13,8 @@ prep_dhs_sib_histories(df, varmap = sibhist_varmap_dhs6,
 \item{varmap}{see Details}
 
 \item{keep_missing}{should we keep reported sibs that are missing sex or survival status?}
+
+\item{keep_varmap_only}{should we only keep ego variables mentioned in the varmap? (Default: FALSE)}
 
 \item{verbose}{report detailed summaries?}
 }

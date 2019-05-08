@@ -3,6 +3,7 @@
 ##' @param df the raw DHS dataset (indvidual recode)
 ##' @param varmap see Details
 ##' @param keep_missing should we keep reported sibs that are missing sex or survival status?
+##' @param keep_varmap_only should we only keep ego variables mentioned in the varmap? (Default: FALSE)
 ##' @param verbose report detailed summaries?
 ##' @return a list; see Details
 ##' @examples
@@ -29,7 +30,11 @@
 ##' * `summ` - a one-row tibble with a summary of the data
 ##'
 ##' @export
-prep_dhs_sib_histories <- function(df, varmap=sibhist_varmap_dhs6, keep_missing=FALSE, verbose=TRUE) {
+prep_dhs_sib_histories <- function(df,
+                                   varmap=sibhist_varmap_dhs6,
+                                   keep_missing=FALSE,
+                                   keep_varmap_only=FALSE,
+                                   verbose=TRUE) {
 
   ## ego (respondent) variables to grab
   tmp <- subset(varmap, sibvar==0)
@@ -41,18 +46,21 @@ prep_dhs_sib_histories <- function(df, varmap=sibhist_varmap_dhs6, keep_missing=
   sib.attrib <- tmp$orig.varname
   names(sib.attrib) <- tmp$new.varname
 
-  ego.dat <- model_dhs_dat %>%
+  ego.dat <- df %>%
     # use information from the varmap to rename ego variables
-    rename(!!!resp.attrib) %>%
+    rename(!!!resp.attrib)
+
+  ego.dat <- ego.dat %>%
     mutate(
       ## typically, only women are asked sibling histories in DHS surveys
       sex='f',
-      ## these breaks should agree with the ones
-      ## used in the age categories for siblings
-      ## (see below)
+      ## for convenience, add 5- and 10-year age groups
       age.cat=forcats::fct_drop(cut(age,
                                     breaks=c(0, seq(from=15,to=50,by=5),95),
                                     include.lowest=TRUE, right=FALSE)),
+      age.cat10=forcats::fct_drop(cut(age,
+                                      breaks=c(0, seq(from=15,to=50,by=10),95),
+                                      include.lowest=TRUE, right=FALSE)),
       ## we'll rescale the weights, dividing them by 1,000,000
       ## (so that their average is 1); see DHS documentation
       wwgt=wwgt/1e6
@@ -119,6 +127,7 @@ prep_dhs_sib_histories <- function(df, varmap=sibhist_varmap_dhs6, keep_missing=
   }
 
   sibs.removed.n <- 0
+  sibs.removed.pct <- 0
 
   if(! keep_missing) {
 
@@ -127,8 +136,8 @@ prep_dhs_sib_histories <- function(df, varmap=sibhist_varmap_dhs6, keep_missing=
     pre.n <- nrow(sib.dat)
     sib.dat <- sib.dat %>% filter(sib.alive %in% c(0,1)) %>% filter(sib.sex %in% c('f', 'm'))
     post.n <- nrow(sib.dat)
-    sibs.removed <- pre.n - post.n
-    sibs.removed.pct <- 100 * sibs.removed / n.sib.raw
+    sibs.removed.n <- pre.n - post.n
+    sibs.removed.pct <- 100 * sibs.removed.n / n.sib.raw
 
     cat("... this removes ", pre.n-post.n, " out of ", pre.n," (", round(100*(pre.n-post.n)/pre.n,2), "%)",
         " sibling reports.")
@@ -144,8 +153,13 @@ prep_dhs_sib_histories <- function(df, varmap=sibhist_varmap_dhs6, keep_missing=
                  miss.alive.pct = miss.alive.pct,
                  miss.sex = miss.sex,
                  miss.sex.pct = miss.sex.pct,
-                 sibs.removed = sibs.removed,
+                 sibs.removed = sibs.removed.n,
                  sibs.removed.pct = sibs.removed.pct)
+
+  if (keep_varmap_only) {
+    ego.dat <- ego.dat %>%
+      select_at(c(names(resp.attrib), 'sex', 'age.cat', 'age.cat10', 'wwgt'))
+  }
 
   return(list(survey=cur.survey,
               ego.dat = ego.dat,

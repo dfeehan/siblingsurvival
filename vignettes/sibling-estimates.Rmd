@@ -258,6 +258,9 @@ then calculate and summarize the estimates for you.
 
 short.bootweights <- bootweights %>% select(1:11)
 
+#est.bootweights <- bootweights
+est.bootweights <- short.bootweights
+
 tic('calculating estimates with bootstrap')
 ex_boot_ests <- sibling_estimator(sib.dat = ex.sib,
                                   ego.id = 'caseid',
@@ -265,7 +268,7 @@ ex_boot_ests <- sibling_estimator(sib.dat = ex.sib,
                                   sib.frame.indicator = 'in.F',
                                   sib.sex = 'sib.sex',
                                   cell.config=cc,
-                                  boot.weights=short.bootweights,  # to get sampling uncertainty, we pass boot.weights into sibling_estimator
+                                  boot.weights=est.bootweights,  # to get sampling uncertainty, we pass boot.weights into sibling_estimator
                                   return.boot=TRUE,                # when TRUE, return all of the resampled estimates (not just summaries)
                                   weights='wwgt')
 toc()
@@ -299,8 +302,8 @@ NOTE: The IC checks can take a while -- about 36 minutes for 1000 bootstrap reps
 
 ```{r}
 # toggle between short bootweights (faster, for coding) and long bootweights (for realism)
-#ic.bootweights <- short.bootweights
-ic.bootweights <- bootweights
+ic.bootweights <- short.bootweights
+#ic.bootweights <- bootweights
 
 tic("Internal consistency checks")
 ic.checks <- sib_ic_checks(ex_boot_ests$esc.dat,
@@ -361,11 +364,61 @@ ggplot(ic.checks$ic.agg) +
 #  ylab(expression(Delta[alpha]))
 ```
 
+## Visibilities
+
+```{r}
+sib.F.dat <- ex.sib %>%
+  group_by(caseid) %>%
+  summarize(y.F = sum(in.F))
+
+ego.vis <- ex.ego %>% 
+  select(caseid, wwgt, age.cat, sex) %>%
+  left_join(sib.F.dat, by='caseid')
+
+# if nothing was joined in, there are no sibs
+ego.vis <- ego.vis %>%
+  mutate(y.F=ifelse(is.na(y.F), 0, y.F))
+
+ego.vis.agg <- ego.vis %>%
+  group_by(sex, age.cat) %>%
+  summarise(y.F.bar = weighted.mean(y.F, wwgt)) %>%
+  mutate(adj.factor = y.F.bar / (y.F.bar + 1))
+```
+
+Make adjusted individual estimates
+
+```{r}
+adj.agg.ests <- ex_ests$asdr.agg %>%
+  left_join(ego.vis.agg,
+            by=c('sib.sex'='sex', 'sib.age'='age.cat')) %>%
+  mutate(adj.factor = ifelse(is.na(adj.factor), 1, adj.factor),
+         estimator = 'sib_agg_adj',
+         asdr.hat = asdr.hat * adj.factor)
+```
+
+And plot a comparison
+
+```{r}
+compare <- bind_rows(ex_ests$asdr.ind, ex_ests$asdr.agg, adj.agg.ests)
+
+ggplot(compare) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, linetype=estimator, group=interaction(estimator, sib.sex))) +
+  theme_minimal() +
+  #facet_grid(sex ~ .) +
+  facet_grid(. ~ sib.sex) +
+  scale_y_log10() + 
+  ggtitle('sibling estimators, 7yr before survey')
+
+```
+
+
+
 ## TODO
 
-* NEXT: make a vignette that shows how to load sibling data. (Or maybe incorporate that into this one?)
-* right now, sibling_estimator now has hard-coded 'agelabel' references -- but it shouldn't? need to handle this more elegantly
+* add calculation of visibilities by respondent, calculate avg vis by cell
+* make it easier to produce adjusted estimates; demonstrate with S/(S+1) issue
 * add normalization to IC checks
 * make it easier to calculate IC checks by single year of age?
+* right now, sibling_estimator now has hard-coded 'agelabel' references -- but it shouldn't? need to handle this more elegantly
 
 
