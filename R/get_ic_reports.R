@@ -57,7 +57,6 @@ get_ic_reports <- function(esc.dat,
   return(ec.yf.dat)
 }
 
-
 ##' get calculate internal consistency checks for sibling reports
 ##'
 ##' @param esc.dat The ego X sibling X cell dataset (see \code{get_esc_reports})
@@ -118,100 +117,69 @@ sib_ic_checks <- function(esc.dat,
     #left_join(boot.weights %>% dplyr::mutate(.ego.id = !!sym(ego.id)), by='.ego.id')
     left_join(boot.weights, by=ego.id)
 
+  boot.cols <- stringr::str_subset(colnames(boot.weights), ego.id, negate=TRUE)
+
   # we'll map over bootstrap resamples and cells, calculating an
   # IC check for each bootstrap rep X cell
-  boot.ests <-
-    purrr::map_df(1:M,
-                 function(boot.idx) {
-                   cur.wgt <- paste0('boot_weight_', boot.idx)
+  boot.ests <- purrr::map_df(cell.vals,
+                             function(cur_cell) {
 
-                   cur.rep.res <-
-                     purrr::map_df(cell.vals,
-                       function(cur_cell) {
+                               # egos in group alpha
+                               y.Falpha.dat <- ec.yf.dat %>%
+                                 grab_cell('.ego.cell', cur_cell)
+                               # reports from egos in group alpha about sibs in -alpha
+                               y.Falpha.Fminusalpha.dat <- y.Falpha.dat %>%
+                                 grab_cell_complement('.sib.cell', cur_cell)
 
-                         # egos in group alpha
-                         y.Falpha.dat <- ec.yf.dat %>%
-                           grab_cell('.ego.cell', cur_cell)
-                         # reports from egos in group alpha about sibs in -alpha
-                         y.Falpha.Fminusalpha.dat <- y.Falpha.dat %>%
-                           grab_cell_complement('.sib.cell', cur_cell)
+                               # egos not in group alpha
+                               y.Fminusalpha.dat <- ec.yf.dat %>%
+                                 grab_cell_complement('.ego.cell', cur_cell)
+                               # reports from egos not in group alpha about sibs in alpha
+                               y.Fminusalpha.Falpha.dat <- y.Fminusalpha.dat %>%
+                                 grab_cell('.sib.cell', cur_cell)
 
-                         # egos not in group alpha
-                         y.Fminusalpha.dat <- ec.yf.dat %>%
-                           grab_cell_complement('.ego.cell', cur_cell)
-                         # reports from egos not in group alpha about sibs in alpha
-                         y.Fminusalpha.Falpha.dat <- y.Fminusalpha.dat %>%
-                           grab_cell('.sib.cell', cur_cell)
+                               #####
+                               ## aggregate visibility estimators
 
-                         #####
-                         ## aggregate visibility estimators
+                               ## use the current bootstrap weights to get estimated reports
+                               ## from respondents in cell alpha to sibs in not alpha,
+                               ## and from respondents in not alpha to sibs in alpha
+                               ## NB: these are aggregate-visibility estimates
+                               #y.Falpha.Fminusalpha <- sum(y.Falpha.Fminusalpha.dat %>% pull(!!sym(cur.wgt)))
+                               #y.Fminusalpha.Falpha <- sum(y.Fminusalpha.Falpha.dat %>% pull(!!sym(cur.wgt)))
 
-                         ## use the current bootstrap weights to get estimated reports
-                         ## from respondents in cell alpha to sibs in not alpha,
-                         ## and from respondents in not alpha to sibs in alpha
-                         ## NB: these are aggregate-visibility estimates
-                         y.Falpha.Fminusalpha <- sum(y.Falpha.Fminusalpha.dat %>% pull(!!sym(cur.wgt)))
-                         y.Fminusalpha.Falpha <- sum(y.Fminusalpha.Falpha.dat %>% pull(!!sym(cur.wgt)))
+                               y.Falpha.Fminusalpha <- y.Falpha.Fminusalpha.dat %>%
+                                 summarize_at(.vars=boot.cols,
+                                              sum) %>%
+                                 gather(starts_with('boot_weight'),
+                                        key='qty',
+                                        value='y.Falpha.Fminusalpha') %>%
+                                 mutate(boot_idx = as.integer(stringr::str_remove_all(qty, '[^\\d]'))) %>%
+                                 select(-qty)
 
-                         return(tibble(y.Falpha.Fminusalpha = y.Falpha.Fminusalpha,
-                                       y.Fminusalpha.Falpha = y.Fminusalpha.Falpha,
-                                       cell=cur_cell,
-                                       n_Falpha = nrow(y.Falpha.Fminusalpha.dat),
-                                       n_Fminusalpha = nrow(y.Fminusalpha.Falpha.dat)))
+                               y.Fminusalpha.Falpha <- y.Fminusalpha.Falpha.dat %>%
+                                 summarize_at(.vars=boot.cols,
+                                              sum) %>%
+                                 gather(starts_with('boot_weight'),
+                                        key='qty',
+                                        value='y.Fminusalpha.Falpha') %>%
+                                 mutate(boot_idx = as.integer(stringr::str_remove_all(qty, '[^\\d]'))) %>%
+                                 select(-qty)
 
-                         ## below adds individual visibility checks,
-                         ## which I no longer think make sense
-                         ##
+                               res <- y.Falpha.Fminusalpha %>%
+                                 left_join(y.Fminusalpha.Falpha, by='boot_idx') %>%
+                                 mutate(cell = cur_cell,
+                                        n_Falpha = nrow(y.Falpha.Fminusalpha.dat),
+                                        n_Fminusalpha = nrow(y.Fminusalpha.Falpha.dat))
 
-                         #####
-                         ## individual visibility estimators
+                               return(res)
+                               #return(tibble(y.Falpha.Fminusalpha = y.Falpha.Fminusalpha,
+                               #              y.Fminusalpha.Falpha = y.Fminusalpha.Falpha,
+                               #              cell=cur_cell,
+                               #              n_Falpha = nrow(y.Falpha.Fminusalpha.dat),
+                               #              n_Fminusalpha = nrow(y.Fminusalpha.Falpha.dat)))
 
-                         ## individual visibility estimator for y(F_alpha, F_-alpha) is
-                         ##    \sum_{i \in s_\alpha} w_i * [y(i, F_-alpha) / (y(i, F_alpha) + 1)]
-                         ##
-                         ## start w/ reports made by ego in cell alpha
-                         #y.Falpha.ind2 <- y.Falpha.dat %>%
-                         #  mutate(samecell = as.numeric(.ego.cell == .sib.cell)) %>%
-                         #  group_by(caseid) %>%
-                         #  summarize(# number of sibs ego reports who are not in the same cell as ego (ie sibs are not in cell alpha)
-                         #            ind.y.Falpha.Fminusalpha = sum((1 - samecell)),
-                         #            # number of sibs ego reports who are in the same cell as ego (ie sibs are in cell alpha)
-                         #            ind.y.Falpha.Falpha = sum(samecell),
-                         #            .cur.wgt = mean(!!sym(cur.wgt))) %>%
-                         #  mutate(ind.y.Falpha.Fminusalpha = .cur.wgt * ind.y.Falpha.Fminusalpha / (ind.y.Falpha.Falpha + 1))
-                         #y.ind.Falpha.Fminusalpha <- sum(y.Falpha.ind2$ind.y.Falpha.Fminusalpha)
-
-                         ### individual visibility estimator for y(F_-alpha, F_alpha) is
-                         ###    \sum_{i \in s_-\alpha} w_i * [y(i, F_alpha) / (y(i, F_-alpha) + 1)]
-                         ###
-                         ### start w/ reports made by ego in cell -alpha
-                         #y.Fminusalpha.ind2 <- y.Fminusalpha.dat %>%
-                         #  mutate(samecell = as.numeric(.ego.cell == .sib.cell)) %>%
-                         #  group_by(caseid) %>%
-                         #  summarize(# number of sibs ego reports who are not in same cell as ego (ie sibs are in cell alpha)
-                         #            ind.y.Fminusalpha.Falpha = sum((1 - samecell)),
-                         #            # number of sibs ego reports who are in the same cell as ego (ie sibs are not in cell alpha)
-                         #            ind.y.Fminusalpha.Fminusalpha = sum(samecell),
-                         #            .cur.wgt = mean(!!sym(cur.wgt))) %>%
-                         #  mutate(ind.y.Fminusalpha.Falpha = .cur.wgt * ind.y.Fminusalpha.Falpha / (ind.y.Fminusalpha.Fminusalpha + 1))
-                         #y.ind.Fminusalpha.Falpha <- sum(y.Fminusalpha.ind2$ind.y.Fminusalpha.Falpha)
-
-                         #return(tibble(y.agg.Falpha.Fminusalpha = y.Falpha.Fminusalpha,
-                         #              y.agg.Fminusalpha.Falpha = y.Fminusalpha.Falpha,
-                         #              y.ind.Falpha.Fminusalpha = y.ind.Falpha.Fminusalpha,
-                         #              y.ind.Fminusalpha.Falpha = y.ind.Fminusalpha.Falpha,
-                         #              cell=cur_cell,
-                         #              n_Falpha = nrow(y.Falpha.Fminusalpha.dat),
-                         #              n_Fminusalpha = nrow(y.Fminusalpha.Falpha.dat)))
-
-                       })
-
-                   cur.rep.res$boot.idx <- boot.idx
-
-                   return(cur.rep.res)
-                 })
-
-
+                             })
 
   ic.agg <- boot.ests %>%
     group_by(cell) %>%
@@ -220,37 +188,21 @@ sib_ic_checks <- function(esc.dat,
            diff2 = diff^2) %>%
     summarise_at(c('diff', 'abs_diff', 'diff2'),
                  list(mean=~mean(.),
-                 se=~sd(.),
-                 ci_low=~quantile(., probs=.025),
-                 ci_high=~quantile(., probs=.975))) %>%
+                      se=~sd(.),
+                      ci_low=~quantile(., probs=.025),
+                      ci_high=~quantile(., probs=.975))) %>%
     decode_cells('cell', ego.cell.vars, remove=FALSE)
-
-  # version w/ separate individual and aggregate IC checks
-  #ic.agg <- boot.ests %>%
-  #  group_by(cell) %>%
-  #  mutate(agg_diff = y.agg.Falpha.Fminusalpha - y.agg.Fminusalpha.Falpha,
-  #         agg_abs_diff = abs(agg_diff),
-  #         agg_diff2 = agg_diff^2,
-  #         ind_diff = y.ind.Falpha.Fminusalpha - y.ind.Fminusalpha.Falpha,
-  #         ind_abs_diff = abs(ind_diff),
-  #         ind_diff2 = ind_diff^2) %>%
-  #  summarise_at(c('agg_diff', 'agg_abs_diff', 'agg_diff2',
-  #                 'ind_diff', 'ind_abs_diff', 'ind_diff2'),
-  #               list(mean=~mean(.),
-  #               se=~sd(.),
-  #               ci_low=~quantile(., probs=.025),
-  #               ci_high=~quantile(., probs=.975))) %>%
-  #  decode_cells('cell', ego.cell.vars, remove=FALSE)
 
   boot.ests <- boot.ests %>%
     decode_cells('cell', ego.cell.vars, remove=FALSE)
 
   ## TODO - should rename ic.agg to ic.summ (to avoid confusion w/ aggregate vis estimator)
-  res <- list(ic.agg = ic.agg,
+  res <- list(ic.summ = ic.agg,
               ic.boot.ests = boot.ests)
 
   return(res)
 }
+
 
 
 # this is a useful helper function, used in sib_ic_checks
@@ -282,3 +234,202 @@ decode_cells <- function(df, cell.name, cell.vars, remove=TRUE, sep="_X_") {
                     sep=sep)
   return(res)
 }
+
+
+## OLD VERSION, going to be removed eventually...
+
+##' get calculate internal consistency checks for sibling reports
+##'
+##' @param esc.dat The ego X sibling X cell dataset (see \code{get_esc_reports})
+##' @param ego.dat The ego dataset, containing one row for each survey respondent
+##' @param ego.id  String with the name of the column in \code{esc.dat} containing the survey respondent ID
+##' @param sib.id  String with the name of the column in \code{esc.dat} containing the unique sibling ID
+##' @param sib.frame.indicator String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population
+##' @param sib.cell.vars see Details
+##' @param ego.cell.vars see Details
+##' @param boot.weights Dataframe with bootstrap resampled weights. See Details
+##' @return A tibble with a row for each reported sibling in the frame population, the sibling's cell info, and the cell info of the survey respondent who reported each sibling
+##' @examples
+##'   # TODO write example code
+##' @section Details:
+##'   The \code{sib.cell.vars} and \code{ego.cell.vars} arguments should have a vector with Strings containing the names of
+##'   columns in \code{esc.dat} identifying the cells to group reports by (typically age and sex, and possibly other variables).
+##'   Note that, unlike the \code{cell.vars} argument in \code{get_ec_reports}, for this function \code{sib.cell.vars} and
+##'   \code{ego.cell.vars} MUST have the age variable listed FIRST.
+##'   The goal of \code{get_ic_reports} is to find the cell that each sibling was in at the time of the interview, meaning the oldest age group to which the
+##'   sibling contributed any exposure.
+##'   \code{boot.weights} is assumed to have a column that is named whatever the \code{ego.id} is,
+##'   and then a series of columns named \code{boot_weight_1}, ..., \code{boot_weight_M}.
+##'
+##' @export
+sib_ic_checks_OLD <- function(esc.dat,
+                          ego.dat,
+                          ego.id,
+                          sib.id,
+                          sib.frame.indicator,
+                          sib.cell.vars,
+                          ego.cell.vars,
+                          boot.weights) {
+
+  ec.yf.dat <- get_ic_reports(esc.dat,
+                              ego.dat,
+                              ego.id,
+                              sib.id,
+                              sib.frame.indicator,
+                              sib.cell.vars,
+                              ego.cell.vars)
+
+  # encode the cells into one variable, making it easier to work with
+  ec.yf.dat <- ec.yf.dat %>%
+    ungroup() %>%
+    encode_cells('.ego.cell', ego.cell.vars) %>%
+    encode_cells('.sib.cell', sib.cell.vars)
+
+  # check that the levels are the same
+  if(! setequal(unique(ec.yf.dat$.ego.cell), unique(ec.yf.dat$.sib.cell))) {
+    warning("The cell values do not appear to be the same for ego and for sibs.")
+  }
+
+  cell.vals <- unique(ec.yf.dat$.ego.cell)
+
+  M <- ncol(boot.weights) - 1
+
+  ec.yf.dat <- ec.yf.dat %>%
+    #left_join(boot.weights %>% dplyr::mutate(.ego.id = !!sym(ego.id)), by='.ego.id')
+    left_join(boot.weights, by=ego.id)
+
+  # we'll map over bootstrap resamples and cells, calculating an
+  # IC check for each bootstrap rep X cell
+  boot.ests <-
+    purrr::map_df(1:M,
+                  function(boot.idx) {
+                    cur.wgt <- paste0('boot_weight_', boot.idx)
+
+                    cur.rep.res <-
+                      purrr::map_df(cell.vals,
+                                    function(cur_cell) {
+
+                                      # egos in group alpha
+                                      y.Falpha.dat <- ec.yf.dat %>%
+                                        grab_cell('.ego.cell', cur_cell)
+                                      # reports from egos in group alpha about sibs in -alpha
+                                      y.Falpha.Fminusalpha.dat <- y.Falpha.dat %>%
+                                        grab_cell_complement('.sib.cell', cur_cell)
+
+                                      # egos not in group alpha
+                                      y.Fminusalpha.dat <- ec.yf.dat %>%
+                                        grab_cell_complement('.ego.cell', cur_cell)
+                                      # reports from egos not in group alpha about sibs in alpha
+                                      y.Fminusalpha.Falpha.dat <- y.Fminusalpha.dat %>%
+                                        grab_cell('.sib.cell', cur_cell)
+
+                                      #####
+                                      ## aggregate visibility estimators
+
+                                      ## use the current bootstrap weights to get estimated reports
+                                      ## from respondents in cell alpha to sibs in not alpha,
+                                      ## and from respondents in not alpha to sibs in alpha
+                                      ## NB: these are aggregate-visibility estimates
+                                      y.Falpha.Fminusalpha <- sum(y.Falpha.Fminusalpha.dat %>% pull(!!sym(cur.wgt)))
+                                      y.Fminusalpha.Falpha <- sum(y.Fminusalpha.Falpha.dat %>% pull(!!sym(cur.wgt)))
+
+                                      return(tibble(y.Falpha.Fminusalpha = y.Falpha.Fminusalpha,
+                                                    y.Fminusalpha.Falpha = y.Fminusalpha.Falpha,
+                                                    cell=cur_cell,
+                                                    n_Falpha = nrow(y.Falpha.Fminusalpha.dat),
+                                                    n_Fminusalpha = nrow(y.Fminusalpha.Falpha.dat)))
+
+                                      ## below adds individual visibility checks,
+                                      ## which I no longer think make sense
+                                      ##
+
+                                      #####
+                                      ## individual visibility estimators
+
+                                      ## individual visibility estimator for y(F_alpha, F_-alpha) is
+                                      ##    \sum_{i \in s_\alpha} w_i * [y(i, F_-alpha) / (y(i, F_alpha) + 1)]
+                                      ##
+                                      ## start w/ reports made by ego in cell alpha
+                                      #y.Falpha.ind2 <- y.Falpha.dat %>%
+                                      #  mutate(samecell = as.numeric(.ego.cell == .sib.cell)) %>%
+                                      #  group_by(caseid) %>%
+                                      #  summarize(# number of sibs ego reports who are not in the same cell as ego (ie sibs are not in cell alpha)
+                                      #            ind.y.Falpha.Fminusalpha = sum((1 - samecell)),
+                                      #            # number of sibs ego reports who are in the same cell as ego (ie sibs are in cell alpha)
+                                      #            ind.y.Falpha.Falpha = sum(samecell),
+                                      #            .cur.wgt = mean(!!sym(cur.wgt))) %>%
+                                      #  mutate(ind.y.Falpha.Fminusalpha = .cur.wgt * ind.y.Falpha.Fminusalpha / (ind.y.Falpha.Falpha + 1))
+                                      #y.ind.Falpha.Fminusalpha <- sum(y.Falpha.ind2$ind.y.Falpha.Fminusalpha)
+
+                                      ### individual visibility estimator for y(F_-alpha, F_alpha) is
+                                      ###    \sum_{i \in s_-\alpha} w_i * [y(i, F_alpha) / (y(i, F_-alpha) + 1)]
+                                      ###
+                                      ### start w/ reports made by ego in cell -alpha
+                                      #y.Fminusalpha.ind2 <- y.Fminusalpha.dat %>%
+                                      #  mutate(samecell = as.numeric(.ego.cell == .sib.cell)) %>%
+                                      #  group_by(caseid) %>%
+                                      #  summarize(# number of sibs ego reports who are not in same cell as ego (ie sibs are in cell alpha)
+                                      #            ind.y.Fminusalpha.Falpha = sum((1 - samecell)),
+                                      #            # number of sibs ego reports who are in the same cell as ego (ie sibs are not in cell alpha)
+                                      #            ind.y.Fminusalpha.Fminusalpha = sum(samecell),
+                                      #            .cur.wgt = mean(!!sym(cur.wgt))) %>%
+                                      #  mutate(ind.y.Fminusalpha.Falpha = .cur.wgt * ind.y.Fminusalpha.Falpha / (ind.y.Fminusalpha.Fminusalpha + 1))
+                                      #y.ind.Fminusalpha.Falpha <- sum(y.Fminusalpha.ind2$ind.y.Fminusalpha.Falpha)
+
+                                      #return(tibble(y.agg.Falpha.Fminusalpha = y.Falpha.Fminusalpha,
+                                      #              y.agg.Fminusalpha.Falpha = y.Fminusalpha.Falpha,
+                                      #              y.ind.Falpha.Fminusalpha = y.ind.Falpha.Fminusalpha,
+                                      #              y.ind.Fminusalpha.Falpha = y.ind.Fminusalpha.Falpha,
+                                      #              cell=cur_cell,
+                                      #              n_Falpha = nrow(y.Falpha.Fminusalpha.dat),
+                                      #              n_Fminusalpha = nrow(y.Fminusalpha.Falpha.dat)))
+
+                                    })
+
+                    cur.rep.res$boot.idx <- boot.idx
+
+                    return(cur.rep.res)
+                  })
+
+
+
+  ic.agg <- boot.ests %>%
+    group_by(cell) %>%
+    mutate(diff = y.Falpha.Fminusalpha - y.Fminusalpha.Falpha,
+           abs_diff = abs(diff),
+           diff2 = diff^2) %>%
+    summarise_at(c('diff', 'abs_diff', 'diff2'),
+                 list(mean=~mean(.),
+                      se=~sd(.),
+                      ci_low=~quantile(., probs=.025),
+                      ci_high=~quantile(., probs=.975))) %>%
+    decode_cells('cell', ego.cell.vars, remove=FALSE)
+
+  # version w/ separate individual and aggregate IC checks
+  #ic.agg <- boot.ests %>%
+  #  group_by(cell) %>%
+  #  mutate(agg_diff = y.agg.Falpha.Fminusalpha - y.agg.Fminusalpha.Falpha,
+  #         agg_abs_diff = abs(agg_diff),
+  #         agg_diff2 = agg_diff^2,
+  #         ind_diff = y.ind.Falpha.Fminusalpha - y.ind.Fminusalpha.Falpha,
+  #         ind_abs_diff = abs(ind_diff),
+  #         ind_diff2 = ind_diff^2) %>%
+  #  summarise_at(c('agg_diff', 'agg_abs_diff', 'agg_diff2',
+  #                 'ind_diff', 'ind_abs_diff', 'ind_diff2'),
+  #               list(mean=~mean(.),
+  #               se=~sd(.),
+  #               ci_low=~quantile(., probs=.025),
+  #               ci_high=~quantile(., probs=.975))) %>%
+  #  decode_cells('cell', ego.cell.vars, remove=FALSE)
+
+  boot.ests <- boot.ests %>%
+    decode_cells('cell', ego.cell.vars, remove=FALSE)
+
+  ## TODO - should rename ic.agg to ic.summ (to avoid confusion w/ aggregate vis estimator)
+  res <- list(ic.agg = ic.agg,
+              ic.boot.ests = boot.ests)
+
+  return(res)
+}
+
+
