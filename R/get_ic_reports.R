@@ -260,8 +260,6 @@ decode_cells <- function(df, cell.name, cell.vars, remove=TRUE, sep="_X_") {
 ##'   sibling contributed any exposure.
 ##'   \code{boot.weights} is assumed to have a column that is named whatever the \code{ego.id} is,
 ##'   and then a series of columns named \code{boot_weight_1}, ..., \code{boot_weight_M}.
-##'
-##' @export
 sib_ic_checks_OLD <- function(esc.dat,
                           ego.dat,
                           ego.id,

@@ -230,7 +230,7 @@ columns of the dataset.
 set.seed(101010)
 
 tic('running bootstrap')
-## this will take a little while -- for 1000 reps, it takes about 1 minutes on a 2018 Macbook Pro
+## this will take a little while -- for 1000 reps, it takes about 10 minutes on a 2018 Macbook Pro
 num.boot.reps <- 1000
 bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu + stratum(stratum_analysis),
                                                            # a high number is good here, though that will obviously
@@ -319,10 +319,10 @@ toc()
 names(ic.checks)
 ```
 
-We can look at `ic.checks$ic.agg`, which has summarized output:
+We can look at `ic.checks$ic.summ`, which has summarized output:
 
 ```{r}
-ic.checks$ic.agg
+ic.checks$ic.summ
 ```
 
 
@@ -330,7 +330,7 @@ ic.checks$ic.agg
 It's often helpful to plot the results of the internal consistency checks:
 
 ```{r}
-ggplot(ic.checks$ic.agg) +
+ggplot(ic.checks$ic.summ) +
   geom_hline(yintercept=0) +
   geom_pointrange(aes(x=age.cat,
                       y=diff_mean,
@@ -341,7 +341,7 @@ ggplot(ic.checks$ic.agg) +
   xlab("Age group") +
   ylab(expression(Delta[alpha]))
 
-#ggplot(ic.checks$ic.agg) +
+#ggplot(ic.checks$ic.summ) +
 #  geom_hline(yintercept=0) +
 #  geom_pointrange(aes(x=age.cat,
 #                      y=agg_diff_mean,
@@ -352,7 +352,7 @@ ggplot(ic.checks$ic.agg) +
 #  xlab("Age group") +
 #  ylab(expression(Delta[alpha]))
 #
-#ggplot(ic.checks$ic.agg) +
+#ggplot(ic.checks$ic.summ) +
 #  geom_hline(yintercept=0) +
 #  geom_pointrange(aes(x=age.cat,
 #                      y=ind_diff_mean,
@@ -422,3 +422,25 @@ ggplot(compare) +
 * right now, sibling_estimator now has hard-coded 'agelabel' references -- but it shouldn't? need to handle this more elegantly
 
 
+# PROFILING
+
+## TO PROFILE: BOOTSTRAP WEIGHTS
+
+(NOTE: this takes about a minute or so on a 2018 MBP for 1000 resamples.)
+
+```{r, eval=FALSE}
+set.seed(101010)
+
+tic('running bootstrap')
+## this will take a little while -- for 1000 reps, it takes about 1 minutes on a 2018 Macbook Pro
+num.boot.reps <- 1000
+test.bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu + stratum(stratum_analysis),
+                                                           # a high number is good here, though that will obviously
+                                                           # make everything take longer
+                                                           num.reps=num.boot.reps,
+                                                           idvar='caseid',       # column with the respondent ids
+                                                           weights='wwgt', # column with the sampling weight
+                                                           survey.data=ex.ego    # note that we pass in the respondent data, NOT the sibling data
+                                                           )
+toc()
+```
