@@ -67,7 +67,7 @@ get_ic_reports <- function(esc.dat,
 ##' @param sib.cell.vars see Details
 ##' @param ego.cell.vars see Details
 ##' @param boot.weights Dataframe with bootstrap resampled weights. See Details
-##' @return A tibble with a row for each reported sibling in the frame population, the sibling's cell info, and the cell info of the survey respondent who reported each sibling
+##' @return A list with two entries: \code{ic.summ}, with summarized results; and \code{ic.boot.ests} with the full results for each bootstrap rep
 ##' @examples
 ##'   # TODO write example code
 ##' @section Details:

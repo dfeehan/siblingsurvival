@@ -25,7 +25,7 @@ sib_ic_checks(esc.dat, ego.dat, ego.id, sib.id, sib.frame.indicator,
 \item{boot.weights}{Dataframe with bootstrap resampled weights. See Details}
 }
 \value{
-A tibble with a row for each reported sibling in the frame population, the sibling's cell info, and the cell info of the survey respondent who reported each sibling
+A list with two entries: \code{ic.summ}, with summarized results; and \code{ic.boot.ests} with the full results for each bootstrap rep
 }
 \description{
 get calculate internal consistency checks for sibling reports
