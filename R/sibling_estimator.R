@@ -76,29 +76,13 @@ sibling_estimator <- function(sib.dat,
     M <- ncol(boot.weights) - 1
 
     ec.boot.dat <- ec.dat %>% left_join(boot.weights %>%
-                                          dplyr::mutate(.ego.id = !!sym(ego.id)),
+                                        dplyr::mutate(.ego.id = !!sym(ego.id)),
                                         by='.ego.id')
 
-    # for each bootstrap rep,
-    # calculate individual visibility estimate
-    # and aggregate visibility estimate
-    boot.ests <- map(1:M,
-                     function(idx) {
+    boot.cols <- stringr::str_subset(colnames(boot.weights), ego.id, negate=TRUE)
 
-                       cur.wgt <- paste0('boot_weight_', idx)
-
-                       cur.ind.est <- get_ind_est_from_ec(ec.boot.dat, cur.wgt, cell.vars)
-                       cur.ind.est <- cur.ind.est %>% dplyr::mutate(boot_idx = idx)
-
-                       cur.agg.est <- get_agg_est_from_ec(ec.boot.dat, cur.wgt, cell.vars)
-                       cur.agg.est <- cur.agg.est %>% dplyr::mutate(boot_idx = idx)
-
-                       return(list(agg=cur.agg.est, ind=cur.ind.est))
-
-                     })
-
-    boot.ind.ests <- bind_rows(map(boot.ests, ~.x$ind))
-    boot.agg.ests <- bind_rows(map(boot.ests, ~.x$agg))
+    boot.ind.ests <- get_ind_est_from_ec(ec.boot.dat, boot.cols, cell.vars)
+    boot.agg.ests <- get_agg_est_from_ec(ec.boot.dat, boot.cols, cell.vars)
 
     if (any(is.na(boot.ind.ests$asdr.hat))) {
       n.na <- sum(is.na(boot.ind.ests$asdr.hat))
@@ -185,10 +169,101 @@ sibling_estimator <- function(sib.dat,
 ##' helper function for calculating individual visibility estimate from ego X cell data
 ##'
 ##' @param ec_dat the ego X cell data
-##' @param wgt_var string with the name of the column that has sampling weights
+##' @param wgt_var either a string with the name of the column that has sampling weights or a vector with the names of columns with bootstrap weights
 ##' @param cell_vars vector of strings with the names of variables to group by (the cells)
 ##' @return a tibble with the individual visibility ASDR estimates (not including the respondents' exposures)
 get_ind_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
+
+  res <- ec_dat %>%
+    dplyr::mutate(ind.num.ego   = ifelse(y.F > 0,
+                                         y.Dcell / (y.F + 1),
+                                         0),
+                  ind.denom.ego = ifelse(y.F > 0,
+                                         (y.NandFcell / y.F) + (y.NandnotFcell / (y.F + 1)),
+                                         0))
+
+  weighted_sum <- function(x, w) { return(sum(x*w)) }
+
+  res2 <- res %>%
+    group_by_at(cell_vars) %>%
+    summarize_at(.vars=wgt_var,
+                 .funs=list(num.hat   = ~weighted_sum(x=.data[['ind.num.ego']], w=.),
+                            denom.hat = ~weighted_sum(x=.data[['ind.denom.ego']], w=.),
+                            ind.y.F   = ~weighted_sum(x=.data[['y.F']], w=.),
+                            n         = ~n(),
+                            wgt.sum   = ~weighted_sum(x=1, w=.)),
+                 )
+
+  ## if we have bootstrap weights, reshape and clean things up
+  if(length(wgt_var) > 1) {
+    res3 <- res2 %>%
+      gather(starts_with('boot_weight'),
+             key='rawqty',
+             value='value') %>%
+      mutate(qty = stringr::str_remove(rawqty, 'boot_weight_\\d+_'),
+             boot_idx = as.integer(stringr::str_remove_all(rawqty, '[^\\d]'))) %>%
+      select(-rawqty) %>%
+      spread(qty, value)
+  } else {
+    res3 <- res2
+  }
+
+  res4 <- res3 %>%
+    dplyr::mutate(asdr.hat = num.hat / denom.hat,
+                  estimator='sib_ind')
+
+  return(res4)
+}
+
+##' helper function for calculating aggregate visibility estimate from ego X cell data
+##'
+##' @param ec_dat the ego X cell data
+##' @param wgt_var either a string with the name of the column that has sampling weights or a vector with the names of columns with bootstrap weights
+##' @param cell_vars vector of strings with the names of variables to group by (the cells)
+##' @return a tibble with the individual visibility ASDR estimates (not including the respondents' exposures)
+get_agg_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
+
+  weighted_sum <- function(x, w) { return(sum(x*w)) }
+
+  res <- ec_dat %>%
+    #dplyr::mutate(.cur.weight = !!sym(wgt_var)) %>%
+    group_by_at(cell_vars) %>%
+    summarize_at(.vars=wgt_var,
+                 .funs=list(num.hat   = ~weighted_sum(x=.data[['y.Dcell']], w=.),
+                            denom.hat = ~weighted_sum(x=.data[['y.Ncell']], w=.),
+                            n         = ~n(),
+                            wgt.sum   = ~weighted_sum(x=1, w=.)))
+
+  ## if we have bootstrap weights, reshape and clean things up
+  if(length(wgt_var) > 1) {
+    res2 <- res %>%
+      gather(starts_with('boot_weight'),
+             key='rawqty',
+             value='value') %>%
+      mutate(qty = stringr::str_remove(rawqty, 'boot_weight_\\d+_'),
+             boot_idx = as.integer(stringr::str_remove_all(rawqty, '[^\\d]'))) %>%
+      select(-rawqty) %>%
+      spread(qty, value)
+  } else {
+    res2 <- res
+  }
+
+  res3 <- res2 %>%
+    mutate(asdr.hat = num.hat / denom.hat,
+           estimator='sib_agg')
+
+  return(res3)
+}
+
+## DEPRECATED - WILL EVENTUALLY BE CULLED
+
+##' helper function for calculating individual visibility estimate from ego X cell data
+##'
+##' @param ec_dat the ego X cell data
+##' @param wgt_var string with the name of the column that has sampling weights
+##' @param cell_vars vector of strings with the names of variables to group by (the cells)
+##' @return a tibble with the individual visibility ASDR estimates (not including the respondents' exposures)
+get_ind_est_from_ec_OLD <- function(ec_dat, wgt_var, cell_vars) {
   res <- ec_dat %>%
     dplyr::mutate(.cur.weight = !!sym(wgt_var)) %>%
     dplyr::mutate(ind.num.ego   = ifelse(y.F > 0,
@@ -215,7 +290,7 @@ get_ind_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
 ##' @param wgt_var string with the name of the column that has sampling weights
 ##' @param cell_vars vector of strings with the names of variables to group by (the cells)
 ##' @return a tibble with the individual visibility ASDR estimates (not including the respondents' exposures)
-get_agg_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
+get_agg_est_from_ec_OLD <- function(ec_dat, wgt_var, cell_vars) {
   res <- ec_dat %>%
     dplyr::mutate(.cur.weight = !!sym(wgt_var)) %>%
     group_by_at(cell_vars) %>%
@@ -228,3 +303,7 @@ get_agg_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
 
   return(res)
 }
+
+
+
+
