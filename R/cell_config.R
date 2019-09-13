@@ -55,7 +55,8 @@ cell_config <- function(age.groups,
       stop(glue("No setting found for age.groups {age.groups}."))
     }
   } else {
-    stop("No age groups specified.")
+    #stop("No age groups specified.")
+    # using custom age group (which is OK)
   }
 
   if(is.character(time.periods)) {
