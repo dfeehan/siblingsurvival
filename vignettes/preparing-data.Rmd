@@ -112,7 +112,7 @@ sibdata <- siblingsurvival::attributes.to.long(ex.ego,
                                                ego.vars=c('caseid', 'wwgt', 
                                                           'psu', 'doi'),
                                                idvar="caseid")
-sibdata
+glimpse(sibdata)
 ```
 
 Now we'll do some recoding.
