@@ -52,7 +52,7 @@ cell_config <- function(age.groups,
       max.age <- 65
       age.groups <- make.even.age.groups(10, min.age=min.age, max.age=max.age)
     } else {
-      stop(glue("No setting found for age.groups {age.groups}."))
+      stop(glue::glue("No setting found for age.groups {age.groups}."))
     }
   } else {
     #stop("No age groups specified.")
@@ -73,7 +73,7 @@ cell_config <- function(age.groups,
                                         durations=12,
                                         names=c("12mo_beforeint"))
     } else {
-      stop(glue("No setting found for time.periods {time.periods}."))
+      stop(glue::glue("No setting found for time.periods {time.periods}."))
     }
   } else{
     stop("No time periods specified.")
