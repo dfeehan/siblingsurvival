@@ -75,8 +75,11 @@ sibling_estimator <- function(sib.dat,
   if (! is.null(boot.weights)) {
     M <- ncol(boot.weights) - 1
 
-    ec.boot.dat <- ec.dat %>% left_join(boot.weights %>%
-                                        dplyr::mutate(.ego.id = !!sym(ego.id)),
+    boot.weights <- boot.weights %>%
+      dplyr::rename(.ego.id = !!sym(ego.id))
+
+
+    ec.boot.dat <- ec.dat %>% left_join(boot.weights,
                                         by='.ego.id')
 
     boot.cols <- stringr::str_subset(colnames(boot.weights), ego.id, negate=TRUE)
