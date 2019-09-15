@@ -160,6 +160,15 @@ sibling_estimator <- function(sib.dat,
   # (instead of just the summaries), add them to the results list
   if (! is.null(boot.weights)) {
     if(return.boot) {
+
+      boot.ind.ests <- boot.ind.ests %>%
+        rename(!!sib.sex := .sib.sex,
+               sib.age = agelabel)
+
+      boot.agg.ests <- boot.agg.ests %>%
+        rename(!!sib.sex := .sib.sex,
+               sib.age = agelabel)
+
       res$boot.asdr.ind <- boot.ind.ests
       res$boot.asdr.agg <- boot.agg.ests
     }
