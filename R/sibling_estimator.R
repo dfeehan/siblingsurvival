@@ -59,6 +59,8 @@ sibling_estimator <- function(sib.dat,
 
   cell.vars <- c('time.period', '.sib.sex', 'agelabel')
 
+  ## TODO - I think this line sometimes causes a warning
+  ## "Column `.ego.id` has different attributes on LHS and RHS of join"
   ec.dat <- get_ec_reports(esc.dat,
                            ego.id='.ego.id',
                            sib.dat=sib.dat,
@@ -82,7 +84,7 @@ sibling_estimator <- function(sib.dat,
     ec.boot.dat <- ec.dat %>% left_join(boot.weights,
                                         by='.ego.id')
 
-    boot.cols <- stringr::str_subset(colnames(boot.weights), ego.id, negate=TRUE)
+    boot.cols <- stringr::str_subset(colnames(boot.weights), 'ego.id', negate=TRUE)
 
     boot.ind.ests <- get_ind_est_from_ec(ec.boot.dat, boot.cols, cell.vars)
     boot.agg.ests <- get_agg_est_from_ec(ec.boot.dat, boot.cols, cell.vars)

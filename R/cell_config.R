@@ -18,7 +18,8 @@
 ##'   isn't passed into this function, so this function can't check that these column names are valid.
 ##' * \code{age.groups} can either be the output of one of the helper functions for creating age groups
 ##'   (\code{make.age.groups} or \code{make.even.age.groups}), or it can be '1yr', '5yr', or '10yr' for standard
-##'   1, 5, or 10-year age groups ranging from 15 to 65
+##'   1, 5, or 10-year age groups ranging from 15 to 65, or '1yr_to50', '5yr_to50' for standard 1 or 5-year age
+##'   groups ranging from 15 to 49
 ##' * \code{time.periods} can either be the output of \code{make.time.periods}, or it can be
 ##'   '12mo_beforeinterview', '5yr_beforeinterview', or '7yr_beforeinterview' for time periods one,
 ##'   five, or seven years before the interview date
@@ -43,9 +44,17 @@ cell_config <- function(age.groups,
       min.age <- 15
       max.age <- 65
       age.groups <- make.even.age.groups(1, min.age=min.age, max.age=max.age)
+    } else if (age.groups == '1yr_to50') {
+      min.age <- 15
+      max.age <- 50
+      age.groups <- make.even.age.groups(5, min.age=min.age, max.age=max.age)
     } else if (age.groups == '5yr') {
       min.age <- 15
       max.age <- 65
+      age.groups <- make.even.age.groups(5, min.age=min.age, max.age=max.age)
+    } else if (age.groups == '5yr_to50') {
+      min.age <- 15
+      max.age <- 50
       age.groups <- make.even.age.groups(5, min.age=min.age, max.age=max.age)
     } else if (age.groups == '10yr') {
       min.age <- 15
