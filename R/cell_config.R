@@ -47,7 +47,7 @@ cell_config <- function(age.groups,
     } else if (age.groups == '1yr_to50') {
       min.age <- 15
       max.age <- 50
-      age.groups <- make.even.age.groups(5, min.age=min.age, max.age=max.age)
+      age.groups <- make.even.age.groups(1, min.age=min.age, max.age=max.age)
     } else if (age.groups == '5yr') {
       min.age <- 15
       max.age <- 65
