@@ -164,7 +164,7 @@ attributes.to.long <- function(df,
                  }
 
                  these.alterdata <- select_(df, .dots=tograb) %>%
-                   mutate(alternum = this.alternum)
+                   dplyr::mutate(alternum = this.alternum)
 
                  if (! keep.na) {
 

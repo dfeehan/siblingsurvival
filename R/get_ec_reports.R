@@ -21,10 +21,10 @@ get_ec_reports <- function(esc.dat,
                            weights,
                            discretize.exp = FALSE) {
 
-  esc.dat <- esc.dat %>% rename(.ego.id = !!sym(ego.id),
-                                .sib.in.F = !!sym(sib.frame.indicator))
+  esc.dat <- esc.dat %>% dplyr::rename(.ego.id = !!sym(ego.id),
+                                       .sib.in.F = !!sym(sib.frame.indicator))
 
-  sib.dat <- sib.dat %>% rename(.ego.weight = !!sym(weights),
+  sib.dat <- sib.dat %>% dplyr::rename(.ego.weight = !!sym(weights),
                                 .ego.id = !!sym(ego.id))
 
   if(discretize.exp) {
