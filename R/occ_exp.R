@@ -241,7 +241,8 @@ occ.exp <- function(data,
 
                                          res.qty.agg <- res.qty %>%
                                            group_by_at(vars(gpvars)) %>%
-                                           summarise_at(.funs=funs(weighted.sum(., .weight)),
+                                           #summarise_at(.funs=funs(weighted.sum(., .weight)),
+                                           summarise_at(.funs=list(~weighted.sum(., .weight)),
                                                         .vars=vars(starts_with("agegroup")))
 
                                          res.qty.agg <- res.qty.agg %>%
