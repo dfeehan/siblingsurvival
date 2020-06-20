@@ -4,8 +4,13 @@
 \alias{prep_dhs_sib_histories}
 \title{prepare a DHS dataset for analysis}
 \usage{
-prep_dhs_sib_histories(df, varmap = sibhist_varmap_dhs6,
-  keep_missing = FALSE, keep_varmap_only = FALSE, verbose = TRUE)
+prep_dhs_sib_histories(
+  df,
+  varmap = sibhist_varmap_dhs6,
+  keep_missing = FALSE,
+  keep_varmap_only = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{df}{the raw DHS dataset (indvidual recode)}

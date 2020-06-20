@@ -4,9 +4,15 @@
 \alias{attributes.to.long}
 \title{attributes.to.long}
 \usage{
-attributes.to.long(df, attribute.prefix, ego.vars = NULL,
-  keep.na = FALSE, idvar = NULL, sep = "\\\\.|_",
-  varname.first = TRUE)
+attributes.to.long(
+  df,
+  attribute.prefix,
+  ego.vars = NULL,
+  keep.na = FALSE,
+  idvar = NULL,
+  sep = "\\\\.|_",
+  varname.first = TRUE
+)
 }
 \arguments{
 \item{df}{the wide-form dataset to convert}
@@ -39,7 +45,7 @@ respondent id. if NULL, then new ids which correspond to the rows
 in data are created.}
 
 \item{sep}{a regular expression that the wide-form variable names are split
-around. (eg, for "var_01", sep="_"; for "var.01" is is "\.")}
+around. (eg, for "var_01", sep="_"; for "var.01" is is "\\.")}
 
 \item{varname.first}{TRUE if the text before the separator is the variable name
 (eg var_01), and FALSE otherwise}

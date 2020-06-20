@@ -4,8 +4,16 @@
 \alias{cell_config}
 \title{Specify the cells (age groups, time period) to produce estimates for}
 \usage{
-cell_config(age.groups, time.periods, start.obs, end.obs, event,
-  age.offset, time.offset, exp.scale = 1/12)
+cell_config(
+  age.groups,
+  time.periods,
+  start.obs,
+  end.obs,
+  event,
+  age.offset,
+  time.offset,
+  exp.scale = 1/12
+)
 }
 \arguments{
 \item{age.groups}{see Details}

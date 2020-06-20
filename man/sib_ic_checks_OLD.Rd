@@ -4,8 +4,16 @@
 \alias{sib_ic_checks_OLD}
 \title{get calculate internal consistency checks for sibling reports}
 \usage{
-sib_ic_checks_OLD(esc.dat, ego.dat, ego.id, sib.id, sib.frame.indicator,
-  sib.cell.vars, ego.cell.vars, boot.weights)
+sib_ic_checks_OLD(
+  esc.dat,
+  ego.dat,
+  ego.id,
+  sib.id,
+  sib.frame.indicator,
+  sib.cell.vars,
+  ego.cell.vars,
+  boot.weights
+)
 }
 \arguments{
 \item{esc.dat}{The ego X sibling X cell dataset (see \code{get_esc_reports})}

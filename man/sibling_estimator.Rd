@@ -4,9 +4,18 @@
 \alias{sibling_estimator}
 \title{Estimate death rates from sibling history data}
 \usage{
-sibling_estimator(sib.dat, ego.id, sib.id, sib.frame.indicator,
-  sib.sex = "sex", cell.config, weights, boot.weights = NULL,
-  return.boot = FALSE, discretize.exp = FALSE)
+sibling_estimator(
+  sib.dat,
+  ego.id,
+  sib.id,
+  sib.frame.indicator,
+  sib.sex = "sex",
+  cell.config,
+  weights,
+  boot.weights = NULL,
+  return.boot = FALSE,
+  discretize.exp = FALSE
+)
 }
 \arguments{
 \item{sib.dat}{The long-form sibling history dataset (likely produced by TODO)}

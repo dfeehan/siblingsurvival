@@ -4,8 +4,15 @@
 \alias{get_ic_reports}
 \title{get a dataset with reports used for internal-consistency checks}
 \usage{
-get_ic_reports(esc.dat, ego.dat, ego.id, sib.id, sib.frame.indicator,
-  sib.cell.vars, ego.cell.vars)
+get_ic_reports(
+  esc.dat,
+  ego.dat,
+  ego.id,
+  sib.id,
+  sib.frame.indicator,
+  sib.cell.vars,
+  ego.cell.vars
+)
 }
 \arguments{
 \item{esc.dat}{The ego X sibling X cell dataset (see \link{\code{get_esc_reports}})}

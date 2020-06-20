@@ -4,10 +4,21 @@
 \alias{occ.exp}
 \title{tabulate occurrences and exposures}
 \usage{
-occ.exp(data, start.obs, end.obs, event, age.groups, time.periods,
-  id.var = NULL, covars = NULL, age.offsets = NULL,
-  time.offsets = NULL, weights = NULL, discretize = FALSE,
-  exp.scale = 1)
+occ.exp(
+  data,
+  start.obs,
+  end.obs,
+  event,
+  age.groups,
+  time.periods,
+  id.var = NULL,
+  covars = NULL,
+  age.offsets = NULL,
+  time.offsets = NULL,
+  weights = NULL,
+  discretize = FALSE,
+  exp.scale = 1
+)
 }
 \arguments{
 \item{data}{the dataset containing events}

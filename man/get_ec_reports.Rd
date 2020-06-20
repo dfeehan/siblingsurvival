@@ -4,8 +4,15 @@
 \alias{get_ec_reports}
 \title{get ego X cell reports}
 \usage{
-get_ec_reports(esc.dat, ego.id, sib.dat, sib.frame.indicator, cell.vars,
-  weights, discretize.exp = FALSE)
+get_ec_reports(
+  esc.dat,
+  ego.id,
+  sib.dat,
+  sib.frame.indicator,
+  cell.vars,
+  weights,
+  discretize.exp = FALSE
+)
 }
 \arguments{
 \item{esc.dat}{Dataset with a row for each respondent X sibling X cell, likely produced by \code{\link{get_esc_reports}}}
