@@ -25,7 +25,7 @@
 #'
 #'
 window_intersect <- function(a, b) {
-    .Call(`_siblingsurvival_window_intersect`, a, b)
+    .Call('_siblingsurvival_window_intersect', PACKAGE = 'siblingsurvival', a, b)
 }
 
 #'
@@ -53,7 +53,7 @@ window_intersect <- function(a, b) {
 #' @details TODO - should write a more detailed description
 #'
 cpp_compute_occ_exp <- function(lambda, alpha, alpha_offset, tau) {
-    .Call(`_siblingsurvival_cpp_compute_occ_exp`, lambda, alpha, alpha_offset, tau)
+    .Call('_siblingsurvival_cpp_compute_occ_exp', PACKAGE = 'siblingsurvival', lambda, alpha, alpha_offset, tau)
 }
 
 #'
@@ -84,6 +84,6 @@ cpp_compute_occ_exp <- function(lambda, alpha, alpha_offset, tau) {
 #' @details TODO - should write a more detailed description
 #'
 cpp_compute_occ_exp2 <- function(lambda, alpha, alpha_offset, tau, thresh = NA_real_) {
-    .Call(`_siblingsurvival_cpp_compute_occ_exp2`, lambda, alpha, alpha_offset, tau, thresh)
+    .Call('_siblingsurvival_cpp_compute_occ_exp2', PACKAGE = 'siblingsurvival', lambda, alpha, alpha_offset, tau, thresh)
 }
 
