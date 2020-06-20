@@ -245,7 +245,7 @@ occ.exp <- function(data,
                                                         .vars=vars(starts_with("agegroup")))
 
                                          res.qty.agg <- res.qty.agg %>%
-                                           gather(agegroup, value, starts_with("agegroup")) %>%
+                                           tidyr::gather(agegroup, value, starts_with("agegroup")) %>%
                                            mutate(qty=this.qty)
 
                                          return(res.qty.agg)
@@ -258,7 +258,7 @@ occ.exp <- function(data,
 
                     })
 
-  agg.res <- spread(uber.res, qty, value)
+  agg.res <- tidyr::spread(uber.res, qty, value)
 
   ## rename the age group to match the definitions
   agename.remap <- data.frame(agegroup=paste0("agegroup_", 1:length(age.groups$names)),

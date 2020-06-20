@@ -211,13 +211,13 @@ get_ind_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
   ## if we have bootstrap weights, reshape and clean things up
   if(length(wgt_var) > 1) {
     res3 <- res2 %>%
-      gather(starts_with('boot_weight'),
+      tidyr::gather(starts_with('boot_weight'),
              key='rawqty',
              value='value') %>%
       mutate(qty = stringr::str_remove(rawqty, 'boot_weight_\\d+_'),
              boot_idx = as.integer(stringr::str_remove_all(rawqty, '[^\\d]'))) %>%
       select(-rawqty) %>%
-      spread(qty, value)
+      tidyr::spread(qty, value)
   } else {
     res3 <- res2
   }
@@ -251,13 +251,13 @@ get_agg_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
   ## if we have bootstrap weights, reshape and clean things up
   if(length(wgt_var) > 1) {
     res2 <- res %>%
-      gather(starts_with('boot_weight'),
+      tidyr::gather(starts_with('boot_weight'),
              key='rawqty',
              value='value') %>%
       mutate(qty = stringr::str_remove(rawqty, 'boot_weight_\\d+_'),
              boot_idx = as.integer(stringr::str_remove_all(rawqty, '[^\\d]'))) %>%
       select(-rawqty) %>%
-      spread(qty, value)
+      tidyr::spread(qty, value)
   } else {
     res2 <- res
   }

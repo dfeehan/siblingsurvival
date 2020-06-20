@@ -151,7 +151,7 @@ sib_ic_checks <- function(esc.dat,
                                y.Falpha.Fminusalpha <- y.Falpha.Fminusalpha.dat %>%
                                  summarize_at(.vars=boot.cols,
                                               sum) %>%
-                                 gather(starts_with('boot_weight'),
+                                 tidyr::gather(starts_with('boot_weight'),
                                         key='qty',
                                         value='y.Falpha.Fminusalpha') %>%
                                  mutate(boot_idx = as.integer(stringr::str_remove_all(qty, '[^\\d]'))) %>%
@@ -160,7 +160,7 @@ sib_ic_checks <- function(esc.dat,
                                y.Fminusalpha.Falpha <- y.Fminusalpha.Falpha.dat %>%
                                  summarize_at(.vars=boot.cols,
                                               sum) %>%
-                                 gather(starts_with('boot_weight'),
+                                 tidyr::gather(starts_with('boot_weight'),
                                         key='qty',
                                         value='y.Fminusalpha.Falpha') %>%
                                  mutate(boot_idx = as.integer(stringr::str_remove_all(qty, '[^\\d]'))) %>%
