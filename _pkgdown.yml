@@ -1,0 +1,6 @@
+home:
+  title: "siblingsurvival: An R package for sibling survival estimates"
+  description: Produce sibling survival estimates for adult death rates.
+template:
+  params:
+    bootswatch: lumen
