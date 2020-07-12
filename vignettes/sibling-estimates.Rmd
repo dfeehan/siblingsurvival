@@ -63,7 +63,9 @@ prepped <- prep_dhs_sib_histories(model_dhs_dat,
                                   varmap = sibhist_varmap_dhs6,
                                   keep_missing = FALSE)
 
-ex.ego <- prepped$ego.dat
+# we'll only keep the variable we will need for this analysis
+ex.ego <- prepped$ego.dat %>%
+  select(caseid, psu, stratum_analysis, wwgt)
 ex.sib <- prepped$sib.dat
 ```
 
@@ -71,13 +73,13 @@ ex.sib <- prepped$sib.dat
 Let's take a look at the datasets we've produced. First, here's a dataset that has information about survey respondents. (We'll refer to these survey respondents as 'ego'):
 
 ```{r}
-ex.ego
+glimpse(ex.ego)
 ```
 
 And here's a long-form version of the sibling history data -- there's one row for each reported sibling.
 
 ```{r}
-ex.sib
+glimpse(ex.sib)
 ```
 
 ### Laying the groundwork
@@ -169,13 +171,13 @@ estimates, and `asdr.agg`, which has the aggregate visibility estimates.
 Here are the individual visibility estimates:
 
 ```{r}
-ex_ests$asdr.ind
+glimpse(ex_ests$asdr.ind)
 ```
 
 And here are the aggregate visibility estimates
 
 ```{r}
-ex_ests$asdr.agg
+glimpse(ex_ests$asdr.agg)
 ```
 
 ### Plotting the results
@@ -231,7 +233,9 @@ set.seed(101010)
 
 tic('running bootstrap')
 ## this will take a little while -- for 1000 reps, it takes about 10 minutes on a 2018 Macbook Pro
-num.boot.reps <- 1000
+#num.boot.reps <- 1000
+# reduce number of reps to help vignette build faster
+num.boot.reps <- 100
 bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu + stratum(stratum_analysis),
                                                            # a high number is good here, though that will obviously
                                                            # make everything take longer
@@ -322,7 +326,7 @@ names(ic.checks)
 We can look at `ic.checks$ic.summ`, which has summarized output:
 
 ```{r}
-ic.checks$ic.summ
+glimpse(ic.checks$ic.summ)
 ```
 
 
@@ -433,7 +437,9 @@ set.seed(101010)
 
 tic('running bootstrap')
 ## this will take a little while -- for 1000 reps, it takes about 1 minutes on a 2018 Macbook Pro
-num.boot.reps <- 1000
+#num.boot.reps <- 1000
+# use a small number of reps to avoid the vignette taking forever to build
+num.boot.reps <- 100
 test.bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu + stratum(stratum_analysis),
                                                            # a high number is good here, though that will obviously
                                                            # make everything take longer
