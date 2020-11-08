@@ -3,5 +3,5 @@ home:
   description: Produce sibling survival estimates for adult death rates.
 template:
   params:
-    bootswatch: lumen
+    bootswatch: flatly
     ganalytics: G-56MJYKC8R7

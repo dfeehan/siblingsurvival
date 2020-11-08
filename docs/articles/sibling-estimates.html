@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Estimating death rates from sibling history data • siblingsurvival</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/lumen/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/flatly/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
 <script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
@@ -370,7 +370,7 @@
 <span class="co">#&gt; This warning is displayed once every 8 hours.</span>
 <span class="co">#&gt; Call `lifecycle::last_warnings()` to see where this warning was generated.</span>
 <span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html">toc</a></span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; running bootstrap: 1.046 sec elapsed</span></pre></div>
+<span class="co">#&gt; running bootstrap: 0.98 sec elapsed</span></pre></div>
 <p>The result, <code>bootweights</code>, is a dataframe that has a row for each survey respondent, a column for the survey respondent’s ID, and then <code>num.boot.reps</code> columns containing survey weights that result from the bootstrap procedure. The basic idea is to calculate estimated death rates using each one of the <code>num.boot.reps</code> sets of weights. The variation across the estimates is then an estimator for the sampling variation.</p>
 <p>To make this easier, the <code>sibling_estimator</code> function can take a dataset with bootstrap resampled weights; it will then calculate and summarize the estimates for you.</p>
 <p>(NOTE: this is slow; it takes about 35 minutes or so on a 2018 MBP when <code>bootweights</code> has 1000 resamples.)</p>
@@ -393,7 +393,7 @@
                                   return.boot<span class="op">=</span><span class="cn">TRUE</span>,                <span class="co"># when TRUE, return all of the resampled estimates (not just summaries)</span>
                                   weights<span class="op">=</span><span class="st">'wwgt'</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html">toc</a></span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; calculating estimates with bootstrap: 38.16 sec elapsed</span></pre></div>
+<span class="co">#&gt; calculating estimates with bootstrap: 37.235 sec elapsed</span></pre></div>
 <p>Finally, let’s plot the estimated death rates along with their sampling uncertainty:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit">
 <span class="fu">ggplot</span><span class="op">(</span><span class="va">ex_boot_ests</span><span class="op">$</span><span class="va">asdr.ind</span><span class="op">)</span> <span class="op">+</span>
@@ -434,7 +434,7 @@
                            ego.cell.vars<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">'age.cat'</span>, <span class="st">'sex'</span><span class="op">)</span>,
                            boot.weights<span class="op">=</span><span class="va">ic.bootweights</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html">toc</a></span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; Internal consistency checks: 0.927 sec elapsed</span>
+<span class="co">#&gt; Internal consistency checks: 0.63 sec elapsed</span>
 
 <span class="fu"><a href="https://rdrr.io/r/base/names.html">names</a></span><span class="op">(</span><span class="va">ic.checks</span><span class="op">)</span>
 <span class="co">#&gt; [1] "ic.summ"      "ic.boot.ests"</span></pre></div>
