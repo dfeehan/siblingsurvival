@@ -1,0 +1,8 @@
+pandoc: 2.10.1
+pkgdown: 1.6.1
+pkgdown_sha: ~
+articles:
+  preparing-data: preparing-data.html
+  sibling-estimates: sibling-estimates.html
+last_built: 2020-11-08T14:41Z
+
