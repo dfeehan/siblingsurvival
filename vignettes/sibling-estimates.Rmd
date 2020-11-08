@@ -107,7 +107,7 @@ Let's look at the distribution of frame population membership
 with(ex.sib, table(in.F, useNA='ifany'))
 ```
 
-In this example dataset, one of the `in.F` values is missing.
+In this example dataset, a small number of the `in.F` values is missing.
 (In a real dataset, there could well be more.)
 Since we need to be able to determine whether or not each sibling is on in the
 frame population, we would drop siblings missing `in.F` values from the analysis.
