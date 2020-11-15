@@ -9,7 +9,14 @@
 ##' @examples
 ##'   # TODO - write example code
 ##' @section Details:
-##' `varmap` should be a dataframe with columns TODO.
+##'
+##' `varmap` should be a dataframe with columns
+##' * `orig.varname` (the raw variable name)
+##' * `new.varname` (the new variable name)
+##' * `sibvar` (a 0/1 column, with 1 meaning this is a sibling variable and 0 meaning an ego variable)
+##'
+##' Each row of `varmap` describes a variable to rename from the original dataset.
+##'
 ##' For respondents, you should be sure to include
 ##' * `survey` (the survey id, usually a country code plus one digit)
 ##' * `caseid` (the respondent id)
@@ -37,16 +44,19 @@ prep_dhs_sib_histories <- function(df,
                                    verbose=TRUE) {
 
   ## ego (respondent) variables to grab
-  tmp <- subset(varmap, sibvar==0)
+  #tmp <- subset(varmap, sibvar==0)
+  tmp <- varmap %>% filter(sibvar==0)
   resp.attrib <- tmp$orig.varname
   names(resp.attrib) <- tmp$new.varname
 
   ## alter (sibling) variables to grab
-  tmp <- subset(varmap, sibvar==1)
+  #tmp <- subset(varmap, sibvar==1)
+  tmp <- varmap %>% filter(sibvar==1)
   sib.attrib <- tmp$orig.varname
   names(sib.attrib) <- tmp$new.varname
 
   ego.dat <- df %>%
+    as_tibble() %>%
     # use information from the varmap to rename ego variables
     rename(!!!resp.attrib)
 
