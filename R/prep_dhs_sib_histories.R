@@ -91,6 +91,37 @@ prep_dhs_sib_histories <- function(df,
   sib.dat <- sib.dat %>%
     mutate(sib.sex = ifelse(sib.sex == 2, 'f', 'm'))
 
+
+  ## in some cases, there will be information about how many years ago
+  ## a sibling died, and at what age - but not the date
+  ## in those cases, assume that the death happened (12*x) + 6 months ago,
+  ## i.e., assume the death happened halfway through the year that was x years ago
+  ##
+  ## eg, if cmc of intervie, doi, is 1500
+  ## and a sib died 1 years ago, we'd estimate
+  ## death date of 1500 - (12*1 + 6) = 1482
+  approx_death_date <- function(years_ago, doi) {
+    return(as.integer(doi - (12*years_ago + 6)))
+  }
+
+  ## same idea as above, but now try to figure birth date based on
+  ## age at death and how many years ago death was
+  approx_birth_date <- function(death_date, age_at_death) {
+    return(as.integer(death_date - (12*age_at_death)))
+  }
+
+  sib.dat <- sib.dat %>%
+    mutate(sib.death.date = case_when((! is.na(sib.death.yrsago)) &
+                                        (is.na(sib.death.date)) ~
+                                        approx_death_date(sib.death.yrsago,
+                                                          doi),
+                                      TRUE ~ sib.death.date)) %>%
+    mutate(sib.dob = case_when((! is.na(sib.death.yrsago)) &
+                                 (! is.na(sib.death.date)) ~
+                                 approx_birth_date(sib.death.date,
+                                                   sib.death.age),
+                               TRUE ~ sib.dob))
+
   ## make the assumption that
   ##  (1) sibs who died lived all the way through
   ##      the month in which they are reported to have died
