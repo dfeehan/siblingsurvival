@@ -106,8 +106,15 @@ prep_dhs_sib_histories <- function(df,
 
   ## same idea as above, but now try to figure birth date based on
   ## age at death and how many years ago death was
-  approx_birth_date <- function(death_date, age_at_death) {
+  approx_birth_date_from_death <- function(death_date, age_at_death) {
     return(as.integer(death_date - (12*age_at_death)))
+  }
+
+  ## same idea as above, but now try to figure birth date based on
+  ## age at a living sibling
+  ## assume sib is halfway through year of age
+  approx_birth_date_from_age <- function(sib_age, doi) {
+    return(as.integer(doi - (12*sib_age + 6)))
   }
 
   sib.dat <- sib.dat %>%
@@ -116,10 +123,21 @@ prep_dhs_sib_histories <- function(df,
                                         approx_death_date(sib.death.yrsago,
                                                           doi),
                                       TRUE ~ sib.death.date)) %>%
-    mutate(sib.dob = case_when((! is.na(sib.death.yrsago)) &
-                                 (! is.na(sib.death.date)) ~
-                                 approx_birth_date(sib.death.date,
-                                                   sib.death.age),
+    # estimate birth date from a sib who is living and whose age we have,
+    # but whose dob we do not have
+    mutate(sib.dob = case_when((is.na(sib.dob) &
+                                (sib.alive == 1) &
+                                (! is.na(sib.age))) ~
+                                 approx_birth_date_from_age(sib.age,
+                                                            doi),
+                               TRUE ~ sib.dob)) %>%
+    # estimate birth date from a sib whose date of death and age at death
+    # we have
+    mutate(sib.dob = case_when((is.na(sib.dob) &
+                               (! is.na(sib.death.yrsago)) &
+                               (! is.na(sib.death.date))  ) ~
+                                 approx_birth_date_from_death(sib.death.date,
+                                                              sib.death.age),
                                TRUE ~ sib.dob))
 
   ## make the assumption that
