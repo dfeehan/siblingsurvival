@@ -10,6 +10,10 @@
 ##'   # TODO - write example code
 ##' @section Details:
 ##'
+##' Note that if the dataframe does not have a column called 'sex', then
+##' one will be added, and we will assume respondents are all female (sex='f'). If you
+##' want to avoid this, only pass in a dataframe after adding the 'sex' column.
+##'
 ##' `varmap` should be a dataframe with columns
 ##' * `orig.varname` (the raw variable name)
 ##' * `new.varname` (the new variable name)
@@ -60,10 +64,13 @@ prep_dhs_sib_histories <- function(df,
     # use information from the varmap to rename ego variables
     rename(!!!resp.attrib)
 
+  if(is.null(ego.dat$sex)) {
+    ## typically, only women are asked sibling histories in DHS surveys
+    ego.dat$sex <- 'f'
+  }
+
   ego.dat <- ego.dat %>%
     mutate(
-      ## typically, only women are asked sibling histories in DHS surveys
-      sex='f',
       ## for convenience, add 5- and 10-year age groups
       age.cat=forcats::fct_drop(cut(age,
                                     breaks=c(0, seq(from=15,to=50,by=5),95),
@@ -85,7 +92,7 @@ prep_dhs_sib_histories <- function(df,
   sib.dat <- attributes.to.long(ego.dat,
                                 attribute.prefix=sib.attrib,
                                 ego.vars=c('caseid', 'wwgt',
-                                           'psu', 'doi'),
+                                           'psu', 'doi', 'sex'),
                                 idvar="caseid")
 
   sib.dat <- sib.dat %>%
