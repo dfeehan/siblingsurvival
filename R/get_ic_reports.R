@@ -139,6 +139,28 @@ sib_ic_checks <- function(esc.dat,
                                  grab_cell('.sib.cell', cur_cell)
 
                                #####
+                               ## size of frame (for normalization)
+
+                               N.Falpha <- y.Falpha.dat %>%
+                                 summarize_at(.vars=boot.cols,
+                                              sum) %>%
+                                 tidyr::gather(starts_with('boot_weight'),
+                                               key='qty',
+                                               value='N.Falpha') %>%
+                                 mutate(boot_idx = as.integer(stringr::str_remove_all(qty, '[^\\d]'))) %>%
+                                 select(-qty)
+
+
+                               N.Fminusalpha <- y.Fminusalpha.dat %>%
+                                 summarize_at(.vars=boot.cols,
+                                              sum) %>%
+                                 tidyr::gather(starts_with('boot_weight'),
+                                               key='qty',
+                                               value='N.Fminusalpha') %>%
+                                 mutate(boot_idx = as.integer(stringr::str_remove_all(qty, '[^\\d]'))) %>%
+                                 select(-qty)
+
+                               #####
                                ## aggregate visibility estimators
 
                                ## use the current bootstrap weights to get estimated reports
@@ -168,6 +190,8 @@ sib_ic_checks <- function(esc.dat,
 
                                res <- y.Falpha.Fminusalpha %>%
                                  left_join(y.Fminusalpha.Falpha, by='boot_idx') %>%
+                                 left_join(N.Falpha, by='boot_idx') %>%
+                                 left_join(N.Fminusalpha, by='boot_idx') %>%
                                  mutate(cell = cur_cell,
                                         n_Falpha = nrow(y.Falpha.Fminusalpha.dat),
                                         n_Fminusalpha = nrow(y.Fminusalpha.Falpha.dat))
@@ -185,8 +209,12 @@ sib_ic_checks <- function(esc.dat,
     group_by(cell) %>%
     mutate(diff = y.Falpha.Fminusalpha - y.Fminusalpha.Falpha,
            abs_diff = abs(diff),
-           diff2 = diff^2) %>%
-    summarise_at(c('diff', 'abs_diff', 'diff2'),
+           diff2 = diff^2,
+           normalized_diff = diff/(N.Falpha*N.Fminusalpha),
+           abs_normalized_diff = abs(normalized_diff),
+           normalized_diff2 = normalized_diff^2) %>%
+    summarise_at(c('diff', 'abs_diff', 'diff2',
+                   'normalized_diff', 'abs_normalized_diff', 'normalized_diff2'),
                  list(mean=~mean(.),
                       se=~sd(.),
                       ci_low=~quantile(., probs=.025),
