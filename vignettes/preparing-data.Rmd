@@ -97,7 +97,7 @@ ex.ego <- model_dhs_dat %>%
     wwgt=wwgt/1e6
   ) 
 
-ex.ego
+ex.ego %>% head()
 ```
 
 ## Prepare the sibling reports dataset
@@ -201,6 +201,7 @@ cat(paste0("Removed ", pre.n-post.n, " out of ", pre.n, " (", round(100*(pre.n-p
 ex.sib <- sibdata.coded
 ```
 
+
 We'll only keep a small subset of the ego variables, to keep things manageable
 
 ```{r}
@@ -224,7 +225,8 @@ prepped <- prep_dhs_sib_histories(model_dhs_dat,
                                   varmap = sibhist_varmap_dhs6,
                                   keep_missing = FALSE)
 
-str(prepped)
+str(prepped, 1)
 ```
+
 
 
