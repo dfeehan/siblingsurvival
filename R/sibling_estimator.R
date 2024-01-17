@@ -269,55 +269,5 @@ get_agg_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
   return(res3)
 }
 
-## DEPRECATED - WILL EVENTUALLY BE CULLED
-
-##' helper function for calculating individual visibility estimate from ego X cell data
-##'
-##' @param ec_dat the ego X cell data
-##' @param wgt_var string with the name of the column that has sampling weights
-##' @param cell_vars vector of strings with the names of variables to group by (the cells)
-##' @return a tibble with the individual visibility ASDR estimates (not including the respondents' exposures)
-get_ind_est_from_ec_OLD <- function(ec_dat, wgt_var, cell_vars) {
-  res <- ec_dat %>%
-    dplyr::mutate(.cur.weight = !!sym(wgt_var)) %>%
-    dplyr::mutate(ind.num.ego   = ifelse(y.F > 0,
-                                  y.Dcell / (y.F + 1),
-                                  0),
-           ind.denom.ego = ifelse(y.F > 0,
-                                  (y.NandFcell / y.F) + (y.NandnotFcell / (y.F + 1)),
-                                  0)) %>%
-    group_by_at(cell_vars) %>%
-    summarize(num.hat = sum(.cur.weight * ind.num.ego),
-              denom.hat = sum(.cur.weight * ind.denom.ego),
-              ind.y.F = sum(.cur.weight * y.F),
-              n = n(),
-              wgt.sum = sum(.cur.weight)) %>%
-    dplyr::mutate(asdr.hat = num.hat / denom.hat,
-           estimator='sib_ind')
-
-  return(res)
-}
-
-##' helper function for calculating aggregate visibility estimate from ego X cell data
-##'
-##' @param ec_dat the ego X cell data
-##' @param wgt_var string with the name of the column that has sampling weights
-##' @param cell_vars vector of strings with the names of variables to group by (the cells)
-##' @return a tibble with the individual visibility ASDR estimates (not including the respondents' exposures)
-get_agg_est_from_ec_OLD <- function(ec_dat, wgt_var, cell_vars) {
-  res <- ec_dat %>%
-    dplyr::mutate(.cur.weight = !!sym(wgt_var)) %>%
-    group_by_at(cell_vars) %>%
-    summarize(num.hat = sum(.cur.weight * y.Dcell),
-              denom.hat = sum(.cur.weight * y.Ncell),
-              n = n(),
-              wgt.sum = sum(.cur.weight),
-              asdr.hat = num.hat / denom.hat,
-              estimator='sib_agg')
-
-  return(res)
-}
-
-
 
 
