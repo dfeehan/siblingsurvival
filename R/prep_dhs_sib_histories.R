@@ -59,6 +59,10 @@ prep_dhs_sib_histories <- function(df,
   sib.attrib <- tmp$orig.varname
   names(sib.attrib) <- tmp$new.varname
 
+  #########################
+  # prepare ego data
+  #########################
+
   ego.dat <- df %>%
     as_tibble() %>%
     # use information from the varmap to rename ego variables
@@ -66,7 +70,6 @@ prep_dhs_sib_histories <- function(df,
 
   if(is.null(ego.dat$sex)) {
     if(verbose) {
-
       cat(paste0("No information on respondent sex given; assuming all respondents are female.\n"))
     }
 
@@ -93,6 +96,10 @@ prep_dhs_sib_histories <- function(df,
     stop("There appears to be no 'survey' column in the ego dataset.\n")
   }
   cur.survey <- ego.dat$survey[1]
+
+  #########################
+  # prepare sibling data
+  #########################
 
   sib.dat <- attributes.to.long(ego.dat,
                                 attribute.prefix=sib.attrib,
@@ -169,6 +176,11 @@ prep_dhs_sib_histories <- function(df,
 
   ## create a unique id for each sib
   sib.dat$sibid <- 1:nrow(sib.dat)
+
+  #########################
+  # calculate some summary statistics
+  #########################
+
 
   ## get some summary statistics
   n.ego <- nrow(ego.dat)
