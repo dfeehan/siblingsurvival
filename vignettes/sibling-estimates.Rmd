@@ -65,7 +65,14 @@ prepped <- prep_dhs_sib_histories(model_dhs_dat,
 
 # we'll only keep the variable we will need for this analysis
 ex.ego <- prepped$ego.dat %>%
-  select(caseid, psu, stratum_analysis, age.cat, sex, wwgt)
+  ## add a 'sex' variable
+  mutate(sex = 'f') %>%
+  select(caseid, 
+         psu, 
+         stratum_analysis, 
+         stratum_design, 
+         cluster, 
+         age.cat, sex, wwgt)
 ex.sib <- prepped$sib.dat
 ```
 
@@ -236,7 +243,12 @@ tic('running bootstrap')
 #num.boot.reps <- 1000
 # reduce number of reps to help vignette build faster
 num.boot.reps <- 100
-bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu + stratum(stratum_analysis),
+
+
+# The Guide to DHS Statistics DHS-8
+# suggests using what we call the `stratum_design` variable
+# (v023) in calculating sampling-based standard errors
+bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu + strata(stratum_design),
                                                            # a high number is good here, though that will obviously
                                                            # make everything take longer
                                                            num.reps=num.boot.reps,
