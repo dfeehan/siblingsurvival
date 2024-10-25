@@ -22,7 +22,7 @@ sibling_summ <- function(sib.dat,
   esc_dat <- get_esc_reports(sib.dat = sib.dat,
                              ego.id='.ego.id',
                              sib.id='.sib.id',
-                             cell.config=cc)
+                             cell.config=cell.config)
 
   sib_summ <- esc_dat %>%
     filter(sib.exp > 0 | sib.occ > 0)
