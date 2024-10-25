@@ -1,6 +1,6 @@
 ##' Estimate death rates from sibling history data
 ##'
-##' @param sib.dat The long-form sibling history dataset (likely produced by TODO)
+##' @param sib.dat The long-form sibling history dataset (likely produced by \link{\code{prep_dhs_sib_histories}})
 ##' @param ego.id  String with the name of the column of \code{sib.dat} that has the ID of the survey respondent
 ##' @param sib.id  String with the name of the column of \code{sib.dat} that has the sibling ID
 ##' @param sib.frame.indicator String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population
