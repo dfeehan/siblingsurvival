@@ -63,10 +63,26 @@ prep_dhs_sib_histories <- function(df,
   # prepare ego data
   #########################
 
+  ## in some cases, variables in the varmap may not be in the specific DHS dataset
+  ## we are preparing (for example, some surveys don't have the 'literacy' variable, v155)
+  ## in those cases, we print a message reporting this but proceed
+  miss_col <- resp.attrib[which(! resp.attrib %in% names(df))]
+
+  if(length(miss_col > 0)) {
+    cat(glue::glue("
+
+                    Warning: Column(s) found in the varmap are missing in the dataset:
+                    {paste0(miss_col, collapse=',')}
+                    These will be ignored...
+
+                    "))
+  }
+
   ego.dat <- df %>%
     as_tibble() %>%
     # use information from the varmap to rename ego variables
-    rename(!!!resp.attrib)
+    #rename(!!!resp.attrib)
+    rename(any_of(resp.attrib))
 
   if(is.null(ego.dat$sex)) {
     if(verbose) {
