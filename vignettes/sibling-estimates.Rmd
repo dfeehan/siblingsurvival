@@ -91,17 +91,20 @@ glimpse(ex.sib)
 
 ### Laying the groundwork
 
-First, we'll need to add an indicator variable for each sibling's frame population membership. In other words, we need to create a variable
-that has the value 1 for each sibling who was eligible to respond to the survey, and 0 otherwise. In this example data,
-we'll assume that conditions similar to a typical DHS survey hold: i.e., we'll assume the survey design was such that siblings
-would have been eligible to respond if they
+First, we'll need to add an indicator variable for each sibling's frame 
+population membership. In other words, we need to create a variable
+that has the value 1 for each sibling who was eligible to respond to the 
+survey, and 0 otherwise. In this example data, we'll assume that conditions 
+similar to a typical DHS survey hold: i.e., we'll assume the survey design 
+was such that siblings would have been eligible to respond if they
 
 * are alive
 * are female
 * are between the ages of 15 and 50
 
-For a given survey, these criteria will differ. You'll have to find out what the criteria for inclusion in the frame population
-were in order to produce estimates from sibling histories
+For a given survey, these criteria will differ. You'll have to find out what 
+the criteria for inclusion in the frame population were in order to produce 
+estimates from sibling histories.
 
 ```{r}
 ex.sib <- ex.sib %>% 
