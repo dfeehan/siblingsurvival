@@ -19,3 +19,5 @@ LinkingTo:
     Rcpp
 Imports: 
     Rcpp, tidyverse, glue, magrittr, dplyr, rlang, plyr, lazyeval, stringr, tidyr
+Depends: 
+    R (>= 2.10)
