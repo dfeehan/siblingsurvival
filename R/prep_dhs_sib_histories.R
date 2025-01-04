@@ -86,7 +86,7 @@ prep_dhs_sib_histories <- function(df,
 
   if(is.null(ego.dat$sex)) {
     if(verbose) {
-      cat(paste0("No information on respondent sex given; assuming all respondents are female.\n"))
+      cat(paste0("\nNo information on respondent sex given; assuming all respondents are female.\n"))
     }
 
     ## typically, only women are asked sibling histories in DHS surveys
