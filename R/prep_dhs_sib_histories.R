@@ -253,7 +253,8 @@ prep_dhs_sib_histories <- function(df,
                  miss.sex = miss.sex,
                  miss.sex.pct = miss.sex.pct,
                  sibs.removed = sibs.removed.n,
-                 sibs.removed.pct = sibs.removed.pct)
+                 sibs.removed.pct = sibs.removed.pct,
+                 ego.cols.notfound = list(miss_col))
 
   if (keep_varmap_only) {
     ego.dat <- ego.dat %>%
