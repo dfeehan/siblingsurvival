@@ -153,6 +153,13 @@ sibling_estimator <- function(sib.dat,
            !!sib.frame.indicator := .sib.in.F,
            !!weights := .ego.weight)
 
+  if(! is.null(cell.config$event.name)) {
+    asdr.ind.dat$event.name <- cell.config$event.name
+    asdr.agg.dat$event.name <- cell.config$event.name
+    ec.dat$event.name <- cell.config$event.name
+    esc.dat$event.name <- cell.config$event.name
+  }
+
   res <- list(asdr.ind=asdr.ind.dat,
               asdr.agg=asdr.agg.dat,
               ec.dat=ec.dat,
@@ -171,8 +178,14 @@ sibling_estimator <- function(sib.dat,
         rename(!!sib.sex := .sib.sex,
                sib.age = agelabel)
 
+      if(! is.null(cell.config$event.name)) {
+        boot.ind.ests$event.name <- cell.config$event.name
+        boot.agg.ests$event.name <- cell.config$event.name
+      }
+
       res$boot.asdr.ind <- boot.ind.ests
       res$boot.asdr.agg <- boot.agg.ests
+
     }
 
   }
