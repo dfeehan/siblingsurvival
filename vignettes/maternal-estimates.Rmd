@@ -1,0 +1,488 @@
+---
+title: "Estimating maternal mortality rates from sibling history data"
+author: "Dennis M. Feehan"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Estimating death rates from sibling history data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r}
+library(siblingsurvival)
+library(tidyverse)
+# be sure you have at least version 0.0.2.9000 of surveybootstrap
+# run devtools::install_github('dfeehan/surveybootstrap')
+# for the most recent version
+library(surveybootstrap)  
+
+# this is helfpul for timing
+library(tictoc)
+```
+
+
+## Overview
+
+This vignette shows how to use the `siblingsurvival` package to estimate 
+quantities related to maternal mortality. You might find it helpful to also
+read the [vignette about estimating mortality rates](sibling-estimates.html); 
+much of the material here is based on that vignette. In fact, the process for 
+estimating maternal mortality rates is very similar to estimating all-cause 
+death rates, with a few modifications which we will explain in this vignette.
+
+It will be helpful to define a few important terms before we start our analysis:
+
+* `ego` - an ego is a survey respondent
+* `cell` - a cell is a generic group for which we wish to produce estimates.
+ Usually, a cell is defined by a time period, an age range, and a sex. 
+ So, for example, a cell might be women who were age 30-34 in 2015.
+
+As an overview, we'll start from a survey dataset, such as
+the one provided by the DHS. We then use `prep_dhs_sib_histories` to produce two datasets:
+
+* one dataset has a row for each survey respondent/ego
+* one dataset has a row for each sibling who is reported by a survey respondent
+
+We'll then calculate estimates from the sibling histories in three main steps:
+
+1. Create an **esc** dataset, so called because there is  row for each **e**go X **s**ibling X **c**ell
+2. Aggregate this esc dataset up into an **ec** dataset, which has a row for the reports made by each ego for each cell
+3. Aggregate this ec dataset up into estimates for death rates, using either the individual or aggregate visibility approach (or both)
+
+### Opening up the demo datasets
+
+We'll start by opening up the demonstration DHS dataset.
+
+```{r}
+data(model_dhs_dat)
+```
+
+### Using `prep_dhs_sib_histories` to get ego and sib datasets
+
+Now we'll use `prep_dhs_sib_histories` to ready the sibling histories for analysis.
+(Please see the [Preparing Data](preparing-data.html) vignette for more details.)
+This is the step that will produce two datasets: one with a row for each
+survey respondent/ego; and one with a row for each reported sibling.
+Note that we include the parameter `add_maternal=TRUE` to indicate that we
+want columns related to maternal/pregnancy-related mortality to be added.
+
+```{r}
+prepped <- prep_dhs_sib_histories(model_dhs_dat,
+                                  varmap = sibhist_varmap_dhs6,
+                                  add_maternal = TRUE,
+                                  keep_missing = FALSE)
+
+# we'll only keep the variable we will need for this analysis
+ex.ego <- prepped$ego.dat %>%
+  ## add a 'sex' variable
+  mutate(sex = 'f') %>%
+  select(caseid, 
+         psu, 
+         stratum_analysis, 
+         stratum_design, 
+         cluster, 
+         age.cat, sex, wwgt)
+ex.sib <- prepped$sib.dat
+```
+Let's take a look at the datasets we've produced. First, here's a dataset that has information about survey respondents. (We'll refer to these survey respondents as 'ego'):
+
+```{r}
+glimpse(ex.ego)
+```
+
+And here's a long-form version of the sibling history data -- there's one row for each reported sibling.
+
+```{r}
+glimpse(ex.sib)
+```
+
+### Laying the groundwork
+
+First, we'll need to add an indicator variable for each sibling's frame 
+population membership. In other words, we need to create a variable
+that has the value 1 for each sibling who was eligible to respond to the 
+survey, and 0 otherwise. In this example data, we'll assume that conditions 
+similar to a typical DHS survey hold: i.e., we'll assume the survey design 
+was such that siblings would have been eligible to respond if they
+
+* are alive
+* are female
+* are between the ages of 15 and 50
+
+For a given survey, these criteria will differ. You'll have to find out what 
+the criteria for inclusion in the frame population were in order to produce 
+estimates from sibling histories.
+
+```{r}
+ex.sib <- ex.sib %>% 
+  mutate(in.F = as.numeric((sib.alive==1) & (sib.age >= 15) & (sib.age <= 49) & (sib.sex == 'f')))
+```
+
+Let's look at the distribution of frame population membership
+
+```{r}
+with(ex.sib, table(in.F, useNA='ifany'))
+```
+
+In this example dataset, a small number of the `in.F` values is missing.
+(In a real dataset, there could well be more.)
+Since we need to be able to determine whether or not each sibling is on in the
+frame population, we would drop siblings missing `in.F` values from the analysis.
+
+```{r}
+ex.sib <- ex.sib %>% filter(! is.na(in.F)) 
+```
+
+### Specifying cells
+
+
+When we produce estimated maternal death rates from sibling histories, we usually do so
+for different sex X age group X time period combinations. These are called *cells*.
+
+Our next step is to create an object that describes the cells that we plan to produce
+death rate estimates for.
+This means we need to specify the time period and age groups that we'll be using.
+We'll use the helper function `cell_config` to do this:
+
+```{r}
+cc_mm <- cell_config(age.groups='5yr', 
+                     time.periods='7yr_beforeinterview',
+                     start.obs='sib.dob',    # date of birth
+                     end.obs='sib.endobs',   # either the date respondent was interviewed (if sib is alive) or date of death (if sib is dead)
+                     event='sib.maternal.death.date', # date of death (for sibs who died of maternal causes)
+                     age.offset='sib.dob',   # date of birth
+                     time.offset='doi',      # date of interview
+                     exp.scale=1/12)
+```
+
+This step is where we process for estimating maternal death rates starts to 
+differ from estimating all-cause death rates. 
+
+We're specifying that we want
+
+* 5-year age groups, starting from 15 and ending at 65
+* to produce estimates for the 7-year window before each survey interview (so, slightly different for each respondent)
+* the `dob` column of our sibling dataset has the time siblings start being observed (their birthdate)
+* the `endobs` column of our sibling dataset has the time siblings stop being observed (the interview or, if they're dead, the date of death)
+* the `sib.maternal.death.date` column of our sibling dataset has the date the sibling died of maternal causes (if the sibling died of maternal causes)
+* the `doi` column of our sibling dataset has the date the respondent who reported about the sibling was interviewed
+* in our survey, times are counted in months, so we set `exp.scale=1/12` to indicate that we need to divide total exposures by 12 to get years
+
+### Estimating death rates
+
+Given these preparatory steps, the `sibling_estimator` function will take care of estimating
+death rates from the sibling histories for us.
+
+```{r}
+ex_ests <- sibling_estimator(sib.dat = ex.sib,
+                             ego.id = 'caseid',            # column with the respondent id
+                             sib.id = 'sibid',             # column with sibling id 
+                                                           # (unique for each reported sibling)
+                             sib.frame.indicator = 'in.F', # indicator for sibling frame population membership
+                             sib.sex = 'sib.sex',          # column with sibling's sex
+                             cell.config=cc_m,             # cell configuration we created above
+                             weights='wwgt')               # column with the respondents' sampling weights
+
+names(ex_ests)
+```
+
+`sibling_estimator` returns a list with the results. We'll focus on `asdr.ind`, which has the individual visibility
+estimates, and `asdr.agg`, which has the aggregate visibility estimates.
+
+Here are the individual visibility estimates:
+
+```{r}
+glimpse(ex_ests$asdr.ind)
+```
+
+And here are the aggregate visibility estimates
+
+```{r}
+glimpse(ex_ests$asdr.agg)
+```
+
+### Plotting the results
+
+We'll make some plots showing the results
+
+
+```{r}
+ggplot(ex_ests$asdr.ind) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+  theme_minimal() +
+  scale_y_log10() + 
+  ggtitle('individual visibility estimator, 7yr before survey')
+```
+
+
+```{r}
+ggplot(ex_ests$asdr.agg) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+  theme_minimal() +
+  scale_y_log10() + 
+  ggtitle('aggregate visibility estimator, 7yr before survey')
+```
+
+```{r}
+compare <- bind_rows(ex_ests$asdr.ind, ex_ests$asdr.agg)
+
+ggplot(compare) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, linetype=estimator, group=interaction(estimator, sib.sex))) +
+  theme_minimal() +
+  #facet_grid(sex ~ .) +
+  facet_grid(. ~ sib.sex) +
+  scale_y_log10() + 
+  ggtitle('both estimators, 7yr before survey')
+
+```
+
+## Variance estimates
+
+In practice, we want point estimates and estimated sampling uncertainty for the death rates.
+We'll use the rescaled bootstrap to estimate sampling uncertainty. This can be done with the `surveybootstrap` package.
+
+Before we use the rescaled bootstrap, we need to know a little bit about the sampling design of the survey
+we're working with.
+In this example dataset, we have a stratified, multistage design. So we'll need to tell the bootstrap function about
+the strata and the primary sampling units. In this example data, these are indicated by the 'stratum' and 'psu'
+columns of the dataset.
+
+(NOTE: this takes about a minute or so on a 2018 MBP for 1000 resamples.)
+
+```{r}
+set.seed(101010)
+
+tic('running bootstrap')
+## this will take a little while -- for 1000 reps, it takes about 10 minutes on a 2018 Macbook Pro
+#num.boot.reps <- 1000
+# reduce number of reps to help vignette build faster
+num.boot.reps <- 100
+
+
+# The Guide to DHS Statistics DHS-8
+# suggests using what we call the `stratum_design` variable
+# (v023) in calculating sampling-based standard errors
+bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu + strata(stratum_design),
+                                                           # a high number is good here, though that will obviously
+                                                           # make everything take longer
+                                                           num.reps=num.boot.reps,
+                                                           idvar='caseid',       # column with the respondent ids
+                                                           weights='wwgt', # column with the sampling weight
+                                                           survey.data=ex.ego    # note that we pass in the respondent data, NOT the sibling data
+                                                           )
+toc()
+```
+
+The result, `bootweights`, is a dataframe that has a row for each survey respondent, a column for the survey respondent's ID,
+and then `num.boot.reps` columns containing survey weights that result from the bootstrap procedure.
+The basic idea is to calculate estimated death rates using each one of the `num.boot.reps` sets of weights.
+The variation across the estimates is then an estimator for the sampling variation.
+
+To make this easier, the `sibling_estimator` function can take a dataset with bootstrap resampled weights; it will
+then calculate and summarize the estimates for you.
+
+(NOTE: this is slow; it takes about 35 minutes or so on a 2018 MBP when `bootweights` has 1000 resamples.)
+
+```{r}
+# to save time, we'll only use a subset of the bootstrap replicates
+
+short.bootweights <- bootweights %>% select(1:11)
+
+#est.bootweights <- bootweights
+est.bootweights <- short.bootweights
+
+tic('calculating estimates with bootstrap')
+ex_boot_ests <- sibling_estimator(sib.dat = ex.sib,
+                                  ego.id = 'caseid',
+                                  sib.id = 'sibid',
+                                  sib.frame.indicator = 'in.F',
+                                  sib.sex = 'sib.sex',
+                                  cell.config=cc,
+                                  boot.weights=est.bootweights,  # to get sampling uncertainty, we pass boot.weights into sibling_estimator
+                                  return.boot=TRUE,                # when TRUE, return all of the resampled estimates (not just summaries)
+                                  weights='wwgt')
+toc()
+```
+
+Finally, let's plot the estimated death rates along with their sampling uncertainty:
+
+```{r}
+ggplot(ex_boot_ests$asdr.ind) +
+  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sib.sex, group=sib.sex), alpha=.2) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+  theme_minimal() +
+  scale_y_log10() + 
+  ggtitle('individual visibility estimator, 7yr before survey')
+```
+
+```{r}
+ggplot(ex_boot_ests$asdr.agg) +
+  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sib.sex, group=sib.sex), alpha=.2) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+  theme_minimal() +
+  scale_y_log10() + 
+  ggtitle('aggregate visibility estimator, 7yr before survey')
+```
+
+## Internal consistency checks
+
+In this section, we illustrate how to conduct internal consistency checks:
+
+NOTE: The IC checks can take a while -- about 36 minutes for 1000 bootstrap reps on a 2018 MBP
+
+```{r}
+# toggle between short bootweights (faster, for coding) and long bootweights (for realism)
+ic.bootweights <- short.bootweights
+#ic.bootweights <- bootweights
+
+tic("Internal consistency checks")
+ic.checks <- sib_ic_checks(ex_boot_ests$esc.dat,
+                           ego.dat=ex.ego,
+                           ego.id='caseid',
+                           sib.id='sibid',
+                           sib.frame.indicator='in.F',
+                           sib.cell.vars=c('sib.age', 'sib.sex'),
+                           ego.cell.vars=c('age.cat', 'sex'),
+                           boot.weights=ic.bootweights)
+toc()
+
+names(ic.checks)
+```
+
+We can look at `ic.checks$ic.summ`, which has summarized output:
+
+```{r}
+glimpse(ic.checks$ic.summ)
+```
+
+
+
+It's often helpful to plot the results of the internal consistency checks:
+
+```{r}
+ggplot(ic.checks$ic.summ) +
+  geom_hline(yintercept=0) +
+  geom_pointrange(aes(x=age.cat,
+                      y=diff_mean,
+                      ymin=diff_ci_low,
+                      ymax=diff_ci_high)) +
+  theme_minimal() +
+  ggtitle("Internal consistency checks") +
+  xlab("Age group") +
+  ylab(expression(Delta[alpha]))
+
+#ggplot(ic.checks$ic.summ) +
+#  geom_hline(yintercept=0) +
+#  geom_pointrange(aes(x=age.cat,
+#                      y=agg_diff_mean,
+#                      ymin=agg_diff_ci_low,
+#                      ymax=agg_diff_ci_high)) +
+#  theme_minimal() +
+#  ggtitle("Internal consistency checks (aggregate)") +
+#  xlab("Age group") +
+#  ylab(expression(Delta[alpha]))
+#
+#ggplot(ic.checks$ic.summ) +
+#  geom_hline(yintercept=0) +
+#  geom_pointrange(aes(x=age.cat,
+#                      y=ind_diff_mean,
+#                      ymin=ind_diff_ci_low,
+#                      ymax=ind_diff_ci_high)) +
+#  theme_minimal() +
+#  ggtitle("Internal consistency checks (individual)") +
+#  xlab("Age group") +
+#  ylab(expression(Delta[alpha]))
+```
+
+## Visibilities
+
+```{r}
+sib.F.dat <- ex.sib %>%
+  group_by(caseid) %>%
+  summarize(y.F = sum(in.F))
+
+ego.vis <- ex.ego %>% 
+  select(caseid, wwgt, age.cat, sex) %>%
+  left_join(sib.F.dat, by='caseid')
+
+# if nothing was joined in, there are no sibs
+ego.vis <- ego.vis %>%
+  mutate(y.F=ifelse(is.na(y.F), 0, y.F))
+
+ego.vis.agg <- ego.vis %>%
+  group_by(sex, age.cat) %>%
+  summarise(y.F.bar = weighted.mean(y.F, wwgt)) %>%
+  mutate(adj.factor = y.F.bar / (y.F.bar + 1))
+```
+
+Make adjusted individual estimates
+
+```{r}
+adj.agg.ests <- ex_ests$asdr.agg %>%
+  left_join(ego.vis.agg,
+            by=c('sib.sex'='sex', 'sib.age'='age.cat')) %>%
+  mutate(adj.factor = ifelse(is.na(adj.factor), 1, adj.factor),
+         estimator = 'sib_agg_adj',
+         asdr.hat = asdr.hat * adj.factor)
+```
+
+And plot a comparison
+
+```{r}
+compare <- bind_rows(ex_ests$asdr.ind, ex_ests$asdr.agg, adj.agg.ests)
+
+ggplot(compare) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, linetype=estimator, group=interaction(estimator, sib.sex))) +
+  theme_minimal() +
+  #facet_grid(sex ~ .) +
+  facet_grid(. ~ sib.sex) +
+  scale_y_log10() + 
+  ggtitle('sibling estimators, 7yr before survey')
+
+```
+
+
+<!--
+## TODO
+
+* add calculation of visibilities by respondent, calculate avg vis by cell
+* make it easier to produce adjusted estimates; demonstrate with S/(S+1) issue
+* add normalization to IC checks
+* make it easier to calculate IC checks by single year of age?
+* right now, sibling_estimator now has hard-coded 'agelabel' references -- but it shouldn't? need to handle this more elegantly
+
+
+# PROFILING
+
+## TO PROFILE: BOOTSTRAP WEIGHTS
+
+(NOTE: this takes about a minute or so on a 2018 MBP for 1000 resamples.)
+
+```{r, eval=FALSE}
+set.seed(101010)
+
+tic('running bootstrap')
+## this will take a little while -- for 1000 reps, it takes about 1 minutes on a 2018 Macbook Pro
+#num.boot.reps <- 1000
+# use a small number of reps to avoid the vignette taking forever to build
+num.boot.reps <- 100
+test.bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu + stratum(stratum_analysis),
+                                                           # a high number is good here, though that will obviously
+                                                           # make everything take longer
+                                                           num.reps=num.boot.reps,
+                                                           idvar='caseid',       # column with the respondent ids
+                                                           weights='wwgt', # column with the sampling weight
+                                                           survey.data=ex.ego    # note that we pass in the respondent data, NOT the sibling data
+                                                           )
+toc()
+```
+
+-->
