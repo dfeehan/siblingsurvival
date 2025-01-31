@@ -115,7 +115,7 @@ was such that siblings would have been eligible to respond if they
 
 * are alive
 * are female
-* are between the ages of 15 and 50
+* are between the ages of 15 and 49
 
 For a given survey, these criteria will differ. You'll have to find out what 
 the criteria for inclusion in the frame population were in order to produce 
