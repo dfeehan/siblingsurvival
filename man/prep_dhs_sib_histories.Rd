@@ -7,6 +7,7 @@
 prep_dhs_sib_histories(
   df,
   varmap = sibhist_varmap_dhs6,
+  add_maternal = FALSE,
   keep_missing = FALSE,
   keep_varmap_only = FALSE,
   verbose = TRUE
@@ -16,6 +17,8 @@ prep_dhs_sib_histories(
 \item{df}{the raw DHS dataset (indvidual recode)}
 
 \item{varmap}{see Details}
+
+\item{add_maternal}{should maternal/pregnancy-related death info be added? (Default: FALSE)}
 
 \item{keep_missing}{should we keep reported sibs that are missing sex or survival status?}
 
@@ -31,7 +34,20 @@ prepare a DHS dataset for analysis
 }
 \section{Details}{
 
-\code{varmap} should be a dataframe with columns TODO.
+
+Note that if the dataframe does not have a column called 'sex', then
+one will be added, and we will assume respondents are all female (sex='f'). If you
+want to avoid this, only pass in a dataframe after adding the 'sex' column.
+
+\code{varmap} should be a dataframe with columns
+\itemize{
+\item \code{orig.varname} (the raw variable name)
+\item \code{new.varname} (the new variable name)
+\item \code{sibvar} (a 0/1 column, with 1 meaning this is a sibling variable and 0 meaning an ego variable)
+}
+
+Each row of \code{varmap} describes a variable to rename from the original dataset.
+
 For respondents, you should be sure to include
 \itemize{
 \item \code{survey} (the survey id, usually a country code plus one digit)
@@ -45,7 +61,7 @@ For siblings, you should be sure to include
 \itemize{
 \item \code{sib.death.date} (the date of the sibling's death)
 \item \code{sib.alive} (whether or not the sib is alive)
-\item \code{sib.sex} (the sex of the sibling).
+\item \code{sib.sex} (the sex of the sibling, coded 'f' or 'm').
 }
 
 The default varmap is \code{sibhist_varmap_dhs6}, which is included with the package.

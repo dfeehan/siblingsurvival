@@ -12,6 +12,7 @@ cell_config(
   event,
   age.offset,
   time.offset,
+  event.name = NULL,
   exp.scale = 1/12
 )
 }
@@ -29,6 +30,8 @@ cell_config(
 \item{age.offset}{the column name with each sibling's offset for age (typically the date of birth)}
 
 \item{time.offset}{the column name with each sibling's offset for time (often the date of the survey interview)}
+
+\item{event.name}{\link{optional} name of the event (useful for maternal mortality)}
 
 \item{exp.scale}{defaults to 1/12; see Details}
 }

@@ -29,7 +29,7 @@ this vector. in the example above, we would use
 see \code{regexp}, below, to understand
 how these prefixes are used to match columns of the
 dataset; by default, we assume that the variables
-match <prefix><either '.' or '_'><number>.}
+match \if{html}{\out{<prefix>}}<either '.' or '_'>\if{html}{\out{<number>}}.}
 
 \item{ego.vars}{if not NULL, the names of columns in the dataset that refer
 to the egos and so should not be converted to long-form. you
@@ -53,7 +53,7 @@ around. (eg, for "var_01", sep="_"; for "var.01" is is "\\.")}
 \value{
 a long-form dataframe with the attributes reported for all of the alters.
 the dataframe will include an alter.id variable which is formed using
-<respondent id>.<alter number>
+\if{html}{\out{<respondent id>}}.\if{html}{\out{<alter number>}}
 }
 \description{
 Start with a wide-form dataframe reported about alters using network method

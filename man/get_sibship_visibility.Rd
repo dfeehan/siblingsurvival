@@ -7,7 +7,7 @@
 get_sibship_visibility(sib.dat, ego.id, sib.frame.indicator)
 }
 \arguments{
-\item{sib.dat}{The long-form sibling dataset (likely produced by TODO)}
+\item{sib.dat}{The long-form sibling dataset (likely produced by \link{prep_dhs_sib_histories})}
 
 \item{ego.id}{String with the name of the column in \code{sib.dat} containing the survey respondent ID}
 

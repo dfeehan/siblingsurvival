@@ -20,6 +20,8 @@
 ##' Note that this will only consider estimates for females aged 15-49,
 ##' as this is what makes sense for aggregating maternal estimates
 ##'
+##'
+##' @export
 aggregate_maternal_estimates <- function(estimates,
                                          ego.dat,
                                          sib.dat) {

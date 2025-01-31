@@ -4,7 +4,7 @@ author: "Dennis M. Feehan"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Estimating death rates from sibling history data}
+  %\VignetteIndexEntry{Estimating maternal mortality rates from sibling history data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -371,6 +371,6 @@ same bootstrap resamples.
 
 ```{r}
 mmrate_boot <- aggregate_maternal_estimates(ex_boot_ests, ex.ego, ex.sib)
-mmrate_boot
+names(mmrate_boot)
 ```
 
