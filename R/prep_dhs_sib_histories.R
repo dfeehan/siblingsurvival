@@ -355,17 +355,14 @@ add_maternal_deaths <- function(sib_df,
              # NOTE: remember that when we look at DHSes going back in time,
              # we are focusing on pregnancy-related deaths NOT maternal deaths
              # because sib.died.accident is not always available
-             # ... and a comment explaining this
+             #
+             # Sibling died while pregnant
              (sib.died.pregnant == 2) |
-             # ... etc!
+             # Sibling died within 6 weeks after delivery
              (sib.died.pregnant == 5) |
-             # ... and a comment explaining this
-             #(sib.died.pregnant == 2 & sib.died.accident == 0) |
-             # ... etc!
-             #(sib.died.pregnant == 5 & sib.died.accident == 0) |
-             # ... and another one
+             # Sibling died since delivery
              sib.died.pregnant == 4) &
-            # and more comments here (perhaps more than one?)
+            # Death since delivery is within 42 days of birth and is not unknown or inconsistent with other data
             ((sib.time.delivery.death >= 100 & sib.time.delivery.death <= 141) |
                sib.time.delivery.death == 997 |
                sib.time.delivery.death == 998 |
@@ -403,17 +400,14 @@ add_maternal_deaths <- function(sib_df,
                # NOTE: remember that when we look at DHSes going back in time,
                # we are focusing on pregnancy-related deaths NOT maternal deaths
                # because sib.died.accident is not always available
-               # ... and a comment explaining this
-               #(sib.died.pregnant == 2) |
-               # ... etc!
-               #(sib.died.pregnant == 5) |
-               # ... and a comment explaining this
+               #
+               # Sibling died during pregnancy and not due to accident
                (sib.died.pregnant == 2 & sib.died.accident == 0) |
-               # ... etc!
+               # Sibling died within 6 week after delivery and not due to accident
                (sib.died.pregnant == 5 & sib.died.accident == 0) |
-               # ... and another one
+               # Sibling died since delivery
                sib.died.pregnant == 4) &
-              # and more comments here (perhaps more than one?)
+              # Death since delivery is within 42 days of birth and is not unknown or inconsistent with other data
               ((sib.time.delivery.death >= 100 & sib.time.delivery.death <= 141) |
                  sib.time.delivery.death == 997 |
                  sib.time.delivery.death == 998 |
