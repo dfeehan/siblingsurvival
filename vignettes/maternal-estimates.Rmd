@@ -141,6 +141,16 @@ frame population, we would drop siblings missing `in.F` values from the analysis
 ex.sib <- ex.sib %>% filter(! is.na(in.F)) 
 ```
 
+Finally, since we will focus on pregnancy-related deaths in this vignette, we
+will drop all of the male sibs.
+We'll also only keep female sibs up to age 49.
+
+```{r}
+ex.sib <- ex.sib %>% 
+  filter(sib.sex == 'f') 
+```
+
+
 ### Specifying cells
 
 
@@ -153,18 +163,16 @@ This means we need to specify the time period and age groups that we'll be using
 We'll use the helper function `cell_config` to do this:
 
 ```{r}
-cc_mm <- cell_config(age.groups='5yr', 
+cc_pr <- cell_config(age.groups='5yr', 
                      time.periods='7yr_beforeinterview',
                      start.obs='sib.dob',    # date of birth
                      end.obs='sib.endobs',   # either the date respondent was interviewed (if sib is alive) or date of death (if sib is dead)
-                     event='sib.maternal.death.date', # date of death (for sibs who died of maternal causes)
+                     event='sib.preg_related.death.date', # date of death (for sibs who died of maternal causes)
                      age.offset='sib.dob',   # date of birth
                      time.offset='doi',      # date of interview
+                     event.name='pr_death',  # pregnancy-related death
                      exp.scale=1/12)
 ```
-
-This step is where we process for estimating maternal death rates starts to 
-differ from estimating all-cause death rates. 
 
 We're specifying that we want
 
@@ -172,14 +180,14 @@ We're specifying that we want
 * to produce estimates for the 7-year window before each survey interview (so, slightly different for each respondent)
 * the `dob` column of our sibling dataset has the time siblings start being observed (their birthdate)
 * the `endobs` column of our sibling dataset has the time siblings stop being observed (the interview or, if they're dead, the date of death)
-* the `sib.maternal.death.date` column of our sibling dataset has the date the sibling died of maternal causes (if the sibling died of maternal causes)
+* the `sib.preg_related.death.date` column of our sibling dataset has the date the sibling death is considered pregnancy-related (for maternal causes, we would use `sib.maternal.death.date`, but this is not available for many DHS surveys)
 * the `doi` column of our sibling dataset has the date the respondent who reported about the sibling was interviewed
 * in our survey, times are counted in months, so we set `exp.scale=1/12` to indicate that we need to divide total exposures by 12 to get years
 
-### Estimating death rates
+### Estimating pregnancy-related death rates
 
 Given these preparatory steps, the `sibling_estimator` function will take care of estimating
-death rates from the sibling histories for us.
+pregnancy-related death rates from the sibling histories for us. 
 
 ```{r}
 ex_ests <- sibling_estimator(sib.dat = ex.sib,
@@ -188,7 +196,7 @@ ex_ests <- sibling_estimator(sib.dat = ex.sib,
                                                            # (unique for each reported sibling)
                              sib.frame.indicator = 'in.F', # indicator for sibling frame population membership
                              sib.sex = 'sib.sex',          # column with sibling's sex
-                             cell.config=cc_m,             # cell configuration we created above
+                             cell.config=cc_pr,            # cell configuration we created above
                              weights='wwgt')               # column with the respondents' sampling weights
 
 names(ex_ests)
@@ -200,49 +208,61 @@ estimates, and `asdr.agg`, which has the aggregate visibility estimates.
 Here are the individual visibility estimates:
 
 ```{r}
-glimpse(ex_ests$asdr.ind)
+ex_ests$asdr.ind
 ```
 
 And here are the aggregate visibility estimates
 
 ```{r}
-glimpse(ex_ests$asdr.agg)
+ex_ests$asdr.agg
 ```
 
 ### Plotting the results
 
-We'll make some plots showing the results
+We'll make some plots showing the results. We'll only show results up to age 50,
+which is typically how pregnancy-related mortality is analyzed.
 
 
 ```{r}
-ggplot(ex_ests$asdr.ind) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+ggplot(ex_ests$asdr.ind %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, group=sib.sex)) +
   theme_minimal() +
   scale_y_log10() + 
-  ggtitle('individual visibility estimator, 7yr before survey')
+  ylab("1,000 X PRMR") +
+  ggtitle('individual visibility estimator\npregnancy-related mortality, 7yr before survey')
 ```
 
 
 ```{r}
-ggplot(ex_ests$asdr.agg) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+ggplot(ex_ests$asdr.agg %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, group=sib.sex)) +
   theme_minimal() +
   scale_y_log10() + 
-  ggtitle('aggregate visibility estimator, 7yr before survey')
+  ylab("1,000 X PRMR") +
+  ggtitle('aggregate visibility estimator\npregnancy-related mortality, 7yr before survey')
 ```
 
 ```{r}
 compare <- bind_rows(ex_ests$asdr.ind, ex_ests$asdr.agg)
 
-ggplot(compare) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, linetype=estimator, group=interaction(estimator, sib.sex))) +
+ggplot(compare %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, linetype=estimator, group=interaction(estimator, sib.sex))) +
   theme_minimal() +
   #facet_grid(sex ~ .) +
   facet_grid(. ~ sib.sex) +
   scale_y_log10() + 
-  ggtitle('both estimators, 7yr before survey')
+  ylab("1,000 X PRMR") +
+  ggtitle('both estimators\npregnancy-related mortality, 7yr before survey')
 
 ```
+
+## Aggregating estimates across ages
+
+```{r}
+mmrate <- aggregate_maternal_estimates(ex_ests, ex.ego, ex.sib)
+mmrate
+```
+
 
 ## Variance estimates
 
@@ -305,7 +325,7 @@ ex_boot_ests <- sibling_estimator(sib.dat = ex.sib,
                                   sib.id = 'sibid',
                                   sib.frame.indicator = 'in.F',
                                   sib.sex = 'sib.sex',
-                                  cell.config=cc,
+                                  cell.config=cc_pr,
                                   boot.weights=est.bootweights,  # to get sampling uncertainty, we pass boot.weights into sibling_estimator
                                   return.boot=TRUE,                # when TRUE, return all of the resampled estimates (not just summaries)
                                   weights='wwgt')
@@ -315,174 +335,42 @@ toc()
 Finally, let's plot the estimated death rates along with their sampling uncertainty:
 
 ```{r}
-ggplot(ex_boot_ests$asdr.ind) +
-  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sib.sex, group=sib.sex), alpha=.2) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+ggplot(ex_boot_ests$asdr.ind %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
+  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, group=sib.sex), alpha=.2) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, group=sib.sex)) +
   theme_minimal() +
   scale_y_log10() + 
-  ggtitle('individual visibility estimator, 7yr before survey')
+  ylab("1,000 X PRMR") +
+  ggtitle('individual visibility estimator\npregnancy-related mortality, 7yr before survey')
 ```
 
 ```{r}
-ggplot(ex_boot_ests$asdr.agg) +
-  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sib.sex, group=sib.sex), alpha=.2) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
+ggplot(ex_boot_ests$asdr.agg %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
+  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, group=sib.sex), alpha=.2) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, group=sib.sex)) +
   theme_minimal() +
   scale_y_log10() + 
-  ggtitle('aggregate visibility estimator, 7yr before survey')
+  ylab("1,000 X PRMR") +
+  ggtitle('aggregate visibility estimator\npregnancy-related mortality, 7yr before survey')
 ```
-
-## Internal consistency checks
-
-In this section, we illustrate how to conduct internal consistency checks:
-
-NOTE: The IC checks can take a while -- about 36 minutes for 1000 bootstrap reps on a 2018 MBP
-
 ```{r}
-# toggle between short bootweights (faster, for coding) and long bootweights (for realism)
-ic.bootweights <- short.bootweights
-#ic.bootweights <- bootweights
+compare_boot <- bind_rows(ex_boot_ests$asdr.ind, ex_boot_ests$asdr.agg)
 
-tic("Internal consistency checks")
-ic.checks <- sib_ic_checks(ex_boot_ests$esc.dat,
-                           ego.dat=ex.ego,
-                           ego.id='caseid',
-                           sib.id='sibid',
-                           sib.frame.indicator='in.F',
-                           sib.cell.vars=c('sib.age', 'sib.sex'),
-                           ego.cell.vars=c('age.cat', 'sex'),
-                           boot.weights=ic.bootweights)
-toc()
-
-names(ic.checks)
-```
-
-We can look at `ic.checks$ic.summ`, which has summarized output:
-
-```{r}
-glimpse(ic.checks$ic.summ)
-```
-
-
-
-It's often helpful to plot the results of the internal consistency checks:
-
-```{r}
-ggplot(ic.checks$ic.summ) +
-  geom_hline(yintercept=0) +
-  geom_pointrange(aes(x=age.cat,
-                      y=diff_mean,
-                      ymin=diff_ci_low,
-                      ymax=diff_ci_high)) +
+ggplot(compare_boot %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
+  geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=estimator, group=estimator), alpha=.2) +
+  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=estimator, group=interaction(estimator))) +
   theme_minimal() +
-  ggtitle("Internal consistency checks") +
-  xlab("Age group") +
-  ylab(expression(Delta[alpha]))
-
-#ggplot(ic.checks$ic.summ) +
-#  geom_hline(yintercept=0) +
-#  geom_pointrange(aes(x=age.cat,
-#                      y=agg_diff_mean,
-#                      ymin=agg_diff_ci_low,
-#                      ymax=agg_diff_ci_high)) +
-#  theme_minimal() +
-#  ggtitle("Internal consistency checks (aggregate)") +
-#  xlab("Age group") +
-#  ylab(expression(Delta[alpha]))
-#
-#ggplot(ic.checks$ic.summ) +
-#  geom_hline(yintercept=0) +
-#  geom_pointrange(aes(x=age.cat,
-#                      y=ind_diff_mean,
-#                      ymin=ind_diff_ci_low,
-#                      ymax=ind_diff_ci_high)) +
-#  theme_minimal() +
-#  ggtitle("Internal consistency checks (individual)") +
-#  xlab("Age group") +
-#  ylab(expression(Delta[alpha]))
-```
-
-## Visibilities
-
-```{r}
-sib.F.dat <- ex.sib %>%
-  group_by(caseid) %>%
-  summarize(y.F = sum(in.F))
-
-ego.vis <- ex.ego %>% 
-  select(caseid, wwgt, age.cat, sex) %>%
-  left_join(sib.F.dat, by='caseid')
-
-# if nothing was joined in, there are no sibs
-ego.vis <- ego.vis %>%
-  mutate(y.F=ifelse(is.na(y.F), 0, y.F))
-
-ego.vis.agg <- ego.vis %>%
-  group_by(sex, age.cat) %>%
-  summarise(y.F.bar = weighted.mean(y.F, wwgt)) %>%
-  mutate(adj.factor = y.F.bar / (y.F.bar + 1))
-```
-
-Make adjusted individual estimates
-
-```{r}
-adj.agg.ests <- ex_ests$asdr.agg %>%
-  left_join(ego.vis.agg,
-            by=c('sib.sex'='sex', 'sib.age'='age.cat')) %>%
-  mutate(adj.factor = ifelse(is.na(adj.factor), 1, adj.factor),
-         estimator = 'sib_agg_adj',
-         asdr.hat = asdr.hat * adj.factor)
-```
-
-And plot a comparison
-
-```{r}
-compare <- bind_rows(ex_ests$asdr.ind, ex_ests$asdr.agg, adj.agg.ests)
-
-ggplot(compare) +
-  geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, linetype=estimator, group=interaction(estimator, sib.sex))) +
-  theme_minimal() +
-  #facet_grid(sex ~ .) +
-  facet_grid(. ~ sib.sex) +
   scale_y_log10() + 
-  ggtitle('sibling estimators, 7yr before survey')
+  ylab("1,000 X PRMR") +
+  ggtitle('both estimators\npregnancy-related mortality, 7yr before survey')
 
 ```
 
+Finally, we can calculate the aggregated MMRate for pregnancy-related mortality using the
+same bootstrap resamples.
 
-<!--
-## TODO
-
-* add calculation of visibilities by respondent, calculate avg vis by cell
-* make it easier to produce adjusted estimates; demonstrate with S/(S+1) issue
-* add normalization to IC checks
-* make it easier to calculate IC checks by single year of age?
-* right now, sibling_estimator now has hard-coded 'agelabel' references -- but it shouldn't? need to handle this more elegantly
-
-
-# PROFILING
-
-## TO PROFILE: BOOTSTRAP WEIGHTS
-
-(NOTE: this takes about a minute or so on a 2018 MBP for 1000 resamples.)
-
-```{r, eval=FALSE}
-set.seed(101010)
-
-tic('running bootstrap')
-## this will take a little while -- for 1000 reps, it takes about 1 minutes on a 2018 Macbook Pro
-#num.boot.reps <- 1000
-# use a small number of reps to avoid the vignette taking forever to build
-num.boot.reps <- 100
-test.bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu + stratum(stratum_analysis),
-                                                           # a high number is good here, though that will obviously
-                                                           # make everything take longer
-                                                           num.reps=num.boot.reps,
-                                                           idvar='caseid',       # column with the respondent ids
-                                                           weights='wwgt', # column with the sampling weight
-                                                           survey.data=ex.ego    # note that we pass in the respondent data, NOT the sibling data
-                                                           )
-toc()
+```{r}
+mmrate_boot <- aggregate_maternal_estimates(ex_boot_ests, ex.ego, ex.sib)
+mmrate_boot
 ```
 
--->
