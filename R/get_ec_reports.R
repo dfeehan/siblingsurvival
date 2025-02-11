@@ -31,28 +31,31 @@ get_ec_reports <- function(esc.dat,
     stop("discretize.exp not yet implemented...")
   }
 
-  ## ego reports about cells
-  ##
-  ## TODO - eventually add yprime quantities
-  res <- esc.dat %>%
-    group_by_at(c('.ego.id', cell.vars)) %>%
-    summarize(y.Dcell = sum(sib.occ),
-              y.Ncell = sum(sib.exp),
-              y.NandFcell = sum(.sib.in.F * sib.exp)) %>%
-    mutate(y.NandnotFcell = y.Ncell - y.NandFcell)
-
   # calculate y.F, which is closely related to the visibility of each sibship
   vdat <- get_sibship_visibility(sib.dat,
                                  ego.id='.ego.id',
                                  sib.frame.indicator='.sib.in.F')
 
+  esc.dat.with.indviswgt <- esc.dat %>%
+    left_join(vdat %>% select(.ego.id, y.F),
+              by='.ego.id') %>%
+    mutate(ind_vis_weight = case_when(.sib.in.F == 1 ~ y.F,
+                                      .sib.in.F == 0 ~ y.F + 1))
 
-
-
-  #vdat <- res %>%
-  #  group_by(.ego.id) %>%
-  #  summarize(y.F = sum(y.Fcell),
-  #            y.NandF = sum(y.NandFcell))
+  ## ego reports about cells
+  ##
+  ## TODO - eventually add yprime quantities
+  res <- esc.dat %>%
+    group_by_at(c('.ego.id', cell.vars)) %>%
+    summarize(# for aggregate vis
+              y.Dcell = sum(sib.occ),
+              y.Ncell = sum(sib.exp),
+              y.NandFcell = sum(.sib.in.F * sib.exp),
+              # for individual vis (use individual vis weights)
+              y.Dcell.ind = sum(sib.occ*ind_vis_weight),
+              y.Ncell.ind = sum(sib.exp*ind_vis_weight)
+              ) %>%
+    mutate(y.NandnotFcell = y.Ncell - y.NandFcell)
 
   # join sampling weights onto sibship visibilities
   vdat <- vdat %>% left_join(sib.dat %>%
