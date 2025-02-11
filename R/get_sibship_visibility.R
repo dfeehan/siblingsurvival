@@ -30,6 +30,8 @@ get_sibship_visibility <- function(sib.dat,
 ##' @param ego.id  String with the name of the column in \code{sib.dat} containing the survey respondent ID
 ##' @param sib.dat The long-form sibling dataset (likely produced by [siblingsurvival::prep_dhs_sib_histories])
 ##' @param sib.frame.indicator String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population
+##' @param weight string with the name of the column in \code{ego.dat} and \code{sib.dat} containing the sampling weight. Defaults to `wwgt`
+##' @param age string with the name of the column in \code{ego.dat} containing the age group. Defaults to `age.cat`
 ##' @return A list with two entries:
 ##'   * `ego_vis_agg` - a tibble with summarized adjustment factors
 ##'   * `ego_vis` - a tibble with one row per ego and the ego-specific visibilities
@@ -40,16 +42,22 @@ get_sibship_visibility <- function(sib.dat,
 get_visibility <- function(ego.dat,
                            ego.id,
                            sib.dat,
-                           sib.frame.indicator) {
+                           sib.frame.indicator,
+                           weight='wwgt',
+                           age='age.cat') {
 
   sib.dat <- sib.dat %>%
     # rename the ego id and sibling frame indicator variables
     # to make the code more flexible
     rename(.ego.id = !!sym(ego.id),
-           .sib.in.F = !!sym(sib.frame.indicator))
+           .sib.in.F = !!sym(sib.frame.indicator),
+           .weight = !!sym(weight))
+           #.agecat = !!sym(age))
 
   ego.dat <- ego.dat %>%
-    rename(.ego.id=!!sym(ego.id))
+    rename(.ego.id=!!sym(ego.id),
+           .weight = !!sym(weight),
+           .agecat = !!sym(age))
 
   ###################################
   ## calculate quantities related to visibility for each respondent's sibship
@@ -68,7 +76,7 @@ get_visibility <- function(ego.dat,
 
   # add the sibling size to the ego data
   ego_vis <- ego.dat %>%
-    select(.ego.id, wwgt, age.cat, sex) %>%
+    select(.ego.id, .weight, .agecat, sex) %>%
     left_join(sib_F_dat, by='.ego.id')
 
   # if nothing was joined in, there are no sibs
@@ -76,6 +84,9 @@ get_visibility <- function(ego.dat,
     mutate(y.F=ifelse(is.na(y.F), 0, y.F),
            y.Fplusone = y.F + 1,
            sib.size = ifelse(is.na(sib.size), 1, sib.size))
+
+  sib_res <- sib.dat %>%
+    left_join(ego_vis)
 
   ###################################
   ## calculate summaries + adjustment factors based on the
@@ -87,24 +98,24 @@ get_visibility <- function(ego.dat,
   }
 
   # TODO comment
-  S.hat <- wh.mean(ego_vis$y.Fplusone, ego_vis$wwgt)
+  S.hat <- wh.mean(ego_vis$y.Fplusone, ego_vis$.weight)
   S.adj.factor <- 1 - (1/S.hat)
 
   # TODO comment
-  y.F.bar <- weighted.mean(ego_vis$y.F, ego_vis$wwgt)
+  y.F.bar <- weighted.mean(ego_vis$y.F, ego_vis$.weight)
   approx.S.hat <- y.F.bar + 1
   approx.S.adj.factor <- 1 - (1/approx.S.hat)
 
   # TODO comment
   ego_vis_agg <- ego_vis %>%
-    mutate(age.cat = paste(age.cat)) %>%
-    group_by(sex, age.cat) %>%
+    mutate(.agecat = paste(.agecat)) %>%
+    group_by(sex, .agecat) %>%
 
     summarise(# this is the average y.F value across egos
-              y.F.bar = weighted.mean(y.F, wwgt),
+              y.F.bar = weighted.mean(y.F, .weight),
               # this is the average sibship size (which will be
               # size-biased)
-              avg.sib.size = weighted.mean(sib.size, wwgt)) %>%
+              avg.sib.size = weighted.mean(sib.size, .weight)) %>%
 
     mutate(adj.factor = S.adj.factor,
            # this is the all-ages approximation
@@ -112,8 +123,20 @@ get_visibility <- function(ego.dat,
            # this is the age-specific approximation
            adj.factor.agespec = y.F.bar / (y.F.bar + 1))
 
+  #asdr.agg.dat <- asdr.agg.dat %>%
+  #  rename(!!sib.sex := .sib.sex,
+  #         sib.age = agelabel)
+  ego_vis <- ego_vis %>%
+    rename(!!ego.id := .ego.id,
+           !!weight := .weight,
+           !!age := .agecat)
+
+  ego_vis_agg <- ego_vis_agg %>%
+    rename(!!age := .agecat)
+
   return(lst(ego_vis,
-             ego_vis_agg))
+             ego_vis_agg,
+             sib_res))
 
 }
 
