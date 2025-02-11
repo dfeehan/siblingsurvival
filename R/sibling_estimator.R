@@ -204,12 +204,14 @@ sibling_estimator <- function(sib.dat,
 get_ind_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
 
   res <- ec_dat %>%
-    dplyr::mutate(ind.num.ego   = ifelse(y.F > 0,
-                                         y.Dcell / (y.F + 1),
-                                         0),
-                  ind.denom.ego = ifelse(y.F > 0,
-                                         (y.NandFcell / y.F) + (y.NandnotFcell / (y.F + 1)),
-                                         0))
+    dplyr::mutate(ind.num.ego   = y.Dcell.ind,
+                  ind.denom.ego = y.Ncell.ind)
+    #dplyr::mutate(ind.num.ego   = ifelse(y.F > 0,
+    #                                     y.Dcell / (y.F + 1),
+    #                                     0),
+    #              ind.denom.ego = ifelse(y.F > 0,
+    #                                     (y.NandFcell / y.F) + (y.NandnotFcell / (y.F + 1)),
+    #                                     0))
 
   weighted_sum <- function(x, w) { return(sum(x*w)) }
 

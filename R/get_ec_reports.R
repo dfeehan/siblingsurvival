@@ -36,16 +36,24 @@ get_ec_reports <- function(esc.dat,
                                  ego.id='.ego.id',
                                  sib.frame.indicator='.sib.in.F')
 
+  # add individual visibility weights to the esc data
   esc.dat.with.indviswgt <- esc.dat %>%
     left_join(vdat %>% select(.ego.id, y.F),
               by='.ego.id') %>%
-    mutate(ind_vis_weight = case_when(.sib.in.F == 1 ~ y.F,
-                                      .sib.in.F == 0 ~ y.F + 1))
+    # individual visibility weight depends on whether the sib is on the frame
+    # if yes, then individual vis weight is y.F.
+    # if no (including if sib is dead), it is y.F + 1
+    mutate(ind_vis_weight = case_when(.sib.in.F == 1 ~ 1 / y.F,
+                                      .sib.in.F == 0 ~ 1 / (y.F + 1)))
+
+  if (any(is.na(esc.dat.with.indviswgt$ind_vis_weight))) {
+    stop("esc data has rows for which we have no individual visibility weight. something must be wrong. is there any missingness in the indicator variable for sibling frame membership?")
+  }
 
   ## ego reports about cells
   ##
   ## TODO - eventually add yprime quantities
-  res <- esc.dat %>%
+  res <- esc.dat.with.indviswgt %>%
     group_by_at(c('.ego.id', cell.vars)) %>%
     summarize(# for aggregate vis
               y.Dcell = sum(sib.occ),
@@ -56,6 +64,9 @@ get_ec_reports <- function(esc.dat,
               y.Ncell.ind = sum(sib.exp*ind_vis_weight)
               ) %>%
     mutate(y.NandnotFcell = y.Ncell - y.NandFcell)
+
+  ## res now has a row for each ego X cell
+  ## we want to add sampling weight info to this dataset
 
   # join sampling weights onto sibship visibilities
   vdat <- vdat %>% left_join(sib.dat %>%
