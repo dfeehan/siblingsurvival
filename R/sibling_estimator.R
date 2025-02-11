@@ -52,10 +52,12 @@ sibling_estimator <- function(sib.dat,
 
   # add covariates for the siblings
   esc.dat <- esc.dat %>%
-    left_join(sib.dat %>% select(.sib.id,
+    left_join(sib.dat %>% select(.ego.id,
+                                 .sib.id,
                                  .ego.weight,
                                  .sib.in.F,
-                                 .sib.sex), by='.sib.id')
+                                 .sib.sex),
+              by=c('.ego.id', '.sib.id'))
 
   cell.vars <- c('time.period', '.sib.sex', 'agelabel')
 
