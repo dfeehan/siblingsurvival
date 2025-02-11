@@ -258,6 +258,8 @@ ggplot(compare %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
 
 ## Aggregating estimates across ages
 
+Problem: ex.sib doesn't have column age.cat
+
 ```{r}
 mmrate <- aggregate_maternal_estimates(ex_ests, ex.ego, ex.sib)
 mmrate

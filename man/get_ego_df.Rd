@@ -7,7 +7,7 @@
 get_ego_df(df, resp.attrib, verbose = FALSE)
 }
 \arguments{
-\item{df}{the DHS survey dataset}
+\item{df}{the survey dataset}
 
 \item{resp.attrib}{vector with respondent attribute columns (see \link{prep_dhs_sib_histories})}
 
