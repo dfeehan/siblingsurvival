@@ -56,10 +56,11 @@ sibling_estimator <- function(sib.dat,
                                  .sib.id,
                                  .ego.weight,
                                  .sib.in.F,
-                                 .sib.sex),
+                                 .sib.sex,
+                                 cell.config$covars),
               by=c('.ego.id', '.sib.id'))
 
-  cell.vars <- c('time.period', '.sib.sex', 'agelabel')
+  cell.vars <- c('time.period', '.sib.sex', 'agelabel', cell.config$covars)
 
   ## TODO - I think this line sometimes causes a warning
   ## "Column `.ego.id` has different attributes on LHS and RHS of join"

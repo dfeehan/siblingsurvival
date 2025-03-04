@@ -37,6 +37,7 @@ get_ec_reports <- function(esc.dat,
                                  sib.frame.indicator='.sib.in.F')
 
   # add individual visibility weights to the esc data
+  # (these are sibling individual visibility weights)
   esc.dat.with.indviswgt <- esc.dat %>%
     left_join(vdat %>% select(.ego.id, y.F),
               by='.ego.id') %>%

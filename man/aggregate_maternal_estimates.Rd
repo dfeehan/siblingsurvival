@@ -4,7 +4,7 @@
 \alias{aggregate_maternal_estimates}
 \title{calculate total rate based on point estimates}
 \usage{
-aggregate_maternal_estimates(estimates, ego.dat, sib.dat)
+aggregate_maternal_estimates(estimates, ego.dat, sib.dat, only_females = TRUE)
 }
 \arguments{
 \item{estimates}{the output of \link{sibling_estimator}}
@@ -12,6 +12,8 @@ aggregate_maternal_estimates(estimates, ego.dat, sib.dat)
 \item{ego.dat}{the prepped ego data}
 
 \item{sib.dat}{the prepped sibling data}
+
+\item{only_females}{only keep female estimates? Defaults to TRUE; see Details, below}
 }
 \value{
 either a tibble with the estimates aggregated across age groups
@@ -33,7 +35,10 @@ like the maternal death rate or the pregnancy-related death rate.
 It uses the age distribution of the survey respondents as the reference
 population.
 
-Note that this will only consider estimates for females aged 15-49,
-as this is what makes sense for aggregating maternal estimates
+Note that, by default, this will only consider estimates for females aged 15-49,
+as this is what makes sense for aggregating maternal estimates.
+It might occasionally be useful to run this function for all-cause mortality;
+in that case, setting the parameter \code{only_female=FALSE} will include
+male estimates, too (but will still restrict to ages 15-49)
 }
 

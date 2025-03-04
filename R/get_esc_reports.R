@@ -27,7 +27,7 @@ get_esc_reports <- function(sib.dat,
            .const_weight = 1)
 
   esc.reports <- occ.exp(data=sib.dat,
-                         covars=c(".ego.id", ".sib.id"),
+                         covars=c(".ego.id", ".sib.id", cell.config$covars),
                          start.obs=cell.config$start.obs,
                          end.obs=cell.config$end.obs,
                          event=cell.config$event,
