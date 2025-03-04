@@ -8,6 +8,7 @@
 ##' @param event the column name with the time of the event (e.g. date of death)
 ##' @param age.offset the column name with each sibling's offset for age (typically the date of birth)
 ##' @param time.offset the column name with each sibling's offset for time (often the date of the survey interview)
+##' @param covars [optional] vector with names of columns that have covariates
 ##' @param event.name [optional] name of the event (useful for maternal mortality)
 ##' @param exp.scale defaults to 1/12; see Details
 ##' @return A \code{cell_config} object that can be passed into estimation functions to describe
@@ -36,6 +37,7 @@ cell_config <- function(age.groups,
                         event,
                         age.offset,
                         time.offset,
+                        covars=NULL,
                         event.name = NULL,
                         exp.scale=1/12) {
 
@@ -98,6 +100,7 @@ cell_config <- function(age.groups,
   cell_config_res$time.periods <- time.periods
   cell_config_res$time.offset <- time.offset
   cell_config_res$event.name <- event.name
+  cell_config_res$covars <- covars
   cell_config_res$exp.scale <- exp.scale
 
   class(cell_config_res) <- 'cell_config'
