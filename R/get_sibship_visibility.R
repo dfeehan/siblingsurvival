@@ -1,4 +1,6 @@
-##' calculate visibility for each sibship
+##' calculate number of sibs on frame for each respondent
+##'
+##' this quantity, y.F, is related to the visibility of each respondent
 ##'
 ##' @param sib.dat The long-form sibling dataset (likely produced by [siblingsurvival::prep_dhs_sib_histories])
 ##' @param ego.id  String with the name of the column in \code{sib.dat} containing the survey respondent ID
@@ -6,9 +8,9 @@
 ##' @return A tibble with a row for each survey respondent (each unique value of \code{ego.id}), and the number of sibs the respondent reported on the frame, including and not including herself
 ##' @examples
 ##'   # TODO write example code
-get_sibship_visibility <- function(sib.dat,
-                                   ego.id,
-                                   sib.frame.indicator) {
+get_sibship_num_in_F <- function(sib.dat,
+                                 ego.id,
+                                 sib.frame.indicator) {
 
   sib.dat <- sib.dat %>% rename(.ego.id = !!sym(ego.id),
                                 .sib.in.F = !!sym(sib.frame.indicator))

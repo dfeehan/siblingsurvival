@@ -32,14 +32,14 @@ get_ec_reports <- function(esc.dat,
   }
 
   # calculate y.F, which is closely related to the visibility of each sibship
-  vdat <- get_sibship_visibility(sib.dat,
-                                 ego.id='.ego.id',
-                                 sib.frame.indicator='.sib.in.F')
+  yFdat <- get_sibship_num_in_F(sib.dat,
+                                ego.id='.ego.id',
+                                sib.frame.indicator='.sib.in.F')
 
   # add individual visibility weights to the esc data
   # (these are sibling individual visibility weights)
   esc.dat.with.indviswgt <- esc.dat %>%
-    left_join(vdat %>% select(.ego.id, y.F),
+    left_join(yFdat %>% select(.ego.id, y.F),
               by='.ego.id') %>%
     # individual visibility weight depends on whether the sib is on the frame
     # if yes, then individual vis weight is y.F.
@@ -70,7 +70,7 @@ get_ec_reports <- function(esc.dat,
   ## we want to add sampling weight info to this dataset
 
   # join sampling weights onto sibship visibilities
-  vdat <- vdat %>% left_join(sib.dat %>%
+  yFdat <- yFdat %>% left_join(sib.dat %>%
                                group_by(.ego.id) %>%
                                slice(1) %>%
                                select(.ego.id, .ego.weight), by='.ego.id')
@@ -80,7 +80,7 @@ get_ec_reports <- function(esc.dat,
   ## TODO - not yet calculating y.Fcell and y.Fnotcell
   ##        think this through once we get the other stuff working
   res <- res %>%
-    left_join(vdat, by='.ego.id')
+    left_join(yFdat, by='.ego.id')
   #%>%
   #mutate(#y.Fnotcell = y.F - y.Fcell,
   #       y.NandnotFcell = y.Ncell - y.NandFcell)
