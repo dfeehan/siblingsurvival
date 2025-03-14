@@ -32,9 +32,9 @@ get_ec_reports <- function(esc.dat,
   }
 
   # calculate y.F, which is closely related to the visibility of each sibship
-  yFdat <- get_sibship_num_in_F(sib.dat,
-                                ego.id='.ego.id',
-                                sib.frame.indicator='.sib.in.F')
+  yFdat <- get_sibship_info(sib.dat,
+                            ego.id='.ego.id',
+                            sib.frame.indicator='.sib.in.F')
 
   # add individual visibility weights to the esc data
   # (these are sibling individual visibility weights)

@@ -8,17 +8,22 @@
 ##' @return A tibble with a row for each survey respondent (each unique value of \code{ego.id}), and the number of sibs the respondent reported on the frame, including and not including herself
 ##' @examples
 ##'   # TODO write example code
-get_sibship_num_in_F <- function(sib.dat,
-                                 ego.id,
-                                 sib.frame.indicator) {
+get_sibship_info <- function(sib.dat,
+                             ego.id,
+                             sib.frame.indicator) {
 
   sib.dat <- sib.dat %>% rename(.ego.id = !!sym(ego.id),
                                 .sib.in.F = !!sym(sib.frame.indicator))
 
-  # visibility for each sibship, based on summing reports across cells
+  # y_F for each sibship, based on summing reports across cells
   vis.dat <- sib.dat %>%
     group_by(.ego.id) %>%
-    summarize(y.F = sum(.sib.in.F)) %>%
+    summarize(# number of sibs in the sampling frame
+              y.F = sum(.sib.in.F),
+              # total size of sibship, which is number of reported
+              # siblings plus one (for the respondent)
+              sib.size = n() + 1) %>%
+    # number of sibs in the sampling frame, including respondent
     mutate(yprime.F = y.F + 1)
 
   vis.dat <- vis.dat %>% rename(!!ego.id := .ego.id)
@@ -66,15 +71,19 @@ get_visibility <- function(ego.dat,
 
   # for each sibship, calculate the number of reported sibs on the frame
   # and the size of the sibship
-  sib_F_dat <- sib.dat %>%
-    group_by(.ego.id) %>%
-    summarize(# y.F is the number of siblings in the frame population
-              # reported by the respondent
-              # (note that dead sibs are never in the frame popn)
-              y.F = sum(.sib.in.F),
-              # total size of sibship, which is number of reported
-              # siblings plus one (for the respondent)
-              sib.size = n() + 1)
+  sib_F_dat <- get_sibship_info(sib.dat,
+                                ego.dat,
+                                sib.frame.indicator)
+
+  #sib_F_dat <- sib.dat %>%
+  #  group_by(.ego.id) %>%
+  #  summarize(# y.F is the number of siblings in the frame population
+  #            # reported by the respondent
+  #            # (note that dead sibs are never in the frame popn)
+  #            y.F = sum(.sib.in.F),
+  #            # total size of sibship, which is number of reported
+  #            # siblings plus one (for the respondent)
+  #            sib.size = n() + 1)
 
   # add the sibling size to the ego data
   ego_vis <- ego.dat %>%
