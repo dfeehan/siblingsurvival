@@ -38,7 +38,6 @@ get_esc_reports <- function(sib.dat,
                          weights='.const_weight',
                          exp.scale=cell.config$exp.scale)
 
-  ## TODO - map .ego.id and .sib.id back to original values?
   esc.reports <- esc.reports %>%
     rename(!!ego.id := .ego.id,
            !!sib.id := .sib.id,
@@ -47,3 +46,5 @@ get_esc_reports <- function(sib.dat,
 
   return(esc.reports)
 }
+
+

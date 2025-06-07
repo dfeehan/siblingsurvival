@@ -56,11 +56,18 @@ sibling_estimator <- function(sib.dat,
                                  .sib.id,
                                  .ego.weight,
                                  .sib.in.F,
-                                 .sib.sex,
-                                 cell.config$covars),
+                                 .sib.sex),
               by=c('.ego.id', '.sib.id'))
 
   cell.vars <- c('time.period', '.sib.sex', 'agelabel', cell.config$covars)
+
+  # add individual visibility weights for the siblings
+  esc.dat <- esc.dat %>%
+    add_esc_ind_vis(ego.id='.ego.id',
+                    sib.dat,
+                    sib.frame.indicator='.sib.in.F',
+                    # column name for individual visibility
+                    varname='ind_vis')
 
   ## TODO - I think this line sometimes causes a warning
   ## "Column `.ego.id` has different attributes on LHS and RHS of join"
@@ -71,7 +78,8 @@ sibling_estimator <- function(sib.dat,
                            # TODO - eventually, perhaps these should be
                            # parameters and not hard-coded
                            cell.vars=cell.vars,
-                           weights='.ego.weight')
+                           weights='.ego.weight',
+                           ind.vis.var='ind_vis')
 
   asdr.ind.dat <- get_ind_est_from_ec(ec.dat, '.ego.weight', cell.vars)
   asdr.agg.dat <- get_agg_est_from_ec(ec.dat, '.ego.weight', cell.vars)
@@ -207,12 +215,6 @@ get_ind_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
   res <- ec_dat %>%
     dplyr::mutate(ind.num.ego   = y.Dcell.ind,
                   ind.denom.ego = y.Ncell.ind)
-    #dplyr::mutate(ind.num.ego   = ifelse(y.F > 0,
-    #                                     y.Dcell / (y.F + 1),
-    #                                     0),
-    #              ind.denom.ego = ifelse(y.F > 0,
-    #                                     (y.NandFcell / y.F) + (y.NandnotFcell / (y.F + 1)),
-    #                                     0))
 
   weighted_sum <- function(x, w) { return(sum(x*w)) }
 
