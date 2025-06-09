@@ -47,6 +47,7 @@ get_sibship_info <- function(sib.dat,
 ##'   and the number of sibs the respondent reported on the frame, including and not including herself
 ##' @examples
 ##'   # TODO write example code
+##'   @export
 get_visibility <- function(ego.dat,
                            ego.id,
                            sib.dat,
