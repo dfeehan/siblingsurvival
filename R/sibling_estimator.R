@@ -91,14 +91,8 @@ sibling_estimator <- function(sib.dat,
     boot.weights <- boot.weights %>%
       dplyr::rename(.ego.id = !!sym(ego.id))
 
-
-    ec.boot.dat <- ec.dat %>% left_join(boot.weights,
-                                        by='.ego.id')
-
-    boot.cols <- stringr::str_subset(colnames(boot.weights), 'ego.id', negate=TRUE)
-
-    boot.ind.ests <- get_ind_est_from_ec(ec.boot.dat, boot.cols, cell.vars)
-    boot.agg.ests <- get_agg_est_from_ec(ec.boot.dat, boot.cols, cell.vars)
+    boot.ind.ests <- get_boot_ests_matrix(ec.dat, boot.weights, '.ego.id', cell.vars, 'ind')
+    boot.agg.ests <- get_boot_ests_matrix(ec.dat, boot.weights, '.ego.id', cell.vars, 'agg')
 
     if (any(is.na(boot.ind.ests$asdr.hat))) {
       n.na <- sum(is.na(boot.ind.ests$asdr.hat))
@@ -204,6 +198,66 @@ sibling_estimator <- function(sib.dat,
   return(res)
 }
 
+##' Fast bootstrap estimation using matrix multiplication
+##'
+##' Replaces the wide-dataframe summarize_at + gather/spread approach with direct
+##' matrix multiplication. For each cell, computes weighted sums across all M bootstrap
+##' replicates simultaneously using BLAS routines, avoiding the creation of 10k-column
+##' intermediate dataframes.
+##'
+##' @param ec_dat ego X cell data from get_ec_reports()
+##' @param boot_weights_df dataframe with .ego.id column and boot_weight_1..M columns
+##' @param ego_id_col name of the ego id column in ec_dat and boot_weights_df
+##' @param cell_vars vector of column names defining cells (age, sex, time period, etc)
+##' @param estimator_type either 'ind' (individual visibility) or 'agg' (aggregate visibility)
+##' @return long-form data frame with one row per cell per bootstrap replicate
+get_boot_ests_matrix <- function(ec_dat, boot_weights_df, ego_id_col, cell_vars, estimator_type) {
+
+  # Build boot weight matrix: rows = respondents, cols = bootstrap replicates
+  boot_col_names <- stringr::str_subset(colnames(boot_weights_df), 'ego.id', negate = TRUE)
+  boot_mat <- as.matrix(boot_weights_df[, boot_col_names, drop = FALSE])
+  boot_ego_ids <- boot_weights_df[[ego_id_col]]
+  M <- ncol(boot_mat)
+
+  # Split ec_dat by cell for vectorized operations within each cell
+  cell_groups <- ec_dat %>% dplyr::group_by_at(cell_vars) %>% dplyr::group_split()
+  cell_keys   <- ec_dat %>% dplyr::group_by_at(cell_vars) %>% dplyr::group_keys()
+
+  purrr::map2_dfr(cell_groups, seq_len(nrow(cell_keys)), function(grp, i) {
+    # Match respondents in this cell to rows in the boot weight matrix
+    row_idx <- match(grp[[ego_id_col]], boot_ego_ids)
+
+    # Rows from boot_mat corresponding to respondents in this cell
+    W <- boot_mat[row_idx, , drop = FALSE]  # N_cell x M
+
+    # Select numerator and denominator vectors based on estimator type
+    if (estimator_type == 'ind') {
+      num_vec   <- grp$y.Dcell.ind
+      denom_vec <- grp$y.Ncell.ind
+    } else {
+      num_vec   <- grp$y.Dcell
+      denom_vec <- grp$y.Ncell
+    }
+
+    # Matrix multiply: length-N_cell vector %*% N_cell x M matrix = length-M vector
+    # This uses BLAS and runs in milliseconds even for large M
+    num.hat   <- as.vector(num_vec   %*% W)
+    denom.hat <- as.vector(denom_vec %*% W)
+
+    estimator_label <- if (estimator_type == 'ind') 'sib_ind' else 'sib_agg'
+
+    data.frame(
+      cell_keys[rep(i, M), , drop = FALSE],
+      boot_idx  = seq_len(M),
+      num.hat   = num.hat,
+      denom.hat = denom.hat,
+      asdr.hat  = num.hat / denom.hat,
+      estimator = estimator_label,
+      stringsAsFactors = FALSE
+    )
+  })
+}
+
 ##' helper function for calculating individual visibility estimate from ego X cell data
 ##'
 ##' @param ec_dat the ego X cell data
@@ -231,13 +285,13 @@ get_ind_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
   ## if we have bootstrap weights, reshape and clean things up
   if(length(wgt_var) > 1) {
     res3 <- res2 %>%
-      tidyr::gather(starts_with('boot_weight'),
-             key='rawqty',
-             value='value') %>%
+      tidyr::pivot_longer(cols = tidyselect::starts_with('boot_weight'),
+                          names_to = 'rawqty',
+                          values_to = 'value') %>%
       mutate(qty = stringr::str_remove(rawqty, 'boot_weight_\\d+_'),
              boot_idx = as.integer(stringr::str_remove_all(rawqty, '[^\\d]'))) %>%
       select(-rawqty) %>%
-      tidyr::spread(qty, value)
+      tidyr::pivot_wider(names_from = qty, values_from = value)
   } else {
     res3 <- res2
   }
@@ -271,13 +325,13 @@ get_agg_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
   ## if we have bootstrap weights, reshape and clean things up
   if(length(wgt_var) > 1) {
     res2 <- res %>%
-      tidyr::gather(starts_with('boot_weight'),
-             key='rawqty',
-             value='value') %>%
+      tidyr::pivot_longer(cols = tidyselect::starts_with('boot_weight'),
+                          names_to = 'rawqty',
+                          values_to = 'value') %>%
       mutate(qty = stringr::str_remove(rawqty, 'boot_weight_\\d+_'),
              boot_idx = as.integer(stringr::str_remove_all(rawqty, '[^\\d]'))) %>%
       select(-rawqty) %>%
-      tidyr::spread(qty, value)
+      tidyr::pivot_wider(names_from = qty, values_from = value)
   } else {
     res2 <- res
   }
