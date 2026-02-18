@@ -190,8 +190,7 @@ occ.exp <- function(data,
     return(sum(x*w))
   }
 
-  uber.res <- plyr::ldply(1:time.periods$num.groups,
-  #uber.res <- purrr::map_df(1:time.periods$num.groups,
+  uber.res <- purrr::map_dfr(1:time.periods$num.groups,
                     function(time.idx) {
 
                       this.time.period <- matrix(time.periods$template[time.idx,],
@@ -200,15 +199,12 @@ occ.exp <- function(data,
                                                  byrow=TRUE)
 
 
-                      #this.time.period <- this.time.period + select_(full.dat, .dots=time.offsets)[,1]
-                      #toff <- (select_(full.dat, .dots=time.offsets) %>% pull(1))
                       toff <- full.dat %>% select(.time.offset) %>% pull(1)
 
                       this.time.period <- this.time.period + toff
 
                       this.age.groups <- age.groups$template
 
-                      #this.age.offset <- select_(full.dat, .dots=start.obs)[,1]
                       this.age.offset <- full.dat %>% select(.start.obs) %>% pull(1)
 
 
@@ -229,8 +225,7 @@ occ.exp <- function(data,
 
 
                       ## summarize each qty (occ and exp) separately; then combine them
-                      agg.qty <- plyr::ldply(c('occ', 'exp'),
-                      #agg.qty <- purrr::map_df(c('occ', 'exp'),
+                      agg.qty <- purrr::map_dfr(c('occ', 'exp'),
                                        function(this.qty) {
 
                                          res.qty <- as.data.frame(raw.res[[this.qty]])
@@ -241,12 +236,13 @@ occ.exp <- function(data,
 
                                          res.qty.agg <- res.qty %>%
                                            group_by_at(vars(gpvars)) %>%
-                                           #summarise_at(.funs=funs(weighted.sum(., .weight)),
                                            summarise_at(.funs=list(~weighted.sum(., .weight)),
                                                         .vars=vars(starts_with("agegroup")))
 
                                          res.qty.agg <- res.qty.agg %>%
-                                           tidyr::gather(agegroup, value, starts_with("agegroup")) %>%
+                                           tidyr::pivot_longer(cols = tidyselect::starts_with("agegroup"),
+                                                               names_to = 'agegroup',
+                                                               values_to = 'value') %>%
                                            mutate(qty=this.qty)
 
                                          return(res.qty.agg)
@@ -259,7 +255,7 @@ occ.exp <- function(data,
 
                     })
 
-  agg.res <- tidyr::spread(uber.res, qty, value)
+  agg.res <- tidyr::pivot_wider(uber.res, names_from = qty, values_from = value)
 
   ## rename the age group to match the definitions
   agename.remap <- data.frame(agegroup=paste0("agegroup_", 1:length(age.groups$names)),
