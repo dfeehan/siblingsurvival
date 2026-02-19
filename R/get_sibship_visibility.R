@@ -245,7 +245,7 @@ add_esc_ind_vis <- function(esc.dat,
     #mutate(ind_vis_weight = case_when(.sib.in.F == 1 ~ 1 / y.F,
     #                                  .sib.in.F == 0 ~ 1 / (y.F + 1)))
 
-  if (any(is.na(esc.dat.with.indviswgt$ind_vis_weight))) {
+  if (any(is.na(esc.dat.with.indviswgt$ind_vis))) {
     stop("esc data has rows for which we have no individual visibility weight. something must be wrong. is there any missingness in the indicator variable for sibling frame membership?")
   }
 
