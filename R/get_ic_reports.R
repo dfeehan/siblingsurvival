@@ -39,7 +39,7 @@ get_ic_reports <- function(esc.dat,
     filter(.sib.in.F == 1, sib.exp > 0) %>%
     ## within each sib, we want to pick the latest age group
     ## they contributed exposure to
-    group_by_at(c('.sib.id', sib.cell.vars[-1])) %>%
+    group_by(across(all_of(c('.sib.id', sib.cell.vars[-1])))) %>%
     ## NB: assumes agegroup, when arranged, is in increasing
     ##     order of age, ie, age 15 precedes age 20, etc...
     arrange(desc(agegroup)) %>%
@@ -142,8 +142,7 @@ sib_ic_checks <- function(esc.dat,
                                ## size of frame (for normalization)
 
                                N.Falpha <- y.Falpha.dat %>%
-                                 summarize_at(.vars=boot.cols,
-                                              sum) %>%
+                                 summarize(across(all_of(boot.cols), sum)) %>%
                                  tidyr::gather(starts_with('boot_weight'),
                                                key='qty',
                                                value='N.Falpha') %>%
@@ -152,8 +151,7 @@ sib_ic_checks <- function(esc.dat,
 
 
                                N.Fminusalpha <- y.Fminusalpha.dat %>%
-                                 summarize_at(.vars=boot.cols,
-                                              sum) %>%
+                                 summarize(across(all_of(boot.cols), sum)) %>%
                                  tidyr::gather(starts_with('boot_weight'),
                                                key='qty',
                                                value='N.Fminusalpha') %>%
@@ -171,8 +169,7 @@ sib_ic_checks <- function(esc.dat,
                                #y.Fminusalpha.Falpha <- sum(y.Fminusalpha.Falpha.dat %>% pull(!!sym(cur.wgt)))
 
                                y.Falpha.Fminusalpha <- y.Falpha.Fminusalpha.dat %>%
-                                 summarize_at(.vars=boot.cols,
-                                              sum) %>%
+                                 summarize(across(all_of(boot.cols), sum)) %>%
                                  tidyr::gather(starts_with('boot_weight'),
                                         key='qty',
                                         value='y.Falpha.Fminusalpha') %>%
@@ -180,8 +177,7 @@ sib_ic_checks <- function(esc.dat,
                                  select(-qty)
 
                                y.Fminusalpha.Falpha <- y.Fminusalpha.Falpha.dat %>%
-                                 summarize_at(.vars=boot.cols,
-                                              sum) %>%
+                                 summarize(across(all_of(boot.cols), sum)) %>%
                                  tidyr::gather(starts_with('boot_weight'),
                                         key='qty',
                                         value='y.Fminusalpha.Falpha') %>%
@@ -213,12 +209,12 @@ sib_ic_checks <- function(esc.dat,
            normalized_diff = diff/(N.Falpha*N.Fminusalpha),
            abs_normalized_diff = abs(normalized_diff),
            normalized_diff2 = normalized_diff^2) %>%
-    summarise_at(c('diff', 'abs_diff', 'diff2',
-                   'normalized_diff', 'abs_normalized_diff', 'normalized_diff2'),
-                 list(mean=~mean(.),
-                      se=~sd(.),
-                      ci_low=~quantile(., probs=.025),
-                      ci_high=~quantile(., probs=.975))) %>%
+    summarise(across(all_of(c('diff', 'abs_diff', 'diff2',
+                              'normalized_diff', 'abs_normalized_diff', 'normalized_diff2')),
+                     list(mean=~mean(.x),
+                          se=~sd(.x),
+                          ci_low=~quantile(.x, probs=.025),
+                          ci_high=~quantile(.x, probs=.975)))) %>%
     decode_cells('cell', ego.cell.vars, remove=FALSE)
 
   boot.ests <- boot.ests %>%
@@ -235,13 +231,13 @@ sib_ic_checks <- function(esc.dat,
 
 # this is a useful helper function, used in sib_ic_checks
 grab_cell <- function(dat, cell.var, cell.value) {
-  res <- dat %>% filter_at(vars(cell.var), all_vars(. == cell.value))
+  res <- dat %>% filter(.data[[cell.var]] == cell.value)
   return(res)
 }
 
 # this is a useful helper function, used in sib_ic_checks
 grab_cell_complement <- function(dat, cell.var, cell.value) {
-  res <- dat %>% filter_at(vars(cell.var), all_vars(. != cell.value))
+  res <- dat %>% filter(.data[[cell.var]] != cell.value)
   return(res)
 }
 
@@ -424,11 +420,11 @@ sib_ic_checks_OLD <- function(esc.dat,
     mutate(diff = y.Falpha.Fminusalpha - y.Fminusalpha.Falpha,
            abs_diff = abs(diff),
            diff2 = diff^2) %>%
-    summarise_at(c('diff', 'abs_diff', 'diff2'),
-                 list(mean=~mean(.),
-                      se=~sd(.),
-                      ci_low=~quantile(., probs=.025),
-                      ci_high=~quantile(., probs=.975))) %>%
+    summarise(across(all_of(c('diff', 'abs_diff', 'diff2')),
+                     list(mean=~mean(.x),
+                          se=~sd(.x),
+                          ci_low=~quantile(.x, probs=.025),
+                          ci_high=~quantile(.x, probs=.975)))) %>%
     decode_cells('cell', ego.cell.vars, remove=FALSE)
 
   # version w/ separate individual and aggregate IC checks

@@ -114,26 +114,26 @@ aggregate_maternal_estimates <- function(estimates,
         res <- total_boot_res %>%
           mutate(dummy=1) %>%
           group_by(dummy) %>%
-          summarize_at(vars(ind.est, agg.est,
-                            adj.factor, adj.factor.allage, adj.factor.meanagespec,
-                            ratio.agg.ind,
-                            ratio.ind.agg),
-                       list( .ci.low = ~ quantile(.x, .025, na.rm=TRUE),
-                             .ci.high = ~ quantile(.x, .975, na.rm=TRUE),
-                             .mean = ~ mean(.x, na.rm=TRUE))) %>%
+          summarize(across(c(ind.est, agg.est,
+                             adj.factor, adj.factor.allage, adj.factor.meanagespec,
+                             ratio.agg.ind,
+                             ratio.ind.agg),
+                           list( .ci.low = ~ quantile(.x, .025, na.rm=TRUE),
+                                 .ci.high = ~ quantile(.x, .975, na.rm=TRUE),
+                                 .mean = ~ mean(.x, na.rm=TRUE)))) %>%
           select(-dummy) %>%
           rename_with(~ stringr::str_replace(.x, "_", ""))
       } else {
         res <- total_boot_res %>%
           mutate(dummy=1) %>%
           group_by(dummy, sex) %>%
-          summarize_at(vars(ind.est, agg.est,
-                            adj.factor, adj.factor.allage, adj.factor.meanagespec,
-                            ratio.agg.ind,
-                            ratio.ind.agg),
-                       list( .ci.low = ~ quantile(.x, .025, na.rm=TRUE),
-                             .ci.high = ~ quantile(.x, .975, na.rm=TRUE),
-                             .mean = ~ mean(.x, na.rm=TRUE))) %>%
+          summarize(across(c(ind.est, agg.est,
+                             adj.factor, adj.factor.allage, adj.factor.meanagespec,
+                             ratio.agg.ind,
+                             ratio.ind.agg),
+                           list( .ci.low = ~ quantile(.x, .025, na.rm=TRUE),
+                                 .ci.high = ~ quantile(.x, .975, na.rm=TRUE),
+                                 .mean = ~ mean(.x, na.rm=TRUE)))) %>%
           select(-dummy) %>%
           rename_with(~ stringr::str_replace(.x, "_", ""))
 

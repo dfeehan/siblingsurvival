@@ -158,7 +158,7 @@ prep_dhs_sib_histories <- function(df,
 
   if (keep_varmap_only) {
     ego.dat <- ego.dat %>%
-      select_at(c(names(resp.attrib), 'sex', 'age.cat', 'age.cat10', 'wwgt'))
+      select(all_of(c(names(resp.attrib), 'sex', 'age.cat', 'age.cat10', 'wwgt')))
   }
 
   return(list(survey=cur.survey,
@@ -327,7 +327,7 @@ prep_nrsim_sib_histories <- function(df,
 
   if (keep_varmap_only) {
     ego.dat <- ego.dat %>%
-      select_at(c(names(resp.attrib), 'sex', 'age.cat', 'age.cat10', 'wwgt'))
+      select(all_of(c(names(resp.attrib), 'sex', 'age.cat', 'age.cat10', 'wwgt')))
   }
 
   return(list(survey=cur.survey,

@@ -235,9 +235,9 @@ occ.exp <- function(data,
                                          res.qty <- cbind(full.dat, res.qty)
 
                                          res.qty.agg <- res.qty %>%
-                                           group_by_at(vars(gpvars)) %>%
-                                           summarise_at(.funs=list(~weighted.sum(., .weight)),
-                                                        .vars=vars(starts_with("agegroup")))
+                                           group_by(across(all_of(gpvars))) %>%
+                                           summarise(across(starts_with("agegroup"),
+                                                            ~ weighted.sum(.x, .weight)))
 
                                          res.qty.agg <- res.qty.agg %>%
                                            tidyr::pivot_longer(cols = tidyselect::starts_with("agegroup"),

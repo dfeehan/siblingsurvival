@@ -104,7 +104,7 @@ sibling_estimator <- function(sib.dat,
     # individual and aggregate visibility estimates
     boot.ind.varest <- boot.ind.ests %>%
       ungroup() %>%
-      group_by_at(cell.vars) %>%
+      group_by(across(all_of(cell.vars))) %>%
       summarise(asdr.hat.ci.low = quantile(asdr.hat, .025, na.rm=TRUE),
                 asdr.hat.ci.high = quantile(asdr.hat, 0.975, na.rm=TRUE),
                 asdr.hat.median = quantile(asdr.hat, 0.5, na.rm=TRUE),
@@ -119,7 +119,7 @@ sibling_estimator <- function(sib.dat,
 
     boot.agg.varest <- boot.agg.ests %>%
       ungroup() %>%
-      group_by_at(cell.vars) %>%
+      group_by(across(all_of(cell.vars))) %>%
       summarise(asdr.hat.ci.low = quantile(asdr.hat, .025, na.rm=TRUE),
                 asdr.hat.ci.high = quantile(asdr.hat, 0.975, na.rm=TRUE),
                 asdr.hat.median = quantile(asdr.hat, 0.5, na.rm=TRUE),
@@ -220,8 +220,8 @@ get_boot_ests_matrix <- function(ec_dat, boot_weights_df, ego_id_col, cell_vars,
   M <- ncol(boot_mat)
 
   # Split ec_dat by cell for vectorized operations within each cell
-  cell_groups <- ec_dat %>% dplyr::group_by_at(cell_vars) %>% dplyr::group_split()
-  cell_keys   <- ec_dat %>% dplyr::group_by_at(cell_vars) %>% dplyr::group_keys()
+  cell_groups <- ec_dat %>% dplyr::group_by(dplyr::across(dplyr::all_of(cell_vars))) %>% dplyr::group_split()
+  cell_keys   <- ec_dat %>% dplyr::group_by(dplyr::across(dplyr::all_of(cell_vars))) %>% dplyr::group_keys()
 
   purrr::map2_dfr(cell_groups, seq_len(nrow(cell_keys)), function(grp, i) {
     # Match respondents in this cell to rows in the boot weight matrix
@@ -273,14 +273,13 @@ get_ind_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
   weighted_sum <- function(x, w) { return(sum(x*w)) }
 
   res2 <- res %>%
-    group_by_at(cell_vars) %>%
-    summarize_at(.vars=wgt_var,
-                 .funs=list(num.hat   = ~weighted_sum(x=.data[['ind.num.ego']], w=.),
-                            denom.hat = ~weighted_sum(x=.data[['ind.denom.ego']], w=.),
-                            ind.y.F   = ~weighted_sum(x=.data[['y.F']], w=.),
-                            n         = ~n(),
-                            wgt.sum   = ~weighted_sum(x=1, w=.)),
-                 )
+    group_by(across(all_of(cell_vars))) %>%
+    summarize(num.hat   = weighted_sum(x = ind.num.ego,   w = .data[[wgt_var]]),
+              denom.hat = weighted_sum(x = ind.denom.ego,  w = .data[[wgt_var]]),
+              ind.y.F   = weighted_sum(x = y.F,            w = .data[[wgt_var]]),
+              n         = n(),
+              wgt.sum   = weighted_sum(x = 1,              w = .data[[wgt_var]]),
+              .groups   = "drop")
 
   ## if we have bootstrap weights, reshape and clean things up
   if(length(wgt_var) > 1) {
@@ -315,12 +314,12 @@ get_agg_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
 
   res <- ec_dat %>%
     #dplyr::mutate(.cur.weight = !!sym(wgt_var)) %>%
-    group_by_at(cell_vars) %>%
-    summarize_at(.vars=wgt_var,
-                 .funs=list(num.hat   = ~weighted_sum(x=.data[['y.Dcell']], w=.),
-                            denom.hat = ~weighted_sum(x=.data[['y.Ncell']], w=.),
-                            n         = ~n(),
-                            wgt.sum   = ~weighted_sum(x=1, w=.)))
+    group_by(across(all_of(cell_vars))) %>%
+    summarize(num.hat   = weighted_sum(x = y.Dcell, w = .data[[wgt_var]]),
+              denom.hat = weighted_sum(x = y.Ncell,  w = .data[[wgt_var]]),
+              n         = n(),
+              wgt.sum   = weighted_sum(x = 1,        w = .data[[wgt_var]]),
+              .groups   = "drop")
 
   ## if we have bootstrap weights, reshape and clean things up
   if(length(wgt_var) > 1) {

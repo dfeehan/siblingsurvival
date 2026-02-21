@@ -56,7 +56,7 @@ get_ec_reports <- function(esc.dat,
   ##
   ## TODO - eventually add yprime quantities?
   res <- esc.dat.with.indviswgt %>%
-    group_by_at(c('.ego.id', cell.vars)) %>%
+    group_by(across(all_of(c('.ego.id', cell.vars)))) %>%
     summarize(# this should be constant within respondents (.ego.id)
               y.F = y.F[1],
               # for aggregate vis
