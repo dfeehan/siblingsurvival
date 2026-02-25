@@ -1,7 +1,4 @@
-home:
-  title: "siblingsurvival: An R package for sibling survival estimates"
-  description: Produce sibling survival estimates for adult death rates.
+url: http://dennisfeehan.org/siblingsurvival/
 template:
-  params:
-    bootswatch: flatly
-    ganalytics: G-56MJYKC8R7
+  bootstrap: 5
+
