@@ -29,9 +29,9 @@ aggregate_maternal_estimates <- function(estimates,
 
   # get age distribution of respondents
   age_prop <- get_ego_age_distn(ego.dat)
-  vis_res <- get_visibility(ex.ego,
+  vis_res <- get_visibility(ego.dat,
                             ego.id='caseid',
-                            ex.sib,
+                            sib.dat,
                             sib.frame.indicator='in.F')
 
   res <- estimates$asdr.ind %>%
