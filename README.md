@@ -1,5 +1,8 @@
-siblingsurvival
-===============
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/dfeehan/siblingsurvival/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/dfeehan/siblingsurvival/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/dfeehan/siblingsurvival/graph/badge.svg)](https://app.codecov.io/gh/dfeehan/siblingsurvival)
+<!-- badges: end -->
 
 An R package to help estimate adult death rates from sibling history data.
 

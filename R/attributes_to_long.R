@@ -163,32 +163,20 @@ attributes.to.long <- function(df,
                    stop("There appear to be overlapping names in the ego and sibling variables - this is not allowed.\n")
                  }
 
-                 these.alterdata <- select_(df, .dots=tograb) %>%
+                 these.alterdata <- dplyr::select(df, dplyr::all_of(tograb)) %>%
                    dplyr::mutate(alternum = this.alternum)
 
                  if (! keep.na) {
 
-                   ## this is tricky because we need to convert the usual
-                   ## non-standard evaluation function calls to use
-                   ## the standard evaluation version
-
-                   ## for each row, we'll count the number of alter columns
-                   ## that have missing values
-                   ## and we'll filter out rows where that number is all of them
-                   filter.cond <- paste(paste0("as.numeric(is.na(",
-                                               names(these.altercols),
-                                               "))", collapse="+"))
+                   ## count NA alter columns per row; drop rows where all are missing
                    numvar <- length(these.altercols)
 
-                   these.alterdata <- mutate_(these.alterdata,
-                                              .misscount=lazyeval::interp(filter.cond))
-
-                   these.alterdata <- filter_(these.alterdata,
-                                              .dots=lazyeval::interp(~ .misscount < numvar))
-
-                   these.alterdata <- select_(these.alterdata,
-                                              .dots=lazyeval::interp(~ -.misscount))
-
+                   these.alterdata <- these.alterdata %>%
+                     dplyr::mutate(.misscount = rowSums(
+                       dplyr::across(dplyr::all_of(names(these.altercols)), is.na)
+                     )) %>%
+                     dplyr::filter(.misscount < numvar) %>%
+                     dplyr::select(-.misscount)
 
                  }
 

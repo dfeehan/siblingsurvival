@@ -21,6 +21,11 @@
 * Fixed `aggregate_maternal_estimates()`, which was accidentally referencing
   package-level example objects (`ex.ego`, `ex.sib`) instead of the `ego.dat`
   and `sib.dat` arguments passed by the caller.
+* Fixed `attributes.to.long()`: replaced defunct `dplyr::select_()`,
+  `mutate_()`, and `filter_()` (deprecated in dplyr 0.7, now defunct) with
+  modern equivalents (`select(all_of(...))`, `mutate(across(...))`,
+  `filter()`). Removed `lazyeval` from package `Imports`. This unblocked
+  `devtools::build()`, which was failing when building vignettes.
 
 ## Tests
 
