@@ -357,7 +357,7 @@ get_ego_df <- function(df, resp.attrib, verbose=FALSE) {
     #rename(!!!resp.attrib)
     rename(any_of(resp.attrib))
 
-  if(is.null(ego.dat$sex)) {
+  if(!"sex" %in% names(ego.dat)) {
     if(verbose) {
       cat(paste0("\nNo information on respondent sex given; assuming all respondents are female.\n"))
     }
