@@ -358,7 +358,7 @@ bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu
                                                            survey.data=ex.ego    # note that we pass in the respondent data, NOT the sibling data
                                                            )
 toc()
-#> running bootstrap: 0.386 sec elapsed
+#> running bootstrap: 0.343 sec elapsed
 ```
 
 The result, `bootweights`, is a dataframe that has a row for each survey
@@ -395,7 +395,7 @@ ex_boot_ests <- sibling_estimator(sib.dat = ex.sib,
                                   return.boot=TRUE,                # when TRUE, return all of the resampled estimates (not just summaries)
                                   weights='wwgt')
 toc()
-#> calculating estimates with bootstrap: 4.198 sec elapsed
+#> calculating estimates with bootstrap: 3.981 sec elapsed
 ```
 
 Finally, let’s plot the estimated death rates along with their sampling
@@ -450,7 +450,7 @@ ic.checks <- sib_ic_checks(ex_boot_ests$esc.dat,
                            ego.cell.vars=c('age.cat', 'sex'),
                            boot.weights=ic.bootweights)
 toc()
-#> Internal consistency checks: 0.292 sec elapsed
+#> Internal consistency checks: 0.269 sec elapsed
 
 names(ic.checks)
 #> [1] "ic.summ"      "ic.boot.ests"
