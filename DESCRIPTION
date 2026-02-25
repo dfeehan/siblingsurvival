@@ -1,7 +1,7 @@
 Package: siblingsurvival
 Type: Package
 Title: Tools for producing sibling survival estimates
-Version: 0.2.0
+Version: 0.3.0
 Author: Dennis M. Feehan
 Maintainer: Dennis M. Feehan <feehan@berkeley.edu>
 Description: Tools for working with sibling history data
