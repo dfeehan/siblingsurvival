@@ -7,9 +7,9 @@
 get_ego_age_distn(ego.dat, only_females = TRUE)
 }
 \arguments{
-\item{only_females}{should only females be used to calculate age distribution? (default: True)}
+\item{ego.dat}{the ego dataset (probably from \link{prep_dhs_sib_histories})}
 
-\item{ego_dat}{the ego dataset (probably from \link{prep_dhs_sib_histories})}
+\item{only_females}{should only females be used to calculate age distribution? (default: True)}
 }
 \value{
 dataframe with distribution of respondent ages by 5-year category,

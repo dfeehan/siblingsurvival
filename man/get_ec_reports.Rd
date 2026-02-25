@@ -11,6 +11,7 @@ get_ec_reports(
   sib.frame.indicator,
   cell.vars,
   weights,
+  ind.vis.var = NULL,
   discretize.exp = FALSE
 )
 }
@@ -26,6 +27,8 @@ get_ec_reports(
 \item{cell.vars}{a vector with Strings containing the names of columns in \code{esc.dat} identifying the cells to group reports by (typically age group, sex, time period)}
 
 \item{weights}{String with the name of the column in \code{esc.dat} that has the survey weights}
+
+\item{ind.vis.var}{String with the name of the column in \code{esc.dat} that has the individual visibility for each sibling; defaults to NULL. If NULL, the individual visibilities are calculated}
 
 \item{discretize.exp}{Boolean for whether or not expsoure should be discretized. Not yet implemented.}
 }

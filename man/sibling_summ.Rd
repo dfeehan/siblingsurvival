@@ -7,13 +7,15 @@
 sibling_summ(sib.dat, ego.id, sib.id, sib.frame.indicator, cell.config)
 }
 \arguments{
-\item{sib.dat}{The long-form sibling dataset (likely produced by \link{\code{prep_dhs_sib_histories}})}
+\item{sib.dat}{The long-form sibling dataset (likely produced by \link{prep_dhs_sib_histories})}
 
 \item{ego.id}{String with the name of the column in \code{sib.dat} containing the survey respondent ID}
 
 \item{sib.id}{String with the name of the column of \code{sib.dat} that has the sibling ID}
 
 \item{sib.frame.indicator}{String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population}
+
+\item{cell.config}{An object containing the configuration of cells; see \code{\link{cell_config}} for more information}
 }
 \value{
 A one-row tibble with two columns: \code{num_sibs} has the number of sibs who contribute exposure in the time window; and \code{num_deaths}, the number of reported sibling deaths in the time window

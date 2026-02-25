@@ -18,7 +18,7 @@ sibling_estimator(
 )
 }
 \arguments{
-\item{sib.dat}{The long-form sibling history dataset (likely produced by \link{\code{prep_dhs_sib_histories}})}
+\item{sib.dat}{The long-form sibling history dataset (likely produced by \link{prep_dhs_sib_histories})}
 
 \item{ego.id}{String with the name of the column of \code{sib.dat} that has the ID of the survey respondent}
 

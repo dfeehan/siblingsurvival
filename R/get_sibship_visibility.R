@@ -47,7 +47,7 @@ get_sibship_info <- function(sib.dat,
 ##'   and the number of sibs the respondent reported on the frame, including and not including herself
 ##' @examples
 ##'   # TODO write example code
-##'   @export
+##' @export
 get_visibility <- function(ego.dat,
                            ego.id,
                            sib.dat,
@@ -167,7 +167,7 @@ get_visibility <- function(ego.dat,
 
 ##' get_ego_age_distribution
 ##'
-##' @param ego_dat the ego dataset (probably from [siblingsurvival::prep_dhs_sib_histories])
+##' @param ego.dat the ego dataset (probably from [siblingsurvival::prep_dhs_sib_histories])
 ##' @param only_females should only females be used to calculate age distribution? (default: True)
 ##'
 ##' @return dataframe with distribution of respondent ages by 5-year category,
@@ -260,11 +260,11 @@ add_esc_ind_vis <- function(esc.dat,
 
 ##' given a sib dataset, calculate individual visibility weight for each sib
 ##'
-##' @param sib.dat Dataset on sibling reports (possibly by cell)
-##' @param sib.frame.indicator String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population
-##' @param num.sib.son.frame.var String with the name of the column in \code{sib.dat} containing indicator for whether or not each sib is in the frame population
+##' @param df Dataset on sibling reports (possibly by cell)
+##' @param sib.frame.indicator String with the name of the column in \code{df} containing a 0/1 coded variable indicating whether or not each sib is in the frame population
+##' @param num.sibs.on.frame.var String with the name of the column in \code{df} containing the number of sibs on the frame for each ego
 ##' @param varname String with the name of the new column to create with the individual visibility of each sib
-##' @return \code{sib.dat} with a new column that has the individual visibility of each sibling
+##' @return \code{df} with a new column that has the individual visibility of each sibling
 calculate_sib_ind_visibility <- function(df,
                                          sib.frame.indicator='.sib.in.F',
                                          num.sibs.on.frame.var='y.F',

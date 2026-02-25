@@ -87,7 +87,7 @@ will be returned.)\cr
 
 \itemize{
 \item{should follow the se / nse pattern in, eg, the kp functions;
-interim workaround -- eg as.data.frame(df)\link{,idvar} -- for now}
+interim workaround -- eg \code{as.data.frame(df)[,idvar]} -- for now}
 \item{for now, this converts any factors into characters.
 this is obviously not ideal. eventually, data type should be
 preserved...}

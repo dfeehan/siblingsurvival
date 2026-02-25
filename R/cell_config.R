@@ -8,8 +8,8 @@
 ##' @param event the column name with the time of the event (e.g. date of death)
 ##' @param age.offset the column name with each sibling's offset for age (typically the date of birth)
 ##' @param time.offset the column name with each sibling's offset for time (often the date of the survey interview)
-##' @param covars [optional] vector with names of columns that have covariates
-##' @param event.name [optional] name of the event (useful for maternal mortality)
+##' @param covars (optional) vector with names of columns that have covariates
+##' @param event.name (optional) name of the event (useful for maternal mortality)
 ##' @param exp.scale defaults to 1/12; see Details
 ##' @return A \code{cell_config} object that can be passed into estimation functions to describe
 ##' the cells that estimates should be produced for.
@@ -116,7 +116,7 @@ cell_config <- function(age.groups,
 ##'
 ##' @param min.age the first age
 ##' @param max.age the highest age
-##' @param width the width of each group
+##' @param aw the width of each group
 ##' @return see make.age.groups
 agenames <- function(aw, min.age, max.age) {
 

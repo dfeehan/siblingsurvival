@@ -7,11 +7,11 @@
 agenames(aw, min.age, max.age)
 }
 \arguments{
+\item{aw}{the width of each group}
+
 \item{min.age}{the first age}
 
 \item{max.age}{the highest age}
-
-\item{width}{the width of each group}
 }
 \value{
 see make.age.groups

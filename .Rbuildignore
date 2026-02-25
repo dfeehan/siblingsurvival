@@ -7,3 +7,8 @@
 ^doc$
 ^Meta$
 ^\.github$
+^\.claude$
+^TODO-dev\.md$
+^scratch$
+^scratch-dev\.Rmd$
+^scratch-dev\.nb\.html$

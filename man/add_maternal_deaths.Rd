@@ -7,11 +7,11 @@
 add_maternal_deaths(sib_df, keep_missing = FALSE, verbose = TRUE)
 }
 \arguments{
+\item{sib_df}{the prepped DHS dataset (probably from \link{prep_dhs_sib_histories})}
+
 \item{keep_missing}{should we keep reported sibs that are missing sex or survival status?}
 
 \item{verbose}{report detailed summaries?}
-
-\item{df}{the prepped DHS dataset (probably from \link{prep_dhs_sib_histories})}
 }
 \value{
 a dataframe with columns \code{sib.preg_related.death.date} and \code{sib.maternal.death.date} added

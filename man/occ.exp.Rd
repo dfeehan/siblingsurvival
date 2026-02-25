@@ -94,7 +94,7 @@ from the DHS surveys, but it should work for any interval scale
 }
 }
 \examples{
-
+\dontrun{
   ## THESE EXAMPLES ARE NOT UPDATED!
   ## Please disregard for the time being...
 
@@ -133,5 +133,6 @@ from the DHS surveys, but it should work for any interval scale
 
   ## TODO -- need to write this example using new
   ##         version
+}
 
 }

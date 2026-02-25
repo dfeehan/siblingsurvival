@@ -1,9 +1,10 @@
 ##' calculate summary statistics for siblings in a given time window
 ##'
-##' @param sib.dat The long-form sibling dataset (likely produced by \link{\code{prep_dhs_sib_histories}})
+##' @param sib.dat The long-form sibling dataset (likely produced by [prep_dhs_sib_histories])
 ##' @param ego.id  String with the name of the column in \code{sib.dat} containing the survey respondent ID
 ##' @param sib.id  String with the name of the column of \code{sib.dat} that has the sibling ID
 ##' @param sib.frame.indicator String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population
+##' @param cell.config An object containing the configuration of cells; see \code{\link{cell_config}} for more information
 ##' @return A one-row tibble with two columns: \code{num_sibs} has the number of sibs who contribute exposure in the time window; and \code{num_deaths}, the number of reported sibling deaths in the time window
 sibling_summ <- function(sib.dat,
                          # the name of the id of the ego in the sibling histories

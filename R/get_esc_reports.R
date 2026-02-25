@@ -32,9 +32,9 @@ get_esc_reports <- function(sib.dat,
                          end.obs=cell.config$end.obs,
                          event=cell.config$event,
                          age.groups=cell.config$age.groups,
-                         age.offset=cell.config$age.offset,
+                         age.offsets=cell.config$age.offset,
                          time.periods=cell.config$time.periods,
-                         time.offset=cell.config$time.offset,
+                         time.offsets=cell.config$time.offset,
                          weights='.const_weight',
                          exp.scale=cell.config$exp.scale)
 

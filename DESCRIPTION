@@ -10,17 +10,21 @@ Description: Tools for working with sibling history data
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-Suggests: 
+Suggests:
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    tibble,
+    surveybootstrap,
+    tictoc,
+    tidyverse
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
-LinkingTo: 
+RoxygenNote: 7.3.3
+LinkingTo:
     Rcpp
-Imports: 
-    Rcpp, tidyverse, glue, magrittr, dplyr, rlang, plyr, stringr, tidyr
+Imports:
+    Rcpp, glue, dplyr, rlang, plyr, stringr, tidyr, purrr, forcats, tidyselect
 Depends: 
     R (>= 2.10)
 Config/testthat/edition: 3

@@ -30,7 +30,7 @@
 ##' }
 ##'
 ##' @examples
-##'
+##' \dontrun{
 ##'   ## THESE EXAMPLES ARE NOT UPDATED!
 ##'   ## Please disregard for the time being...
 ##'
@@ -69,6 +69,7 @@
 ##'
 ##'   ## TODO -- need to write this example using new
 ##'   ##         version
+##' }
 ##'
 ##' @param data the dataset containing events
 ##' @param start.obs vector of values (one per row of \code{data}) with the starting point

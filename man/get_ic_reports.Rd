@@ -15,7 +15,7 @@ get_ic_reports(
 )
 }
 \arguments{
-\item{esc.dat}{The ego X sibling X cell dataset (see \link{\code{get_esc_reports}})}
+\item{esc.dat}{The ego X sibling X cell dataset (see \link{get_esc_reports})}
 
 \item{ego.dat}{The ego dataset, containing one row for each survey respondent}
 
@@ -33,7 +33,7 @@ get_ic_reports(
 A tibble with a row for each reported sibling in the frame population, the sibling's cell info,
 the cell info of the survey respondent who reported each sibling, and unified variables with the ego and sibs'
 cell values; these unified variables are called \code{.ego.cell} and \code{.sib.cell}, and are used in
-\link{\code{sib_ic_checks}}.
+\link{sib_ic_checks}.
 }
 \description{
 get a dataset with reports used for internal-consistency checks
@@ -42,7 +42,7 @@ get a dataset with reports used for internal-consistency checks
 
 The \code{sib.cell.vars} and \code{ego.cell.vars} arguments should have a vector with Strings containing the names of
 columns in \code{esc.dat} identifying the cells to group reports by (typically age and sex, and possibly other variables).
-Note that, unlike the \code{cell.vars} argument in \link{\code{get_ec_reports}}, for this function \code{sib.cell.vars} and
+Note that, unlike the \code{cell.vars} argument in \link{get_ec_reports}, for this function \code{sib.cell.vars} and
 \code{ego.cell.vars} MUST have the age variable listed FIRST.
 The goal of \code{get_ic_reports} is to find the cell that each sibling was in at the time of the interview, meaning the oldest age group to which the
 sibling contributed any exposure.

@@ -494,7 +494,7 @@ get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE) {
 
 ##' take a prepared DHS sibling dataset and add maternal death info
 ##'
-##' @param df the prepped DHS dataset (probably from [siblingsurvival::prep_dhs_sib_histories])
+##' @param sib_df the prepped DHS dataset (probably from [siblingsurvival::prep_dhs_sib_histories])
 ##' @param keep_missing should we keep reported sibs that are missing sex or survival status?
 ##' @param verbose report detailed summaries?
 ##' @return a dataframe with columns `sib.preg_related.death.date` and `sib.maternal.death.date` added

@@ -27,10 +27,11 @@ get_visibility(
 \item{age}{string with the name of the column in \code{ego.dat} containing the age group. Defaults to \code{age.cat}}
 }
 \value{
-A list with two entries:
+A list with three entries:
 \itemize{
-\item \code{ego_vis_agg} - a tibble with summarized adjustment factors
 \item \code{ego_vis} - a tibble with one row per ego and the ego-specific visibilities
+\item \code{ego_vis_agg} - a tibble with summarized adjustment factors
+\item \code{sib_res} - a tibble with one row per reported sibling, along with
 tibble with a row for each survey respondent (each unique value of \code{ego.id}),
 and the number of sibs the respondent reported on the frame, including and not including herself
 }
