@@ -428,7 +428,7 @@ bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu
 #> dplyr::select(data, !!!enquos(x)) # Splice list of quosures
 #> This warning is displayed once every 8 hours.
 toc()
-#> running bootstrap: 0.793 sec elapsed
+#> running bootstrap: 0.784 sec elapsed
 ```
 
 The result, `bootweights`, is a dataframe that has a row for each survey
@@ -465,7 +465,7 @@ ex_boot_ests <- sibling_estimator(sib.dat = ex.sib,
                                   return.boot=TRUE,                # when TRUE, return all of the resampled estimates (not just summaries)
                                   weights='wwgt')
 toc()
-#> calculating estimates with bootstrap: 5.261 sec elapsed
+#> calculating estimates with bootstrap: 3.91 sec elapsed
 ```
 
 Finally, let’s plot the estimated death rates along with their sampling

@@ -32,6 +32,32 @@
 
 ### Bug fixes
 
+- Fixed a grouping bug in
+  [`sibling_estimator()`](http://dennisfeehan.org/siblingsurvival/reference/sibling_estimator.md)
+  that caused an error (`Column '.ego.id' doesn't exist`) when using
+  dplyr \< 1.1.0. The `summarise(across(...))` calls introduced in the
+  dplyr 1.0 migration were missing `.groups = "drop"`, so the result
+  remained grouped by `.ego.id`. This residual grouping propagated
+  through `pivot_wider` and
+  [`purrr::map_dfr`](https://purrr.tidyverse.org/reference/map_dfr.html)
+  into
+  [`get_ec_reports()`](http://dennisfeehan.org/siblingsurvival/reference/get_ec_reports.md),
+  where a subsequent `group_by(across(all_of(...)))` failed because
+  dplyr 1.0.x evaluates
+  [`across()`](https://dplyr.tidyverse.org/reference/across.html) in a
+  mutate context that cannot select already-active grouping variables.
+  Fixed by adding `.groups = "drop"` to the `summarise` in
+  [`occ.exp()`](http://dennisfeehan.org/siblingsurvival/reference/occ.exp.md)
+  and
+  [`get_ec_reports()`](http://dennisfeehan.org/siblingsurvival/reference/get_ec_reports.md),
+  and adding a defensive
+  [`ungroup()`](https://dplyr.tidyverse.org/reference/group_by.html)
+  before the `group_by` in
+  [`get_ec_reports()`](http://dennisfeehan.org/siblingsurvival/reference/get_ec_reports.md).
+  The bug was most visible when calling
+  [`sibling_estimator()`](http://dennisfeehan.org/siblingsurvival/reference/sibling_estimator.md)
+  inside
+  [`purrr::imap_dfr()`](https://purrr.tidyverse.org/reference/map_dfr.html).
 - Fixed
   [`aggregate_maternal_estimates()`](http://dennisfeehan.org/siblingsurvival/reference/aggregate_maternal_estimates.md),
   which was accidentally referencing package-level example objects
@@ -52,6 +78,11 @@
 
 ### Tests
 
+- Added regression tests for the grouping bug:
+  [`sibling_estimator()`](http://dennisfeehan.org/siblingsurvival/reference/sibling_estimator.md)
+  returns ungrouped data frames, works correctly when called via
+  [`purrr::imap_dfr()`](https://purrr.tidyverse.org/reference/map_dfr.html),
+  and handles column names containing dots (e.g. `ego.id`, `sib.id`).
 - Added `tests/testthat/test_maternal.R` with tests covering
   [`add_maternal_deaths()`](http://dennisfeehan.org/siblingsurvival/reference/add_maternal_deaths.md),
   [`get_ego_age_distn()`](http://dennisfeehan.org/siblingsurvival/reference/get_ego_age_distn.md),
