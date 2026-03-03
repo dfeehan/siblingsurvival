@@ -56,6 +56,7 @@ get_ec_reports <- function(esc.dat,
   ##
   ## TODO - eventually add yprime quantities?
   res <- esc.dat.with.indviswgt %>%
+    ungroup() %>%
     group_by(across(all_of(c('.ego.id', cell.vars)))) %>%
     summarize(# this should be constant within respondents (.ego.id)
               y.F = y.F[1],
@@ -65,7 +66,8 @@ get_ec_reports <- function(esc.dat,
               y.NandFcell = sum(.sib.in.F * sib.exp),
               # for individual vis (use individual vis weights)
               y.Dcell.ind = sum(sib.occ*ind_vis),
-              y.Ncell.ind = sum(sib.exp*ind_vis)
+              y.Ncell.ind = sum(sib.exp*ind_vis),
+              .groups = "drop"
               ) %>%
     mutate(y.NandnotFcell = y.Ncell - y.NandFcell)
 

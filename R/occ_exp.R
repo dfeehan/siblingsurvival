@@ -238,7 +238,8 @@ occ.exp <- function(data,
                                          res.qty.agg <- res.qty %>%
                                            group_by(across(all_of(gpvars))) %>%
                                            summarise(across(starts_with("agegroup"),
-                                                            ~ weighted.sum(.x, .weight)))
+                                                            ~ weighted.sum(.x, .weight)),
+                                                     .groups = "drop")
 
                                          res.qty.agg <- res.qty.agg %>%
                                            tidyr::pivot_longer(cols = tidyselect::starts_with("agegroup"),

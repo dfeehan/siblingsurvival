@@ -18,6 +18,18 @@
 
 ## Bug fixes
 
+* Fixed a grouping bug in `sibling_estimator()` that caused an error
+  (`Column '.ego.id' doesn't exist`) when using dplyr < 1.1.0. The
+  `summarise(across(...))` calls introduced in the dplyr 1.0 migration were
+  missing `.groups = "drop"`, so the result remained grouped by `.ego.id`.
+  This residual grouping propagated through `pivot_wider` and `purrr::map_dfr`
+  into `get_ec_reports()`, where a subsequent `group_by(across(all_of(...)))`
+  failed because dplyr 1.0.x evaluates `across()` in a mutate context that
+  cannot select already-active grouping variables. Fixed by adding
+  `.groups = "drop"` to the `summarise` in `occ.exp()` and `get_ec_reports()`,
+  and adding a defensive `ungroup()` before the `group_by` in
+  `get_ec_reports()`. The bug was most visible when calling
+  `sibling_estimator()` inside `purrr::imap_dfr()`.
 * Fixed `aggregate_maternal_estimates()`, which was accidentally referencing
   package-level example objects (`ex.ego`, `ex.sib`) instead of the `ego.dat`
   and `sib.dat` arguments passed by the caller.
@@ -29,6 +41,9 @@
 
 ## Tests
 
+* Added regression tests for the grouping bug: `sibling_estimator()` returns
+  ungrouped data frames, works correctly when called via `purrr::imap_dfr()`,
+  and handles column names containing dots (e.g. `ego.id`, `sib.id`).
 * Added `tests/testthat/test_maternal.R` with tests covering
   `add_maternal_deaths()`, `get_ego_age_distn()`, and
   `aggregate_maternal_estimates()` (including bootstrap paths).

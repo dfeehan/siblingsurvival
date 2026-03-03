@@ -205,3 +205,85 @@ test_that("sibling_estimator: ind and agg agree when all egos have equal y.F", {
   row_ind <- res$asdr.ind %>% filter(sib.age == "[45,50)")
   expect_equal(row_agg$asdr.hat, row_ind$asdr.hat, tolerance = 1e-10)
 })
+
+# ---------------------------------------------------------------------------
+# Test 6: sibling_estimator returns ungrouped results
+# (regression: summarise(across(...)) without .groups="drop" left .ego.id
+#  as an active grouping variable, causing group_by(across(all_of(...)))
+#  to fail in dplyr < 1.1.0 with "Column `.ego.id` doesn't exist")
+# ---------------------------------------------------------------------------
+test_that("sibling_estimator returns ungrouped data frames", {
+  res <- sibling_estimator(
+    sib.dat             = make_four_ego_sib_dat(),
+    ego.id              = "ego_id",
+    sib.id              = "sib_id",
+    sib.frame.indicator = "sib_in_frame",
+    sib.sex             = "sex",
+    cell.config         = make_test_cell_config(),
+    weights             = "weight"
+  )
+
+  expect_false(dplyr::is.grouped_df(res$asdr.agg))
+  expect_false(dplyr::is.grouped_df(res$asdr.ind))
+  expect_false(dplyr::is.grouped_df(res$ec.dat))
+  expect_false(dplyr::is.grouped_df(res$esc.dat))
+})
+
+# ---------------------------------------------------------------------------
+# Test 7: sibling_estimator works when called via purrr::imap_dfr
+# (regression: residual .ego.id grouping from occ.exp caused the second
+#  call in a loop to fail in dplyr < 1.1.0)
+# ---------------------------------------------------------------------------
+test_that("sibling_estimator works correctly when called via purrr::imap_dfr", {
+  cc <- make_test_cell_config()
+
+  city_data <- list(
+    city_a = make_four_ego_sib_dat(),
+    city_b = make_four_ego_sib_dat()
+  )
+
+  result <- purrr::imap_dfr(city_data, function(dat, city_name) {
+    ests <- sibling_estimator(
+      sib.dat             = dat,
+      ego.id              = "ego_id",
+      sib.id              = "sib_id",
+      sib.frame.indicator = "sib_in_frame",
+      sib.sex             = "sex",
+      cell.config         = cc,
+      weights             = "weight"
+    )
+    agg <- ests$asdr.agg
+    agg$city <- city_name
+    agg
+  })
+
+  city_a <- result %>% filter(city == "city_a", sib.age == "[45,50)")
+  city_b <- result %>% filter(city == "city_b", sib.age == "[45,50)")
+  expect_equal(city_a$asdr.hat, 36/350, tolerance = 1e-10)
+  expect_equal(city_a$asdr.hat, city_b$asdr.hat)
+})
+
+# ---------------------------------------------------------------------------
+# Test 8: sibling_estimator works with dotted column names
+# (regression: ego.id = "ego.id" caused internal .ego.id column to shadow
+#  the user's column in some rename paths)
+# ---------------------------------------------------------------------------
+test_that("sibling_estimator works with column names containing dots", {
+  dat <- make_four_ego_sib_dat() %>%
+    dplyr::rename(ego.id = ego_id,
+                  sib.id = sib_id,
+                  in.F   = sib_in_frame)
+
+  res <- sibling_estimator(
+    sib.dat             = dat,
+    ego.id              = "ego.id",
+    sib.id              = "sib.id",
+    sib.frame.indicator = "in.F",
+    sib.sex             = "sex",
+    cell.config         = make_test_cell_config(),
+    weights             = "weight"
+  )
+
+  row <- res$asdr.agg %>% filter(sib.age == "[45,50)")
+  expect_equal(row$asdr.hat, 36/350, tolerance = 1e-10)
+})
