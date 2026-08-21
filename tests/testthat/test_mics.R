@@ -347,10 +347,11 @@ test_that("summ reports miss.dob and miss.wgt", {
   expect_equal(r$summ$miss.wgt, 0)
 })
 
-test_that("an impossible derived date of birth warns", {
-  # a respondent under 50 cannot have a sibling who died 58 years ago; the
-  # arithmetic propagates the contradiction to a birth date before CMC 0.
-  # Bhutan 2010 has two such siblings.
+test_that("an implausible implied age warns", {
+  # A sibling dying before the respondent was born is perfectly possible and is
+  # NOT what this flags. What it flags is an implied age no human reaches, which
+  # means years-since-death and age-at-death are jointly inconsistent. Bhutan
+  # 2010 has a sibling reported as dying 58 years ago at age 58.
   mm <- make_mics6_mm()
   mm$MM18[!is.na(mm$MM18)][1] <- 120L         # died 120 years ago
   mm$MM19[!is.na(mm$MM19)][1] <- 60L
@@ -358,5 +359,5 @@ test_that("an impossible derived date of birth warns", {
   expect_warning(
     prep_mics_sib_histories(mm, survey = "T", varmap = make_mics6_varmap(),
                             verbose = FALSE),
-    "before CMC 0")
+    "implied age at interview")
 })

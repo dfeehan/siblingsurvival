@@ -179,9 +179,12 @@ country-specific data quirks worth knowing about:
 
 * **São Tomé and Príncipe 2014** has one respondent with no sampling weight, and
   names its weight column `WMWEIGHT` rather than `wmweight`.
-* **Bhutan 2010** contains two siblings reported as having died longer ago than
-  the respondent has been alive, which propagates to a birth date before 1900.
-  The prep warns rather than silently carrying it.
+* **Bhutan 2010** contains two siblings whose reported years-since-death and age
+  at death are jointly inconsistent -- one died 58 years ago at age 58, implying
+  a birth 116 years before the interview. The prep warns rather than silently
+  carrying it. Note this is *not* a check on whether a sibling died before the
+  respondent was born, which is perfectly possible and not rare where fertility
+  is high and sibships are long.
 
 Two conventions that MICS documents do not state were settled by this exercise.
 

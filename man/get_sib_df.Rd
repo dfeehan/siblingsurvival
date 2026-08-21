@@ -4,7 +4,13 @@
 \alias{get_sib_df}
 \title{helper to prep the sib dataset}
 \usage{
-get_sib_df(ego.dat, sib.attrib, verbose = FALSE, reshape = TRUE)
+get_sib_df(
+  ego.dat,
+  sib.attrib,
+  verbose = FALSE,
+  reshape = TRUE,
+  max.plausible.age = 110
+)
 }
 \arguments{
 \item{ego.dat}{the prepped ego dataset}
@@ -16,6 +22,12 @@ get_sib_df(ego.dat, sib.attrib, verbose = FALSE, reshape = TRUE)
 \item{reshape}{is \code{ego.dat} wide, with one column per sibling attribute per
 sibling (TRUE, the DHS layout), or already one row per reported
 sibling (FALSE, the MICS \code{mm.sav} layout)?}
+
+\item{max.plausible.age}{warn about siblings whose derived date of birth
+implies they would be older than this at the date of interview. Such
+rows mean the reported years-since-death and age at death are
+jointly inconsistent. Note this is \emph{not} a check on whether a sibling
+died before the respondent was born, which is perfectly possible}
 }
 \value{
 a prepped sibling dataset, used in \link{prep_dhs_sib_histories}

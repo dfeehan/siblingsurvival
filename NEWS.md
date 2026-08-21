@@ -121,11 +121,13 @@
   missing sex or survival status, and counted in `summ$miss.wgt`. Like a missing
   date of birth, a single `NA` weight turns an entire estimate cell into `NA`.
   Found in São Tomé and Príncipe 2014, which has one such respondent.
-* `get_sib_df()` now warns when a derived date of birth falls at or before CMC 0
-  (January 1900), which cannot be right and in practice means a sibling was
-  reported as dying before the respondent was born. Found in Bhutan 2010, which
-  has two siblings reported as dying longer ago than the respondent has been
-  alive.
+* `get_sib_df()` now warns when a derived date of birth implies the sibling
+  would be older than `max.plausible.age` (default 110) at the date of
+  interview, which means the reported years-since-death and age at death are
+  jointly inconsistent. Found in Bhutan 2010, which has a sibling reported as
+  dying 58 years ago at age 58. Note this is deliberately *not* a check on
+  whether a sibling died before the respondent was born: that is perfectly
+  possible, and not rare where fertility is high and sibships are long.
 * Sibling reports with no usable date of birth are now dropped along with those
   missing sex or survival status, and counted in `summ$miss.dob`. They cannot be
   placed in an age group, so they contribute neither exposure nor events -- but

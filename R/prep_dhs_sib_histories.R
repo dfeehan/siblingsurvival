@@ -318,9 +318,15 @@ get_ego_df <- function(df, resp.attrib, verbose=FALSE, weight.scale=1e6) {
 ##' @param reshape is `ego.dat` wide, with one column per sibling attribute per
 ##'        sibling (TRUE, the DHS layout), or already one row per reported
 ##'        sibling (FALSE, the MICS `mm.sav` layout)?
+##' @param max.plausible.age warn about siblings whose derived date of birth
+##'        implies they would be older than this at the date of interview. Such
+##'        rows mean the reported years-since-death and age at death are
+##'        jointly inconsistent. Note this is *not* a check on whether a sibling
+##'        died before the respondent was born, which is perfectly possible
 ##' @return a prepped sibling dataset, used in [siblingsurvival::prep_dhs_sib_histories]
 ##'
-get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE, reshape=TRUE) {
+get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE, reshape=TRUE,
+                       max.plausible.age=110) {
 
   ## these ego columns are carried onto every sibling row
   required.ego <- c('caseid', 'wwgt', 'psu', 'doi', 'sex')
@@ -447,20 +453,28 @@ get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE, reshape=TRUE) {
                                                               sib.death.age),
                                TRUE ~ sib.dob))
 
-  ## Sanity-check the derived dates. A birth date at or before CMC 0 (January
-  ## 1900) cannot be right, and in practice signals a sibling reported as having
-  ## died before the respondent was born -- eg a respondent under 50 reporting a
-  ## sibling who died 58 years ago. The arithmetic faithfully propagates the
-  ## contradiction, so flag it rather than silently carrying it.
-  n.impossible <- sum(sib.dat$sib.dob <= 0, na.rm=TRUE)
+  ## Sanity-check the derived dates by the implied age of the sibling at the
+  ## date of interview.
+  ##
+  ## Note that a sibling dying *before the respondent was born* is perfectly
+  ## possible, and not rare where fertility is high and sibships are long --
+  ## that is not what this flags. What it flags is an implied age no human
+  ## reaches, which means the reported years-since-death and age-at-death are
+  ## jointly inconsistent. Eg Bhutan 2010 has a sibling reported as dying 58
+  ## years ago at age 58, implying a birth 116 years before the interview.
+  ##
+  ## They are kept, not dropped: the exposure they contribute lands outside any
+  ## reproductive age group anyway, and silently discarding reported data is
+  ## worse than flagging it.
+  implied.age <- (sib.dat$doi - sib.dat$sib.dob) / 12
+  n.implausible <- sum(implied.age > max.plausible.age, na.rm=TRUE)
 
-  if (n.impossible > 0) {
+  if (n.implausible > 0) {
     warning(glue::glue(
-      "{n.impossible} sibling(s) have a date of birth at or before CMC 0 ",
-      "(January 1900), which is not possible. This usually means the reported ",
-      "years-since-death or age at death is inconsistent with the ",
-      "respondent's own age. They are retained; inspect them with ",
-      "`subset(sib.dat, sib.dob <= 0)`."))
+      "{n.implausible} sibling(s) have an implied age at interview over ",
+      "{max.plausible.age} years, which means the reported years-since-death ",
+      "and age at death are jointly inconsistent. They are retained; inspect ",
+      "them with `subset(sib.dat, (doi - sib.dob)/12 > {max.plausible.age})`."))
   }
 
   ## make the assumption that
