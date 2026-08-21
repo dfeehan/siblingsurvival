@@ -722,6 +722,35 @@ survival status (keeping them gives 0.9974). Not chased further.
 > headline of 462, whereas Iraq's SE table agrees with its TM.9.3. Treat
 > Zimbabwe's TM.9.1/TM.9.3 as unreliable rather than chasing them further.
 >
+> ### Why Iraq's exposure is not *exactly* equal
+>
+> The residual is 0.013% for females and 0.069% for males — small, but the male
+> figure is five times the female one and every male age group is short, which is
+> the signature of dropped siblings rather than noise.
+>
+> It is entirely about **siblings whose survival status is unknown**. Iraq has
+> **81 male** such siblings against **21 female** — respondents evidently know
+> less about brothers — and `prep_*_sib_histories()` drops them by default, so
+> their exposure never enters the denominator.
+>
+> | | female exposure | male exposure |
+> |---|---|---|
+> | `keep_missing = FALSE` (default) | 471,232 (**−62**) | 485,061 (**−337**) |
+> | `keep_missing = TRUE` | 471,342 (**+48**) | 485,495 (**+97**) |
+> | **published** | **471,294** | **485,398** |
+>
+> **The published value sits between the two.** So MICS neither drops these
+> siblings nor carries them to the interview date — it censors them somewhere in
+> between, or drops the subset whose age is also unknown. Deaths are unaffected
+> either way (574 / 1,158 under both settings), since a sibling with unknown
+> survival status contributes no death.
+>
+> The whole spread is under 0.1% of exposure, so this is a rounding-level
+> convention rather than a substantive one, and it does not affect any rate to
+> two decimal places. Worth knowing rather than fixing: exactly reproducing it
+> would mean guessing MICS's censoring rule. Note it is *not* what ails Zimbabwe
+> — there `keep_missing = TRUE` still leaves exposure at 0.9974 of published.
+>
 > **Consequence for the package:** `add_maternal_deaths(style = "mics6")` should
 > produce both columns, but any comparison against published MICS figures must
 > use `sib.preg_related.death.date`, not `sib.maternal.death.date`. Worth stating
