@@ -21,7 +21,7 @@
 ##' @section Details:
 ##' Unless `keep_missing = TRUE`, three kinds of sibling report are dropped:
 ##' those with unknown survival status, those with unknown sex, and those with
-##' no usable date of birth. The last cannot be placed in an age group, so they
+##' no usable date of birth or no sampling weight. The last cannot be placed in an age group, so they
 ##' contribute neither exposure nor events -- and left in, a single one turns an
 ##' entire exposure cell into `NA`, since the estimator sums over the cell.
 ##'
@@ -64,6 +64,18 @@ finalize_sib_prep <- function(ego.dat,
   }
   miss.dob.pct <- 100 * miss.dob / nrow(sib.dat)
 
+  ## CALCULATE % of siblings whose respondent has no sampling weight.
+  ##
+  ## Same hazard as a missing date of birth: these cannot contribute to a
+  ## weighted estimate, and a single one turns a whole cell into NA. Rare, but
+  ## real -- one respondent in Sao Tome and Principe 2014 has no weight.
+  if ('wwgt' %in% names(sib.dat)) {
+    miss.wgt <- sum(is.na(sib.dat$wwgt))
+  } else {
+    miss.wgt <- 0
+  }
+  miss.wgt.pct <- 100 * miss.wgt / nrow(sib.dat)
+
   if(verbose) {
 
     cat(paste0(miss.alive, " out of ", n.sib.raw, " (", round(miss.alive.pct,2), "%)",
@@ -76,6 +88,11 @@ finalize_sib_prep <- function(ego.dat,
       cat(paste0(miss.dob, " out of ", n.sib.raw, " (", round(miss.dob.pct,2), "%)",
                  " reports about sibs have no usable date of birth",
                  " (no reported age and no date to derive one from).\n"))
+    }
+
+    if (miss.wgt > 0) {
+      cat(paste0(miss.wgt, " out of ", n.sib.raw, " (", round(miss.wgt.pct,2), "%)",
+                 " reports about sibs come from a respondent with no sampling weight.\n"))
     }
   }
 
@@ -91,9 +108,14 @@ finalize_sib_prep <- function(ego.dat,
       filter(sib.alive %in% c(0,1)) %>%
       filter(sib.sex %in% c('f', 'm'))
 
-    ## drop siblings that cannot be placed in an age group; see above
+    ## drop siblings that cannot be placed in an age group, or that carry no
+    ## sampling weight; see above
     if ('sib.dob' %in% names(sib.dat)) {
       sib.dat <- sib.dat %>% filter(! is.na(sib.dob))
+    }
+
+    if ('wwgt' %in% names(sib.dat)) {
+      sib.dat <- sib.dat %>% filter(! is.na(wwgt))
     }
     post.n <- nrow(sib.dat)
     sibs.removed.n <- pre.n - post.n
@@ -117,6 +139,8 @@ finalize_sib_prep <- function(ego.dat,
                  miss.sex.pct = miss.sex.pct,
                  miss.dob = miss.dob,
                  miss.dob.pct = miss.dob.pct,
+                 miss.wgt = miss.wgt,
+                 miss.wgt.pct = miss.wgt.pct,
                  sibs.removed = sibs.removed.n,
                  sibs.removed.pct = sibs.removed.pct,
                  ego.cols.notfound = list(miss_col$ego),

@@ -316,3 +316,47 @@ test_that("prep_mics_sib_histories: DK current age does not survive as 99", {
                                verbose = FALSE)
   expect_false(any(r$sib.dat$sib.age %in% c(98, 99), na.rm = TRUE))
 })
+
+# =====================================================================
+# Rows that cannot contribute to a weighted estimate
+# =====================================================================
+
+test_that("prep drops siblings whose respondent has no sampling weight", {
+  # one respondent in Sao Tome and Principe 2014 has a missing weight. Left in,
+  # a single NA weight turns a whole estimate cell into NA, exactly as a missing
+  # date of birth does.
+  mm <- make_mics6_mm_with_cmc()
+  mm$wmweight[mm$HH2 == 3] <- NA_real_        # respondent 2
+
+  r <- prep_mics_sib_histories(mm, survey = "T", varmap = make_mics6_varmap_cmc(),
+                               verbose = FALSE)
+
+  expect_equal(r$summ$miss.wgt, 3)            # that respondent has 3 siblings
+  expect_false(any(is.na(r$sib.dat$wwgt)))
+  expect_false("1.3.1" %in% r$sib.dat$caseid)
+})
+
+test_that("summ reports miss.dob and miss.wgt", {
+  r <- prep_mics_sib_histories(make_mics6_mm_with_cmc(), survey = "T",
+                               varmap = make_mics6_varmap_cmc(), verbose = FALSE)
+  expect_true(all(c("miss.dob", "miss.wgt") %in% names(r$summ)))
+  # the MM16 = DK sibling has no age and no dates, so no birth date can be
+  # derived for her. She is dropped for unknown survival status in any case;
+  # the counts are taken before any dropping.
+  expect_equal(r$summ$miss.dob, 1)
+  expect_equal(r$summ$miss.wgt, 0)
+})
+
+test_that("an impossible derived date of birth warns", {
+  # a respondent under 50 cannot have a sibling who died 58 years ago; the
+  # arithmetic propagates the contradiction to a birth date before CMC 0.
+  # Bhutan 2010 has two such siblings.
+  mm <- make_mics6_mm()
+  mm$MM18[!is.na(mm$MM18)][1] <- 120L         # died 120 years ago
+  mm$MM19[!is.na(mm$MM19)][1] <- 60L
+
+  expect_warning(
+    prep_mics_sib_histories(mm, survey = "T", varmap = make_mics6_varmap(),
+                            verbose = FALSE),
+    "before CMC 0")
+})

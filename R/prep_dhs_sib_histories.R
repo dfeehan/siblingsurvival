@@ -447,6 +447,22 @@ get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE, reshape=TRUE) {
                                                               sib.death.age),
                                TRUE ~ sib.dob))
 
+  ## Sanity-check the derived dates. A birth date at or before CMC 0 (January
+  ## 1900) cannot be right, and in practice signals a sibling reported as having
+  ## died before the respondent was born -- eg a respondent under 50 reporting a
+  ## sibling who died 58 years ago. The arithmetic faithfully propagates the
+  ## contradiction, so flag it rather than silently carrying it.
+  n.impossible <- sum(sib.dat$sib.dob <= 0, na.rm=TRUE)
+
+  if (n.impossible > 0) {
+    warning(glue::glue(
+      "{n.impossible} sibling(s) have a date of birth at or before CMC 0 ",
+      "(January 1900), which is not possible. This usually means the reported ",
+      "years-since-death or age at death is inconsistent with the ",
+      "respondent's own age. They are retained; inspect them with ",
+      "`subset(sib.dat, sib.dob <= 0)`."))
+  }
+
   ## make the assumption that
   ##  (1) sibs who died lived all the way through
   ##      the month in which they are reported to have died

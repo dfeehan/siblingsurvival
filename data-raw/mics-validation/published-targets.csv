@@ -121,3 +121,26 @@ MDG2018,TM.9.1,allcause_deaths,m,total,840,deaths,
 MDG2018,TM.9.3,maternal_deaths,f,total,137,deaths,printed column is PREGNANCY-RELATED; ours 140.4 = ratio 1.025
 MDG2018,TM.9.3,pm,f,age_adjusted,22.1,percent,ours 22.8
 MDG2018,TM.9.3,maternal_rate,f,age_adjusted,0.65,per 1000 woman-years,ours 0.67
+ZW2014,RH.18,exposure,f,"[15,20)",25223,woman-years,Zimbabwe 2014 is MICS5 and validates the MM5-MM13 varmap
+ZW2014,RH.18,exposure,f,"[20,25)",33600,woman-years,
+ZW2014,RH.18,exposure,f,"[25,30)",35570,woman-years,
+ZW2014,RH.18,exposure,f,"[30,35)",29160,woman-years,
+ZW2014,RH.18,exposure,f,"[35,40)",20171,woman-years,
+ZW2014,RH.18,exposure,f,"[40,45)",12902,woman-years,
+ZW2014,RH.18,exposure,f,"[45,50)",8086,woman-years,
+ZW2014,RH.18,exposure,f,total,164712,woman-years,
+ZW2014,RH.18,exposure,m,total,166665,woman-years,
+ZW2014,RH.18,allcause_deaths,f,"[15,20)",55,deaths,
+ZW2014,RH.18,allcause_deaths,f,"[20,25)",149,deaths,
+ZW2014,RH.18,allcause_deaths,f,"[25,30)",264,deaths,
+ZW2014,RH.18,allcause_deaths,f,"[30,35)",371,deaths,
+ZW2014,RH.18,allcause_deaths,f,"[35,40)",355,deaths,
+ZW2014,RH.18,allcause_deaths,f,"[40,45)",263,deaths,
+ZW2014,RH.18,allcause_deaths,f,"[45,50)",158,deaths,
+ZW2014,RH.18,allcause_deaths,f,total,1615,deaths,PM denominator; 149/1615 = 9.2%
+ZW2014,RH.18,allcause_deaths,m,total,1601,deaths,
+ZW2014,RH.19,q35_15,f,,344,per 1000,ours 345
+ZW2014,RH.19,q35_15,m,,357,per 1000,ours 357
+ZW2014,RH.20A,maternal_deaths,f,total,149,deaths,printed column is PREGNANCY-RELATED; ours 146.3 = ratio 0.982
+ZW2014,RH.20A,pm,f,age_adjusted,9.2,percent,ours 9.0
+ZW2014,RH.20A,maternal_rate,f,age_adjusted,0.86,per 1000 woman-years,MICS5 estimand is pregnancy-related, 2-month window, no cause exclusion

@@ -48,7 +48,7 @@ drift apart.
 
 Unless \code{keep_missing = TRUE}, three kinds of sibling report are dropped:
 those with unknown survival status, those with unknown sex, and those with
-no usable date of birth. The last cannot be placed in an age group, so they
+no usable date of birth or no sampling weight. The last cannot be placed in an age group, so they
 contribute neither exposure nor events -- and left in, a single one turns an
 entire exposure cell into \code{NA}, since the estimator sums over the cell.
 }

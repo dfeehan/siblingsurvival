@@ -148,21 +148,40 @@ differ; that difference is the point of the method, not an error.
 
 Ratios of our estimate to the published figure:
 
-| | Iraq 2018 | Madagascar 2018 | Zimbabwe 2019 |
-|---|---|---|---|
-| Female exposure | 1.0000 | 1.0003 | 0.997 |
-| Male exposure | 0.9993 | 1.0003 | 0.999 |
-| Female all-cause deaths | 1.0007 | 0.9994 | 0.987 |
-| Male all-cause deaths | 0.9996 | 1.0003 | 1.002 |
-| Pregnancy-related deaths | 1.008 | 1.025 | 0.923 |
-| $_{35}q_{15}$, women / men | 49.5 / 85.8 vs 49 / 86 | --- | 222.7 / 218.5 vs 224 / 219 |
+| | Iraq 2018 | Madagascar 2018 | Zimbabwe 2014 | Zimbabwe 2019 |
+|---|---|---|---|---|
+| Round | MICS6 | MICS6 | **MICS5** | MICS6 |
+| Female exposure | 1.0000 | 1.0003 | 0.9995 | 0.997 |
+| Male exposure | 0.9993 | 1.0003 | 0.9994 | 0.999 |
+| Female all-cause deaths | 1.0007 | 0.9994 | 1.0037 | 0.987 |
+| Male all-cause deaths | 0.9996 | 1.0003 | 1.0015 | 1.002 |
+| Pregnancy-related deaths | 1.008 | 1.025 | 0.982 | 0.923 |
+| $_{35}q_{15}$ women / men, ours | 49.5 / 85.8 | --- | 345 / 357 | 222.7 / 218.5 |
+| $_{35}q_{15}$ women / men, published | 49 / 86 | --- | 344 / 357 | 224 / 219 |
 
-Iraq and Madagascar reproduce essentially exactly. Zimbabwe 2019 does not, and
+Zimbabwe 2014 also validates the MICS4/MICS5 varmap, which uses the other roster
+numbering.
+
+Three of the four reproduce essentially exactly, across both roster schemes and
+three countries. Zimbabwe 2019 does not, and
 it misses on quantities that involve no maternal recode at all, so the problem is
 in that survey's published tables rather than in the estimator. Zimbabwe's report
 is independently known to be internally inconsistent: its sampling-error appendix
 gives a maternal mortality ratio of 413.6 against its own headline figure of 462,
-whereas Iraq's sampling-error table agrees with its main table.
+whereas Iraq's sampling-error table agrees with its main table. Note that
+Zimbabwe *2014* reproduces exactly, so this is specific to the 2019 survey's
+published tables rather than to the country.
+
+All 13 MICS surveys with a sibling roster have been run through the prep. Every
+one completes, produces no `NA` estimates, and gives a plausible
+pregnancy-related rate (0.08 to 1.39 per 1,000 woman-years). Two turned up
+country-specific data quirks worth knowing about:
+
+* **São Tomé and Príncipe 2014** has one respondent with no sampling weight, and
+  names its weight column `WMWEIGHT` rather than `wmweight`.
+* **Bhutan 2010** contains two siblings reported as having died longer ago than
+  the respondent has been alive, which propagates to a birth date before 1900.
+  The prep warns rather than silently carrying it.
 
 Two conventions that MICS documents do not state were settled by this exercise.
 
@@ -206,6 +225,11 @@ published column is called.
 * **The maternal mortality ratio itself.** MMR is the maternal mortality rate
   divided by a general fertility rate computed from the women's birth history --
   a different module this package does not read.
+Rows that cannot contribute to a weighted estimate -- no usable date of birth,
+or no sampling weight -- are dropped and counted in `summ$miss.dob` and
+`summ$miss.wgt`. This matters more than it sounds: a single such row turns an
+entire estimate cell into `NA`, because the estimator sums over the cell.
+
 * **Exposure, to the last person-year.** Siblings whose survival status is
   unknown are dropped by default, and MICS appears to censor rather than drop
   them: published exposure sits between our `keep_missing = FALSE` and
