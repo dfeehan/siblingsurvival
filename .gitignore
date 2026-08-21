@@ -11,3 +11,7 @@ scratch/
 #docs
 /doc/
 /Meta/
+
+# MICS microdata is registration-gated and must not be redistributed.
+# Validation scripts and published targets ARE tracked; the .sav files are not.
+data-raw/mics-data/

@@ -1,0 +1,63 @@
+survey,table,quantity,sex,age_group,value,units,note
+ZW2019,mm.sav,n_rows,,,47835,rows,Zimbabwe 2019 mm.sav; World Bank catalog 4180
+ZW2019,mm.sav,n_vars,,,48,variables,
+ZW2019,DQ.7.1,sib_pct_living,,,82.8,percent,
+ZW2019,DQ.7.1,sib_pct_dead,,,17.1,percent,
+ZW2019,DQ.7.1,sib_pct_missing,,,0.1,percent,
+ZW2019,DQ.7.1,dead_sib_pct_with_age_and_yrsago,,,97.4,percent,
+ZW2019,DQ.7.2,mean_sibship_size,,,4.9,siblings,
+ZW2019,DQ.7.2,sex_ratio_at_birth,,,0.99,ratio,
+ZW2019,TM.9.3,exposure,f,"[15,20)",15313,woman-years,
+ZW2019,TM.9.3,exposure,f,"[20,25)",18198,woman-years,
+ZW2019,TM.9.3,exposure,f,"[25,30)",21240,woman-years,
+ZW2019,TM.9.3,exposure,f,"[30,35)",21434,woman-years,
+ZW2019,TM.9.3,exposure,f,"[35,40)",16044,woman-years,
+ZW2019,TM.9.3,exposure,f,"[40,45)",10479,woman-years,
+ZW2019,TM.9.3,exposure,f,"[45,50)",6277,woman-years,
+ZW2019,TM.9.3,exposure,f,total,108985,woman-years,
+ZW2019,TM.9.3,maternal_deaths,f,"[15,20)",3,deaths,
+ZW2019,TM.9.3,maternal_deaths,f,"[20,25)",10,deaths,
+ZW2019,TM.9.3,maternal_deaths,f,"[25,30)",9,deaths,
+ZW2019,TM.9.3,maternal_deaths,f,"[30,35)",19,deaths,
+ZW2019,TM.9.3,maternal_deaths,f,"[35,40)",15,deaths,
+ZW2019,TM.9.3,maternal_deaths,f,"[40,45)",10,deaths,
+ZW2019,TM.9.3,maternal_deaths,f,"[45,50)",2,deaths,
+ZW2019,TM.9.3,maternal_deaths,f,total,68,deaths,
+ZW2019,TM.9.3,maternal_rate,f,"[15,20)",0.23,per 1000 woman-years,
+ZW2019,TM.9.3,maternal_rate,f,"[20,25)",0.56,per 1000 woman-years,
+ZW2019,TM.9.3,maternal_rate,f,"[25,30)",0.41,per 1000 woman-years,
+ZW2019,TM.9.3,maternal_rate,f,"[30,35)",0.87,per 1000 woman-years,
+ZW2019,TM.9.3,maternal_rate,f,"[35,40)",0.91,per 1000 woman-years,
+ZW2019,TM.9.3,maternal_rate,f,"[40,45)",0.96,per 1000 woman-years,
+ZW2019,TM.9.3,maternal_rate,f,"[45,50)",0.30,per 1000 woman-years,
+ZW2019,TM.9.3,maternal_rate,f,age_adjusted,0.59,per 1000 woman-years,age-standardised; see V5
+ZW2019,TM.9.3,pm,f,"[15,20)",10.0,percent,proportion of female deaths that are maternal
+ZW2019,TM.9.3,pm,f,"[20,25)",20.8,percent,
+ZW2019,TM.9.3,pm,f,"[25,30)",11.3,percent,
+ZW2019,TM.9.3,pm,f,"[30,35)",12.9,percent,
+ZW2019,TM.9.3,pm,f,"[35,40)",9.1,percent,
+ZW2019,TM.9.3,pm,f,"[40,45)",8.4,percent,
+ZW2019,TM.9.3,pm,f,"[45,50)",2.4,percent,
+ZW2019,TM.9.3,pm,f,age_adjusted,10.0,percent,
+ZW2019,TM.9.3,gfr,f,age_adjusted,128,per 1000 woman-years,7-year GFR; needs birth history - out of package scope
+ZW2019,TM.9.3,mmr,f,age_adjusted,462,per 100000 live births,indicator TM.21; out of package scope
+ZW2019,TM.9.3,lifetime_risk,f,,0.019,proportion,out of package scope
+ZW2019,TM.9.2,q35_15,f,,224,per 1000,adult mortality probability
+ZW2019,TM.9.2,q35_15,m,,219,per 1000,
+IQ2018,TM.9.3,maternal_rate,f,age_adjusted,0.13,per 1000 woman-years,
+IQ2018,TM.9.3,gfr,f,age_adjusted,128,per 1000 woman-years,out of package scope
+IQ2018,TM.9.3,mmr,f,age_adjusted,104,per 100000 live births,out of package scope
+IQ2018,TM.9.2,q35_15,f,,49,per 1000,
+IQ2018,TM.9.2,q35_15,m,,86,per 1000,
+PKPunjab2017,TM.9.3,maternal_rate,f,age_adjusted,0.23,per 1000 woman-years,
+PKPunjab2017,TM.9.3,gfr,f,age_adjusted,126,per 1000 woman-years,out of package scope
+PKPunjab2017,TM.9.3,mmr,f,age_adjusted,180,per 100000 live births,out of package scope; no CI published
+PKPunjab2017,TM.9.3,pm,f,"[15,20)",4.1,percent,implausibly low - see reference section 11
+PKPunjab2017,TM.9.3,pm,f,"[20,25)",22.8,percent,
+PKPunjab2017,TM.9.3,pm,f,"[25,30)",25.0,percent,
+PKPunjab2017,TM.9.3,pm,f,"[30,35)",16.1,percent,
+PKPunjab2017,TM.9.3,pm,f,"[35,40)",18.6,percent,
+PKPunjab2017,TM.9.3,pm,f,"[40,45)",8.5,percent,
+PKPunjab2017,TM.9.3,pm,f,"[45,50)",1.3,percent,
+PKPunjab2017,TM.9.2,q35_15,f,,75,per 1000,
+PKPunjab2017,TM.9.2,q35_15,m,,85,per 1000,
