@@ -85,8 +85,17 @@ error is opaque.
 > present. Callers passing `sib.id` explicitly are unaffected.
 
 
-B. MICS support
+B. MICS support — **moved to `MICS-PLAN.md`**
 ----
+
+> **2026-08-20:** now that A, C, D and E are done, the MICS work is the only
+> thing left, and it has grown its own structure. It lives in **`MICS-PLAN.md`**,
+> which supersedes this section: items B1–B5 map onto M1–M7 there, with the
+> requirement list corrected and expanded, the layout/access dependency made
+> explicit, and one new blocking item (M1) that this section did not anticipate.
+>
+> The text below is kept as the original statement of the problem. Where the two
+> disagree, `MICS-PLAN.md` is current.
 
 The substantive work. Sequenced **after** the feasibility audit answers whether
 the sibling roster survives into released MICS microdata and in what layout —

@@ -12,3 +12,5 @@
 ^scratch$
 ^scratch-dev\.Rmd$
 ^scratch-dev\.nb\.html$
+^PACKAGE-HANDOFF\.md$
+^MICS-PLAN\.md$
