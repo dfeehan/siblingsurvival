@@ -188,8 +188,9 @@ lines. There is already a `TODO` at line 352 anticipating exactly this
 > factor of a million, so it will be obvious rather than subtle. Pass
 > `weight.scale = 1e6` to restore the old behaviour.
 >
-> The MICS prep should pass `weight.scale = 1`, or inherit it if it is built on
-> `prep_nrsim_sib_histories()`.
+> A new exported `prep_mics_sib_histories()` should carry `weight.scale = 1` as
+> its default — see `MICS-PLAN.md`, where that function is now a committed
+> deliverable rather than an optional wrapper.
 
 ### B3. `add_maternal_deaths()` needs a MICS branch
 

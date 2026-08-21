@@ -48,26 +48,91 @@ Audit artifacts, all in the analysis repo
   so the two cannot drift
 
 
-Design decision: extend `prep_nrsim_sib_histories()`, don't write a third prep
+The deliverable: `prep_mics_sib_histories()`
 ----
 
-`prep_dhs_sib_histories()` and `prep_nrsim_sib_histories()` are already
-near-duplicates: same varmap handling, same `check_varmap_cols()`, same
-`get_ego_df()` / `get_sib_df()` calls, same summary block. They differ in the
-default varmap and (since the last batch) in `weight.scale`. A third copy would
-make three places to fix every future bug.
+**Add a real `prep_mics_sib_histories()`, exported, alongside
+`prep_dhs_sib_histories()` and `prep_nrsim_sib_histories()`.**
 
-**Recommendation:** do the MICS work in `get_ego_df()` / `get_sib_df()`, which
-both preps already share, and add `prep_mics_sib_histories()` only as a thin
-wrapper that sets the MICS defaults (`varmap = sibhist_varmap_mics6`,
-`weight.scale = 1`, `layout`, `lowercase = TRUE`). If the wrapper turns out to
-hold no logic of its own, drop it and let callers use
-`prep_nrsim_sib_histories()` directly.
+An earlier draft of this plan hedged — proposing it as a thin wrapper over
+`prep_nrsim_sib_histories()` that could be dropped if it held no logic of its
+own. That was wrong. Once M2 is on the table, the function has real substance:
+MICS supplies **none** of `caseid`, `survey`, `doi` or `psu`, so something has to
+construct all four from `HH1`/`HH2`/`LN` and `WM6M`/`WM6Y` before the shared
+machinery can run. That construction is MICS-specific. It does not belong in
+`get_ego_df()`, which is shared with the DHS path, and it does not belong in
+`prep_nrsim_sib_histories()`, which is deliberately generic.
 
-**Caveat, and it is the important one:** "try `prep_nrsim_sib_histories()` with a
-MICS varmap first" is good advice for *discovering* what breaks — that is how
-several items below were found — but it is not a way *around* them. Both preps
-call the same internals, so both hit the same hardcoded DHS assumptions.
+It is also the discoverable name. Someone holding a MICS file will look for
+`prep_mics_sib_histories()`, and making them find `prep_nrsim_sib_histories()`
+and hand-assemble a varmap plus four constructed columns is a worse interface
+than the DHS path offers.
+
+### Division of labour
+
+The rule: **survey-family-specific work goes in the prep; cross-cutting fixes go
+in the shared internals.** Three functions, one set of internals.
+
+| Item | Lives in |
+|---|---|
+| M1 derived `sib.dob` / `sib.death.date` | `get_sib_df()` — shared; the DHS path benefits too |
+| M2 construct `caseid`, `doi`, `survey`, `psu` | `prep_mics_sib_histories()` |
+| M3 lowercase names | `prep_mics_sib_histories()` |
+| M4 wide vs long layout | `prep_mics_sib_histories()` |
+| M5 varmap + `MM16` guard | data object + guard in the prep |
+| M6 `add_maternal_deaths(style = "mics")` | `add_maternal_deaths()` — shared, switched |
+| M7 fixture | tests |
+
+What stays shared and must **not** be forked: varmap handling,
+`check_varmap_cols()`, `get_ego_df()`, `get_sib_df()`, the summary block. Those
+are already near-identical across the two existing preps; a third copy would make
+three places to fix every future bug. `prep_mics_sib_histories()` should
+pre-process the raw women's file into the shape those internals expect and then
+delegate, not reimplement them.
+
+### Proposed signature
+
+    prep_mics_sib_histories(df,
+                            survey,
+                            varmap       = sibhist_varmap_mics6,
+                            sib.df       = NULL,
+                            layout       = c("wide", "long"),
+                            id.vars      = c("hh1", "hh2", "ln"),
+                            doi.var      = NULL,
+                            doi.ym       = c("wm6y", "wm6m"),
+                            lowercase    = TRUE,
+                            weight.scale = 1,
+                            add_maternal = FALSE,
+                            na.action    = c("include", "exclude"),
+                            keep_missing = FALSE,
+                            keep_varmap_only = FALSE,
+                            verbose      = TRUE)
+
+Notes on the choices, since several are deliberate:
+
+- **`survey` is required and has no default.** MICS has no `v000` equivalent, so
+  the package cannot derive one and should not invent one. Making the caller
+  name the survey (`"BJ2021"`) is honest and keeps MICS ids comparable with the
+  DHS codes. See open decision 2.
+- **`weight.scale = 1`** — `wmweight` is already normalized to mean 1. This is
+  the single most consequential default in the signature; see M2.
+- **`doi.var` before `doi.ym`.** If the released `wm.sav` ships a ready-made CMC,
+  use it (`doi.var`); otherwise construct one from year and month (`doi.ym`).
+  Audit Q7 is open on which applies, so support both rather than betting.
+- **`sib.df`** is only meaningful when `layout = "long"`, and the function should
+  error if one is supplied without the other. See M4.
+- **`id.vars` / `doi.ym` are arguments, not constants**, because the real `.sav`
+  variable names are unknown until a file arrives (M5) and MICS6 country
+  customisations do vary.
+- **`na.action`** is passed through to `add_maternal_deaths()`. See M6 — it is a
+  statistical choice, not a coding detail.
+
+### On "try `prep_nrsim_sib_histories()` first"
+
+Still worth doing as a *probe* — that is how several items below were found — but
+it is not a way *around* them. Both preps call the same internals, so both hit
+the same hardcoded DHS assumptions. Use it to discover breakage, then fix the
+breakage in the right place per the table above.
 
 
 What the package requires today
@@ -142,8 +207,9 @@ age-at-death is reported — not for the common case, where both are present.
 
 ### M2. Construct the ego identifiers MICS does not have
 
-The draft varmap has **no ego rows at all**; every one of these has to be built
-before or during the prep.
+**The core of `prep_mics_sib_histories()`.** The draft varmap has **no ego rows
+at all**; every one of these has to be built by the prep, before the shared
+`get_ego_df()` / `get_sib_df()` machinery runs.
 
 - **`caseid`** — MICS has no single respondent id. Build it from cluster +
   household + line number (`HH1`, `HH2`, `LN`). Must be unique:
@@ -289,10 +355,15 @@ Sequence
    without it.
 2. **M7** — the fixture and the contract tests. First, so the rest is
    test-driven.
-3. **M1** — make `sib.dob` / `sib.death.date` derived rather than required. Small
-   and self-contained, and it unblocks running any MICS varmap at all.
-4. **M3** — the `lowercase` argument. Small.
-5. **M2** — the constructed ego columns. The bulk of the prep.
+3. **M1** — make `sib.dob` / `sib.death.date` derived rather than required, in
+   the shared `get_sib_df()`. Small and self-contained, and until it is done no
+   MICS varmap can run at all.
+4. **`prep_mics_sib_histories()` skeleton** — the signature above, `lowercase`
+   (M3), and straight delegation to the shared internals. Gets an exported
+   function that runs end-to-end against the fixture before any of the harder
+   construction lands, so M2 has something to grow inside.
+5. **M2** — the constructed `caseid`, `doi`, `survey` and `psu`. The bulk of the
+   function.
 6. **M5, M6** — the varmap and the `add_maternal_deaths()` branch. M6 needs the
    `na.action` decision made first.
 7. **M4** — resolve the layout once a real file is in hand; write the wide path
