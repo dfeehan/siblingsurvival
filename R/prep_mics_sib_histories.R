@@ -288,6 +288,32 @@ recode_mics_sib_vars <- function(df, verbose=TRUE) {
     }
   }
 
+  ## MICS codes don't-know and no-response on the numeric sibling items as 98
+  ## and 99, not as missing. Passed through as real values these are silently
+  ## catastrophic: a sibling with sib.death.age = 98 would get a date of birth
+  ## 98 years before her death, and sib.age = 99 would put a living sibling
+  ## outside every age group. The damage is currently masked whenever MICS
+  ## supplies its own imputed CMC dates (MM17C/MM18C, MM7C/MM8C), because then
+  ## the derivations never fire -- but surveys such as BTN_2010 ship no CMC
+  ## columns at all.
+  dk.numeric <- intersect(c('sib.age', 'sib.death.yrsago', 'sib.death.age',
+                            'sib.days.postpartum.death', 'sib.num.children'),
+                          names(df))
+
+  n.dk <- 0
+
+  for (this.col in dk.numeric) {
+    v <- df[[this.col]]
+    hit <- v %in% c(98, 99)
+    n.dk <- n.dk + sum(hit, na.rm=TRUE)
+    df[[this.col]] <- ifelse(hit, NA_real_, as.numeric(v))
+  }
+
+  if (verbose && n.dk > 0) {
+    cat(paste0("\nSet ", n.dk, " value(s) coded 98/99 (don't know / no response) ",
+               "to NA across: ", paste0(dk.numeric, collapse=', '), ".\n"))
+  }
+
   if ('sib.sex' %in% names(df)) {
 
     orig <- df$sib.sex

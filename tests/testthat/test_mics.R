@@ -276,3 +276,43 @@ test_that("cell_config: still rejects an unknown character setting", {
                 time.offset = 'doi', exp.scale = 1/12),
     "No setting found for time.periods")
 })
+
+# =====================================================================
+# MICS 98/99 don't-know codes on the numeric sibling items
+# =====================================================================
+
+test_that("recode_mics_sib_vars: 98/99 on numeric items become NA", {
+  d <- tibble(sib.age = c(30, 99, NA),
+              sib.death.yrsago = c(98, 5, 99),
+              sib.death.age = c(99, 40, 98))
+  out <- siblingsurvival:::recode_mics_sib_vars(d, verbose = FALSE)
+
+  expect_equal(out$sib.age, c(30, NA, NA))
+  expect_equal(out$sib.death.yrsago, c(NA, 5, NA))
+  expect_equal(out$sib.death.age, c(NA, 40, NA))
+})
+
+test_that("prep_mics_sib_histories: a DK age at death does not corrupt sib.dob", {
+  # MM19 = 98 passed through as a real value would put the birth date 98 years
+  # before the death date. The damage is masked whenever MICS supplies MM17C /
+  # MM18C, so this exercises the derivation path, as in surveys that do not.
+  mm <- make_mics6_mm()
+  mm$MM19[mm$MM19 == 20] <- 98L          # a dead sibling with DK age at death
+
+  r <- prep_mics_sib_histories(mm, survey = "T", varmap = make_mics6_varmap(),
+                               verbose = FALSE)
+
+  # every derived birth date should be within a plausible span of the interview
+  expect_true(all(r$sib.dat$sib.dob > r$sib.dat$doi - 12 * 100, na.rm = TRUE))
+  # and the DK row should have NA age at death rather than 98
+  expect_false(any(r$sib.dat$sib.death.age %in% c(98, 99)))
+})
+
+test_that("prep_mics_sib_histories: DK current age does not survive as 99", {
+  mm <- make_mics6_mm_with_cmc()
+  mm$MM17[!is.na(mm$MM17)][1] <- 99L
+
+  r <- prep_mics_sib_histories(mm, survey = "T", varmap = make_mics6_varmap_cmc(),
+                               verbose = FALSE)
+  expect_false(any(r$sib.dat$sib.age %in% c(98, 99), na.rm = TRUE))
+})

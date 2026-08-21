@@ -642,7 +642,7 @@ Run against the survey report itself, not just the transcribed numbers.
 | Stage | Table | Observed | Published | |
 |---|---|---|---|---|
 | V1 sibling rows | — | 47,835 | 47,835 | ✅ |
-| V1 survival status | DQ.7.1 | 82.5 / 17.4 / 0.1 | 82.8 / 17.1 / 0.1 | ✅ |
+| V1 survival status | DQ.7.1 | **39,616 / 8,160 / 42** | **39,616 / 8,160 / 42** | ✅ exact |
 | V1 mean sibship size | DQ.7.2 | 4.9 | 4.9 | ✅ |
 | V1 sex ratio | DQ.7.2 | 1.00 | 0.99 | ✅ |
 | V2 exposure, female | TM.9.1/9.3 | 108,614 | 108,985 | ✅ 0.997 |
@@ -655,6 +655,12 @@ Run against the survey report itself, not just the transcribed numbers.
 | V7 ₃₅q₁₅, men | TM.9.2 | 218.5 | 219 | ✅ |
 | **V3 maternal deaths** | **TM.9.3** | **58.9** | **68** | ❌ **0.87** |
 | V4/V6 | TM.9.3 | — | — | blocked by V3 |
+
+**V1 matches exactly once computed MICS's way.** The earlier 82.5-versus-82.8
+discrepancy was an artefact of the comparison, not the data: DQ.7.1 is
+**unweighted** and its denominator is **47,818**, not 47,835, because MICS
+excludes the 17 siblings whose sex is missing. Recomputed on that basis every
+cell agrees to the unit — 39,616 living, 8,160 dead, 42 missing.
 
 **TM.9.1 and TM.9.2 are the control.** They run through the same prep, the same
 exposure calculation, the same window, the same weights and the same death
@@ -748,6 +754,28 @@ all-cause shortfall, which suggests deaths being *missed* rather than
 (38–50%) than the PM in those groups (8–13%), so the missing deaths would have to
 be disproportionately maternal — which no mechanism we can find explains.
 
+**A real bug surfaced on the way, though it does not explain the gap.** MICS
+codes don't-know and no-response on the *numeric* sibling items as **98 and 99**,
+not as missing:
+
+| item | DK/NR values | matches DQ.7.1 |
+|---|---|---|
+| `MM17` age of living sibling | 99 × 180 | "Age of living siblings: Missing/DK **180**" |
+| `MM18` years since death | 98 × 95, 99 × 57 | |
+| `MM19` age at death | 98 × 96, 99 × 67 | both DK = **102**, published **102** |
+
+Passed through as real values these are silently catastrophic: a sibling with
+`sib.death.age = 98` gets a date of birth 98 years before her death, and
+`sib.age = 99` puts a living sibling outside every age group. **The damage is
+masked whenever MICS supplies its own imputed CMC dates**, because then the
+derivations never fire — which is why Zimbabwe's numbers do not move when it is
+fixed. It would have been severe on `BTN_2010`, the one survey in the archive
+that ships no CMC columns at all.
+
+Now fixed in `recode_mics_sib_vars()`. With the CMC columns deliberately dropped
+from the varmap, the derived `sib.dob` correlates **0.9999** with MICS's own
+`MM17C` — which both validates the derivation and shows how wrong it was before.
+
 Ruled out as the source of the missing deaths:
 
 - *Siblings dropped for missing sex or survival status.* `keep_missing = TRUE`
@@ -756,6 +784,19 @@ Ruled out as the source of the missing deaths:
   `MM19` or `MM18C`.
 - *Age binning.* CMC-derived age gives 663 female deaths against reported
   `MM19`'s 656; the published figure is 674, so neither reaches it.
+- *Weighting.* Weights average 1.0041, so weighted and unweighted counts differ
+  by well under the gap: unweighted 660 female / 666 male against weighted
+  665.7 / 669.5.
+- *The 98/99 codes.* Fixing them leaves Zimbabwe's counts unchanged, since
+  `MM17C`/`MM18C` are complete in that file.
+
+**The remaining asymmetry is the odd part.** Male all-cause deaths reproduce
+(669.5 against 668, ratio 1.002) while female do not (665.7 against 674, 0.987).
+DQ.7.1 reports *more* dead brothers than sisters overall (4,121 against 4,039),
+and our counts preserve that ordering inside the reproductive window (666 male
+against 660 female unweighted) — while MICS reverses it (668 male, 674 female).
+Something in MICS's processing raises female deaths in the 15–49 window relative
+to male ones, and we cannot see what.
 
 > **This makes retrieving the MICS6 Standard SPSS Syntax a blocker rather than a
 > nice-to-have.** The methods reference calls it "the only authoritative

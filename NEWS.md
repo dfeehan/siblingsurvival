@@ -86,6 +86,13 @@
 
 ## Bug fixes
 
+* `prep_mics_sib_histories()` now recodes MICS's 98 (don't know) and 99 (no
+  response) values to `NA` on the numeric sibling items -- `sib.age`,
+  `sib.death.yrsago`, `sib.death.age`, `sib.days.postpartum.death` and
+  `sib.num.children`. Passed through as real values these are silently
+  catastrophic: a sibling with `sib.death.age = 98` gets a date of birth 98
+  years before her death. The damage is masked whenever MICS supplies its own
+  imputed CMC dates, so it only bites on surveys that ship none.
 * Fixed `cell_config()`, which rejected a custom `time.periods` object built by
   `make.time.periods()` -- the documented usage, and how `age.groups` already
   behaved. The non-character branch called `stop("No time periods specified.")`
