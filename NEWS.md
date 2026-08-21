@@ -86,6 +86,11 @@
 
 ## Bug fixes
 
+* Fixed `cell_config()`, which rejected a custom `time.periods` object built by
+  `make.time.periods()` -- the documented usage, and how `age.groups` already
+  behaved. The non-character branch called `stop("No time periods specified.")`
+  unconditionally, so only the three built-in strings worked. This blocked
+  testing alternative reference windows.
 * Fixed `aggregate_maternal_estimates()`, whose bootstrap branch joined the
   visibility results on age alone while the point-estimate branch joined on age
   *and* sex. When the respondents include both sexes, every bootstrap row

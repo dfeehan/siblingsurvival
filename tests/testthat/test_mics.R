@@ -248,3 +248,31 @@ test_that("shipped MICS varmaps are all lowercase", {
     expect_equal(vm$orig.varname, tolower(vm$orig.varname))
   }
 })
+
+# =====================================================================
+# cell_config(): custom time.periods
+# =====================================================================
+
+test_that("cell_config: accepts a make.time.periods() object", {
+  # the documentation says time.periods "can either be the output of
+  # make.time.periods, or ... '7yr_beforeinterview'", and age.groups handles a
+  # custom object, but time.periods used to stop() on anything non-character
+  tp <- make.time.periods(start = -12*8, durations = 12*7, names = "alt")
+
+  cc <- cell_config(age.groups = '5yr', time.periods = tp,
+                    start.obs = 'sib.dob', end.obs = 'sib.endobs',
+                    event = 'sib.death.date', age.offset = 'sib.dob',
+                    time.offset = 'doi', exp.scale = 1/12)
+
+  expect_equal(cc$time.periods$names, "alt")
+  expect_equal(as.numeric(cc$time.periods$template[1, "start"]), -96)
+})
+
+test_that("cell_config: still rejects an unknown character setting", {
+  expect_error(
+    cell_config(age.groups = '5yr', time.periods = 'nonsense',
+                start.obs = 'sib.dob', end.obs = 'sib.endobs',
+                event = 'sib.death.date', age.offset = 'sib.dob',
+                time.offset = 'doi', exp.scale = 1/12),
+    "No setting found for time.periods")
+})

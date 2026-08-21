@@ -633,6 +633,61 @@ Pakistan Punjab and Sindh, named in the first draft, are **not in the archive**.
 Punjab's role (a survey publishing point estimates with no CIs) is worth keeping
 in mind but no longer has a test case; Sindh's role is taken by BTN_2010.
 
+### Results so far (2026-08-21, Zimbabwe 2019)
+
+**V1 and V2 pass. V3 does not, and the cause is not in the package.**
+
+| Stage | Observed | Published | |
+|---|---|---|---|
+| V1 sibling rows | 47,835 | 47,835 | ✅ |
+| V1 survival status | 82.5 / 17.4 / 0.1 | 82.8 / 17.1 / 0.1 | ✅ |
+| V1 mean sibship size | 4.9 | 4.9 | ✅ |
+| V1 sex ratio | 1.00 | 0.99 | ✅ |
+| V2 exposure, total | 108,614 | 108,985 | ✅ 0.997 |
+| V3 maternal deaths | 58.9 | 68 | ❌ 0.87 |
+| V4 age-adjusted rate | — | 0.59 | blocked by V3 |
+
+**V2 resolved the 7-year boundary.** No MICS document states whether the window
+is years-since-death 0–6 or 1–7. Testing all three candidates against the
+published exposure column:
+
+| window | ratio to published |
+|---|---|
+| `[doi-84, doi)` — **0–6 completed years** | **0.9966** |
+| `[doi-96, doi-12)` — 1–7 years | 0.9861 |
+| shifted one month | 0.9958 |
+
+**0–6 wins**, which is what `cell_config('7yr_beforeinterview')` already
+implements. The residual 0.34% is age-patterned — exact at 40–49, worst at
+15–19 — and about a quarter of it is siblings dropped for missing sex or
+survival status (keeping them gives 0.9974). Not chased further.
+
+**V3's shortfall is in the definition, not the machinery.** Ruled out:
+
+- *The package.* A direct hand tabulation off the raw `.sav` gives 58.5 weighted
+  maternal deaths against the package's 58.9. They agree; both are short of 68.
+- *The cause conditions.* Removing the 42-day cut and the violence/accident
+  exclusion — that is, the broadest possible pregnancy-related definition —
+  reaches only 62.7.
+- *The `MM19 >= 12` guard.* Costs nothing in Zimbabwe; every female death aged
+  12+ has `MM22` asked (2,678 of 2,678).
+- *`na.action`.* The `9 = no response` codes on `MM22`/`MM23`/`MM24` number 6, 7
+  and 7 rows. `MM25` is never missing when `MM24 == 1`. Both settings give
+  identical results here.
+- *Window and age-binning conventions.* All four combinations of
+  {integer `MM18` 0–6, CMC `MM18C`} × {reported `MM19`, CMC-derived age} land in
+  656–666 female deaths and 58.5–58.9 maternal. A wider 0–7 window overshoots
+  female deaths (734 vs an implied 680) while still undershooting maternal (64.9).
+
+The published **PM of 10.0%** is above our broadest pregnancy-related PM of
+**9.5%**, so MICS is classifying proportionally more female deaths as maternal
+than any reading of the questionnaire items produces.
+
+> **This makes retrieving the MICS6 Standard SPSS Syntax a blocker rather than a
+> nice-to-have.** The methods reference calls it "the only authoritative
+> statement of the estimation algorithm", and it is Cloudflare-403 from a
+> non-browser client. V3 is unlikely to be resolved by further guessing.
+
 ### Staged checks
 
 Each stage isolates one component. Run them in order; the first failure localises
@@ -742,9 +797,19 @@ Sequence
 Open decisions
 ----
 
-1. **`na.action` for MICS missing/DK on `MM22`–`MM25`** (M6). Changes the
-   numerator of every MICS estimate. Trap 2 argues against inheriting the DHS
-   "include" default. Needs a default and a documented rationale.
+1. ⏳ **`na.action` for MICS missing/DK on `MM22`–`MM25`** (M6). **DEFERRED
+   2026-08-21 — must be settled before M6 is written; do not let this slip.**
+   *Empirical note from V3:* on Zimbabwe 2019 the choice makes **no difference
+   at all** — `MM25` is never missing when `MM24 == 1`, and the `9 = no
+   response` codes on `MM22`/`MM23`/`MM24` number 6, 7 and 7 rows out of 47,835.
+   So this is a low-stakes decision for MICS6 as far as the data shows, but it
+   still needs a documented default, and it may bite harder in MICS4/5.*
+   Changes the numerator of every MICS estimate. Trap 2 argues against
+   inheriting the DHS "include" default: `MM21` routes sisters who died before
+   age 12 straight past `MM22`–`MM25`, so those items are `NA` *by design*, and
+   "include" would make every under-12 female death maternal. Needs a default
+   and a documented rationale. `add_maternal_deaths()` is not to gain a MICS
+   branch until this is decided.
 2. **How `survey` should be constructed** (M2) so MICS and DHS survey ids are
    comparable in one analysis.
 3. **Which estimand the paper reports.** MICS6 offers both; DHS 2–6 offers only
