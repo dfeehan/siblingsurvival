@@ -544,13 +544,35 @@ Demonstrated on identical respondent data where only the sex *labels* differ:
     all female  adj.factor=0.4295711  allage=0.5772943  agespec range=[0.5041, 0.6212]
     half male   adj.factor=0.4295711  allage=0.5772943  agespec range=[0.4922, 0.6288]
 
+> **Sharpened 2026-08-21.** The first write-up of this item framed the puzzle as
+> "two of three are constants". That is true but it buries the actual structure,
+> which is a 2×2 that only has three corners filled:
+>
+> | | pooled over all egos | group-specific |
+> |---|---|---|
+> | **harmonic** mean of `y.F + 1` | `adj.factor` = 0.4296 | *(not computed)* |
+> | **arithmetic** mean of `y.F + 1` | `adj.factor.allage` = 0.5773 | `adj.factor.agespec` = 0.50–0.62 |
+>
+> Since `1 - 1/(y+1) == y/(y+1)`, `.allage` and `.agespec` are the *same
+> functional form* and differ only in whether the mean is pooled or taken within
+> `(sex, age)`. `adj.factor` differs from both in using the **harmonic** rather
+> than the arithmetic mean — and the harmonic mean is the one that is exactly
+> right for this kind of inverse-probability weighting, which is why it is
+> smaller (0.4296 against 0.5773).
+>
+> So the naming is more defensible than it first looked: `adj.factor` is the
+> *exact* all-ages quantity, and `.allage` / `.agespec` are the pooled and
+> age-specific **approximations** to it. A constant `adj.factor` is then
+> intended, not a bug. What is genuinely missing is the fourth corner — a
+> harmonic, age-specific factor — and it is worth deciding whether that is a
+> deliberate omission or just was never written.
+
 Three separate questions here, worth separating:
 
-1. **Is it intended?** For `adj.factor.allage` the name says so — "allage" is an
-   all-ages approximation, and a constant is exactly right. For `adj.factor`,
-   the unqualified name gives no such signal, yet it is equally global. If it is
-   meant to be global, it should be named to say so (`adj.factor.overall`?); if
-   it is meant to vary, it is wrong.
+1. **Is it intended?** Probably yes, on the reading above: `adj.factor` is the
+   exact all-ages estimator and the other two are approximations. If so the only
+   fix needed is documentation, plus possibly a clearer name
+   (`adj.factor.exact`?). Confirm the intent before changing anything.
 
 2. **Should it respect `only_females`?** `S.hat` is computed over *all* egos
    regardless of what the caller asked for. With mixed-sex respondents, an
