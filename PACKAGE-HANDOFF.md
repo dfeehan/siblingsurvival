@@ -503,13 +503,61 @@ male sibling estimates under `only_females = FALSE` are `NA`. That is the honest
 answer — you cannot estimate a visibility adjustment for a sex that was never
 interviewed — but it is now announced rather than silent.
 
-### Still open in that file
+### E4. `adj.factor` and `adj.factor.allage` are global scalars — **open, needs a decision**
 
-`adj.factor` and `adj.factor.allage` come out **identical for both sexes**,
-because `get_visibility()` computes them as scalars over all egos
-(`S.adj.factor`, `approx.S.adj.factor`) rather than per sex. Only
-`adj.factor.agespec` varies. That is pre-existing behaviour, left alone here,
-but worth deciding whether it is intended.
+Pre-existing behaviour, deliberately left alone in the fixes above, but it
+becomes *visible* now that the two-sex path actually runs, so it needs an answer.
+
+`get_visibility()` (`R/get_sibship_visibility.R:121-148`) computes three
+adjustment factors, and two of the three are **scalars over the entire
+respondent sample**, computed before any grouping:
+
+    S.hat               <- wh.mean(ego_vis$y.F + 1, ego_vis$.weight)   # ALL egos
+    S.adj.factor        <- 1 - (1/S.hat)
+
+    y.F.bar             <- weighted.mean(ego_vis$y.F, ego_vis$.weight) # ALL egos
+    approx.S.adj.factor <- 1 - (1/approx.S.hat)
+
+    ego_vis_agg <- ego_vis %>%
+      group_by(sex, .agecat) %>%
+      summarise(y.F.bar = weighted.mean(y.F, .weight), ...) %>%
+      mutate(adj.factor         = S.adj.factor,          # <- recycled scalar
+             adj.factor.allage  = approx.S.adj.factor,   # <- recycled scalar
+             adj.factor.agespec = y.F.bar/(y.F.bar + 1)) # <- group-specific
+
+Note that the `y.F.bar` inside `summarise()` shadows the global one, so only
+`adj.factor.agespec` varies by `(sex, age)`. The other two are constant down
+every row of `ego_vis_agg`.
+
+Demonstrated on identical respondent data where only the sex *labels* differ:
+
+    all female  adj.factor=0.4295711  allage=0.5772943  agespec range=[0.5041, 0.6212]
+    half male   adj.factor=0.4295711  allage=0.5772943  agespec range=[0.4922, 0.6288]
+
+Three separate questions here, worth separating:
+
+1. **Is it intended?** For `adj.factor.allage` the name says so — "allage" is an
+   all-ages approximation, and a constant is exactly right. For `adj.factor`,
+   the unqualified name gives no such signal, yet it is equally global. If it is
+   meant to be global, it should be named to say so (`adj.factor.overall`?); if
+   it is meant to vary, it is wrong.
+
+2. **Should it respect `only_females`?** `S.hat` is computed over *all* egos
+   regardless of what the caller asked for. With mixed-sex respondents, an
+   `only_females = TRUE` aggregate therefore carries an adjustment factor
+   computed partly from male respondents. Invisible in the DHS, where all
+   respondents are women; not invisible in anything else.
+
+3. **`adj.factor[1]` is a fragile idiom.** `aggregate_maternal_estimates()`
+   summarises these two with `adj.factor[1]`, which is correct *only because*
+   they are constant within the group. If either ever becomes group-varying,
+   `[1]` silently picks an arbitrary row instead of erroring. Worth replacing
+   with something that asserts constancy.
+
+None of this changes any current DHS result — all three factors are what they
+have always been. It matters for MICS only insofar as MICS respondents are also
+all women, so the answer there is the same. It matters most for the
+`only_females = FALSE` path, which is now reachable for the first time.
 
 
 Suggested order
@@ -542,6 +590,8 @@ Suggested order
 8. ~~**E1–E3**~~ — done; see section E. Two follow-ups land in the *analysis*
    repo, not here: the same missing sex key at `code/R/estimate.R:134`, and the
    changed `get_ego_age_distn(only_females = FALSE)` shape at `:129`/`:135`.
+9. **E4** — decide what `adj.factor` is supposed to be. Needs a judgement about
+   the estimator, not a code change; see section E4 for the three questions.
 
 
 Context the next session will want
