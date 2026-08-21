@@ -149,9 +149,9 @@ What stays shared and must **not** be forked: varmap handling,
 
 ### Proposed signature
 
-    prep_mics_sib_histories(wm.df,
-                            mm.df,
+    prep_mics_sib_histories(mm.df,
                             survey,
+                            wm.df        = NULL,
                             varmap       = sibhist_varmap_mics6,
                             id.vars      = c("hh1", "hh2", "ln"),
                             doi.var      = "wdoi",
@@ -167,18 +167,22 @@ What stays shared and must **not** be forked: varmap handling,
 
 Notes on the choices that are not obvious:
 
-- **Two data arguments, not one.** MICS6 genuinely has two files. `mm.df` is the
-  sibling roster; `wm.df` supplies respondent attributes. This is a real
-  departure from the DHS signature, and the clearest reason a thin wrapper would
-  not have sufficed.
+- **`mm.df` is the only required data argument; `wm.df` is optional.** Confirmed
+  2026-08-21 from the public data dictionaries (below): `mm.sav` already carries
+  the weights, `psu`, `stratum`, `WDOI`, `WDOB` and a set of respondent
+  background variables. Everything the pipeline *requires* can be built from
+  `mm.sav` alone. Pass `wm.df` only to bring across further respondent
+  covariates.
 - **`survey` is required, no default.** MICS has no `v000` equivalent, so the
   package cannot derive one and should not invent one. Making the caller name it
   (`"ZW2019"`) keeps MICS ids comparable with the DHS codes. Open decision 2.
 - **`weight.scale = 1`** — `wmweight` is already normalized to mean 1. The single
   most consequential default in the signature.
 - **`doi.var = "wdoi"` with `doi.ym` as fallback.** `WDOI` is a ready-made CMC
-  interview date in `mm.sav`, which answers what the audit had open. Keep
-  `doi.ym` because country files vary.
+  interview date, present in both files inspected. Keep `doi.ym` because country
+  files vary.
+- **No `age` argument.** Respondent age comes from `(WDOI - WDOB) / 12`, both of
+  which are CMCs in `mm.sav`. No need to reach into `wm.sav` for it.
 - **`id.vars` / `doi.ym` are arguments, not constants**, because MICS6 country
   customisation is real: Sindh adds `MM22A` and drops background variables.
 - **`style`** selects the maternal recode, defaulting to the MICS6/7 form. See M6.
@@ -265,27 +269,41 @@ on the same file.
 
 ### M2. Join the two files and construct `caseid`
 
-The core of `prep_mics_sib_histories()`, and smaller than the first draft
-thought, since `psu`, `doi` and the weights are already in `mm.sav`.
+The core of `prep_mics_sib_histories()`, and **much** smaller than the first
+draft thought. Having read the actual dictionaries, almost everything is already
+in `mm.sav`; only `caseid` genuinely has to be constructed.
 
 - **`caseid`** — build from `HH1` + `HH2` + `LN` (cluster, household,
   respondent's line number). Must be unique per respondent;
-  `aggregate_maternal_estimates()` hardcodes the name.
-- **Join `wm.sav` to `mm.sav`** on the `WM1`/`WM2`/`WM3` keys, to bring
-  respondent attributes (age from `WB4`, education, and so on) onto the roster.
+  `aggregate_maternal_estimates()` hardcodes the name. This is the only real
+  construction.
+- **`age`** — respondent age in single years as `(WDOI - WDOB) / 12`, both CMCs
+  in `mm.sav`. Decide whether to floor or round; floor matches "age last
+  birthday".
+- **`sex`** — constant `'f'`. MICS interviews women only, and `get_ego_df()`
+  already assumes this when the column is absent.
 - **`survey`** — from the required argument.
-- **`doi`** — `WDOI` when present, else CMC from `WM6Y`/`WM6M`:
+- **`doi`** — `WDOI`, or CMC from `WM6Y`/`WM6M` as a fallback:
   `cmc = (year - 1900) * 12 + month`.
-- **`age`** — respondent age in single years, `WB4`.
+- **`psu`, `stratum`, `wwgt`** — map straight from `psu`, `stratum`, `wmweight`.
+- **Joining `wm.sav` is optional**, for covariates beyond the background
+  variables `mm.sav` already carries (`welevel`, `MSTATUS`, `CEB`, `religion`,
+  `windex5`, …). Join on `WM1`/`WM2`/`WM3` when needed.
 
 ### M3. Lowercase the variable names
 
-MICS `.sav` files are conventionally uppercase (`MM15`); DHS `.dta` lowercase.
-The varmap match is by exact name, so an uppercase file against a lowercase
-varmap matches nothing and produces an empty roster — no error.
+**Confirmed necessary, and for a better reason than expected: MICS files are
+*mixed* case.** In both dictionaries inspected, the questionnaire items and link
+keys are uppercase (`MM15`, `HH1`, `WM3`, `WDOI`, `WDOB`, `MSTATUS`, `CEB`) while
+the derived and design variables are lowercase (`wmweight`, `psu`, `stratum`,
+`welevel`, `religion`, `windex5`). So neither "assume uppercase" nor "assume
+lowercase" is safe, and the varmap match is by exact name.
 
-**Change:** a `lowercase = TRUE` argument that lowercases `names()` of both input
-frames up front.
+Without normalisation an unmatched varmap produces an empty roster — no error,
+just nothing.
+
+**Change:** a `lowercase = TRUE` argument that lowercases `names()` of the input
+frames up front, and write every MICS varmap in lowercase.
 
 ### M4. Long layout — skip the reshape ⚠
 
@@ -303,6 +321,14 @@ Consequence: `get_sib_df()` currently *always* reshapes. Give it a
 shared function, one switch.
 
 ### M5. The varmaps, and the `MM16` collision ⚠
+
+> **No longer provisional.** The first draft said the real `.sav` variable names
+> were unknown until a survey was downloaded. They are not: the **World Bank
+> microdata catalog publishes full data dictionaries without registration**.
+> Confirmed 2026-08-21 against Zimbabwe 2019 (catalog 4180, `mm.sav`, 47,835
+> records × 48 variables — matching the reference exactly) and Pakistan Sindh
+> 2018-19 (catalog 4181, 147,316 × 42). **The MICS6 varmap can be written now,
+> with confirmed spellings, before any data arrives.**
 
 **The draft varmap in the analysis repo has the wrong numbering for MICS6.**
 
@@ -330,8 +356,28 @@ Correct MICS6 sibling mappings:
 | `MM26` | `sib.died.violence` |
 | `MM27` | `sib.died.accident` |
 
-`MM20` and `MM21` are interviewer check items and **are not in the data**. `MM28`
-is loop control and is not in the data either.
+`MM20` and `MM21` are interviewer check items and **are not in the data** —
+confirmed absent from both dictionaries. `MM28` is loop control and is absent
+too. Nothing between `MM5` and `MM14` appears: the MICS6 roster genuinely starts
+at `MM15`.
+
+**Ego columns available directly in `mm.sav`** (so the varmap covers both halves
+and the prep constructs only `caseid`):
+
+| MICS6 | Package name |
+|---|---|
+| `HH1`, `HH2`, `LN` | → build `caseid` |
+| `WDOI` | `doi` |
+| `WDOB` | → `age` as `(WDOI - WDOB)/12` |
+| `wmweight` | `wwgt` |
+| `psu` | `psu` |
+| `stratum` | `stratum` |
+| `MMLN` | `sibindex` |
+
+**Country customisation is real and must not break the prep.** Sindh adds
+`MM22A` ("Was deceased sister ever married"), drops `MM17C`/`MM18C`, and carries
+42 variables against Zimbabwe's 48. `check_varmap_cols()` already reports
+varmap entries missing from a file, which is exactly the right behaviour here.
 
 > ⚠ **The `MM16` collision is worse than documented.** The earlier plan said MICS
 > `MM16` is loop control. It is not — in MICS6 loop control is **`MM28`**, and
@@ -481,13 +527,24 @@ Run it as a testthat file that skips unless the data is present:
 so the suite stays green for anyone without the files, and becomes a real
 regression test for anyone with them.
 
+### Data dictionaries are public even though the data is not
+
+The World Bank microdata catalog serves full variable dictionaries without
+registration — that is where the variable lists above were confirmed. Use them to
+check a survey's `mm.sav` **before** requesting it: whether the module was
+fielded at all, whether `MM17C`/`MM18C` are present, and what country-specific
+items were added. Registration is only needed for the actual `.sav` files.
+
+- Zimbabwe 2019: `catalog/4180/data-dictionary/F6?file_name=mm.sav`
+- Pakistan Sindh 2018-19: `catalog/4181/data-dictionary/F6`
+
 ### Which surveys, and why each
 
 | Survey | Why |
 |---|---|
 | **Zimbabwe 2019** | Primary. Fullest published tables — TM.9.3 age-specific, TM.9.1/9.2 adult mortality, DQ.7.1/7.2 data quality. Has `MM17C`/`MM18C` |
 | **Iraq 2018** | Second country. Its sampling-error table *agrees* with TM.9.3, unlike Zimbabwe's |
-| **Pakistan Sindh 2018-19** | **Lacks `MM17C`/`MM18C`** — exercises the M1 derivation fallback, the code path Zimbabwe never reaches |
+| **Pakistan Sindh 2018-19** | **Confirmed to lack `MM17C`/`MM18C`** while carrying `WDOI`/`WDOB` — exercises the M1 derivation fallback, the code path Zimbabwe never reaches. Also adds `MM22A`, so it tests tolerance of country-specific items. 147,316 sibling rows |
 | **Pakistan Punjab 2017-18** | Published point estimates but **no CIs** — confirms the pipeline does not assume uncertainty is available |
 
 ### Staged checks
@@ -567,9 +624,21 @@ From the reference, so they are not mistaken for pipeline bugs:
 Sequence
 ----
 
-1. **Request MICS microdata access now**, in parallel with everything else. It is
-   the long pole. Prioritise **Zimbabwe 2019** for validation and the four
-   shortlisted surveys for the analysis.
+1. **Request MICS microdata access now**, in parallel with everything else — it
+   is the long pole, and nothing below waits on it except V1–V7. Prioritise
+   **Zimbabwe 2019**: it is the validation key, having the fullest published
+   tables, even though it is not on the analysis shortlist. Then the four
+   shortlisted surveys, then **Pakistan Sindh 2018-19** for the derivation
+   fallback. Check each survey's public data dictionary first — it says whether
+   the module was fielded before you spend a registration on it.
+
+   Also worth a browser session: the **MICS6 Tabulation Plan** and the
+   **Standard SPSS Syntax** are Cloudflare-blocked from a non-browser client and
+   absent from the Wayback Machine, but the reference calls the syntax "the only
+   authoritative statement of the estimation algorithm". Retrieving it could
+   *answer* the two ambiguities that V2 and V5 are otherwise designed to resolve
+   empirically — the 7-year boundary and the age standard — and would be worth
+   more than either validation stage.
 2. **M8** — the fixture and the contract tests. First, so the rest is
    test-driven.
 3. **M1** — make `sib.dob` / `sib.death.date` optional in the shared
