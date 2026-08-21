@@ -61,3 +61,15 @@ PKPunjab2017,TM.9.3,pm,f,"[40,45)",8.5,percent,
 PKPunjab2017,TM.9.3,pm,f,"[45,50)",1.3,percent,
 PKPunjab2017,TM.9.2,q35_15,f,,75,per 1000,
 PKPunjab2017,TM.9.2,q35_15,m,,85,per 1000,
+ZW2019,TM.9.1,allcause_deaths,f,"[15,20)",35,deaths,control for V3 - same pipeline without the maternal recode
+ZW2019,TM.9.1,allcause_deaths,f,"[20,25)",49,deaths,
+ZW2019,TM.9.1,allcause_deaths,f,"[25,30)",77,deaths,
+ZW2019,TM.9.1,allcause_deaths,f,"[30,35)",145,deaths,
+ZW2019,TM.9.1,allcause_deaths,f,"[35,40)",161,deaths,
+ZW2019,TM.9.1,allcause_deaths,f,"[40,45)",119,deaths,
+ZW2019,TM.9.1,allcause_deaths,f,"[45,50)",88,deaths,
+ZW2019,TM.9.1,allcause_deaths,f,total,674,deaths,this is the PM denominator; 68/674 = 10.1%
+ZW2019,TM.9.1,allcause_deaths,m,total,668,deaths,
+ZW2019,TM.9.1,exposure,m,total,110089,woman-years,male exposure
+ZW2019,TM.9.1,allcause_rate,f,age_adjusted,6.28,per 1000 person-years,standardised by the respondents age distribution - see V5
+ZW2019,TM.9.1,allcause_rate,m,age_adjusted,6.09,per 1000 person-years,

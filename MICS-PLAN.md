@@ -633,19 +633,41 @@ Pakistan Punjab and Sindh, named in the first draft, are **not in the archive**.
 Punjab's role (a survey publishing point estimates with no CIs) is worth keeping
 in mind but no longer has a test case; Sindh's role is taken by BTN_2010.
 
-### Results so far (2026-08-21, Zimbabwe 2019)
+### Results (2026-08-21, Zimbabwe 2019)
 
-**V1 and V2 pass. V3 does not, and the cause is not in the package.**
+Run against the survey report itself, not just the transcribed numbers.
 
-| Stage | Observed | Published | |
-|---|---|---|---|
-| V1 sibling rows | 47,835 | 47,835 | ✅ |
-| V1 survival status | 82.5 / 17.4 / 0.1 | 82.8 / 17.1 / 0.1 | ✅ |
-| V1 mean sibship size | 4.9 | 4.9 | ✅ |
-| V1 sex ratio | 1.00 | 0.99 | ✅ |
-| V2 exposure, total | 108,614 | 108,985 | ✅ 0.997 |
-| V3 maternal deaths | 58.9 | 68 | ❌ 0.87 |
-| V4 age-adjusted rate | — | 0.59 | blocked by V3 |
+**Everything reproduces except the maternal classification.**
+
+| Stage | Table | Observed | Published | |
+|---|---|---|---|---|
+| V1 sibling rows | — | 47,835 | 47,835 | ✅ |
+| V1 survival status | DQ.7.1 | 82.5 / 17.4 / 0.1 | 82.8 / 17.1 / 0.1 | ✅ |
+| V1 mean sibship size | DQ.7.2 | 4.9 | 4.9 | ✅ |
+| V1 sex ratio | DQ.7.2 | 1.00 | 0.99 | ✅ |
+| V2 exposure, female | TM.9.1/9.3 | 108,614 | 108,985 | ✅ 0.997 |
+| V2 exposure, male | TM.9.1 | 109,979 | 110,089 | ✅ 0.999 |
+| V5 age-adj. rate, female | TM.9.1 | **6.27** | **6.28** | ✅ |
+| V5 age-adj. rate, male | TM.9.1 | 6.16 | 6.09 | ✅ |
+| V7 all-cause deaths, female | TM.9.1 | 665 | 674 | ✅ 0.987 |
+| V7 all-cause deaths, male | TM.9.1 | 670 | 668 | ✅ 1.002 |
+| V7 ₃₅q₁₅, women | TM.9.2 | 222.7 | 224 | ✅ |
+| V7 ₃₅q₁₅, men | TM.9.2 | 218.5 | 219 | ✅ |
+| **V3 maternal deaths** | **TM.9.3** | **58.9** | **68** | ❌ **0.87** |
+| V4/V6 | TM.9.3 | — | — | blocked by V3 |
+
+**TM.9.1 and TM.9.2 are the control.** They run through the same prep, the same
+exposure calculation, the same window, the same weights and the same death
+placement as TM.9.3 — everything except the maternal recode. They reproduce to
+within 1–2%. So the machinery is correct and **the entire V3 gap sits in the
+classification rule**.
+
+**V5 resolved the age-standard ambiguity.** The reference flagged three
+candidate reference populations (MICS text: survey respondents; IUSSP: women
+15–49 in surveyed households; MMEIG: female population of respondent
+households). Standardising the all-cause female rate by
+`get_ego_age_distn()` — the survey respondents — gives **6.27 against a
+published 6.28**. MICS uses interviewed women, as its own text says.
 
 **V2 resolved the 7-year boundary.** No MICS document states whether the window
 is years-since-death 0–6 or 1–7. Testing all three candidates against the
@@ -662,7 +684,19 @@ implements. The residual 0.34% is age-patterned — exact at 40–49, worst at
 15–19 — and about a quarter of it is siblings dropped for missing sex or
 survival status (keeping them gives 0.9974). Not chased further.
 
-**V3's shortfall is in the definition, not the machinery.** Ruled out:
+**V3's shortfall is in the definition, not the machinery.** The report's own
+methodology text is internally inconsistent about which estimand TM.9.3 uses:
+
+> "Age-specific mortality rates are calculated by dividing the number of
+> **pregnancy-related deaths** by years of exposure" (p. 110)
+
+while footnote A of the table says
+
+> "A maternal death is defined as the death of a woman while pregnant or within
+> 42 days of termination of pregnancy, **from any cause except accidents or
+> violence**"
+
+Neither reading reproduces. Ruled out:
 
 - *The package.* A direct hand tabulation off the raw `.sav` gives 58.5 weighted
   maternal deaths against the package's 58.9. They agree; both are short of 68.
@@ -679,9 +713,19 @@ survival status (keeping them gives 0.9974). Not chased further.
   656–666 female deaths and 58.5–58.9 maternal. A wider 0–7 window overshoots
   female deaths (734 vs an implied 680) while still undershooting maternal (64.9).
 
-The published **PM of 10.0%** is above our broadest pregnancy-related PM of
-**9.5%**, so MICS is classifying proportionally more female deaths as maternal
-than any reading of the questionnaire items produces.
+With TM.9.1's female-death denominator now known (**674**, not the 680 inferred
+from rounded percentages), the discrepancy is sharp:
+
+| | ours | published |
+|---|---|---|
+| female deaths 15–49 | 665 | 674 |
+| pregnancy-related | 62.7 | — |
+| maternal | 58.9 | 68 |
+| **PM** | **8.9% (mat) / 9.4% (PR)** | **10.1%** |
+
+So MICS classifies proportionally more female deaths as maternal than *any*
+reading of the questionnaire items produces — and it does so while agreeing with
+us on the denominator to within 1.3%.
 
 > **This makes retrieving the MICS6 Standard SPSS Syntax a blocker rather than a
 > nice-to-have.** The methods reference calls it "the only authoritative
@@ -718,9 +762,12 @@ age-specific cells are small, so compare counts rather than rates here.
 **V4. Age-specific rates per 1,000.** 0.23, 0.56, 0.41, 0.87, 0.91, 0.96, 0.30.
 *V2 and V3 combined, via `asdr.agg`.*
 
-**V5. Age-standardised rate.** 0.59 per 1,000. *Tests `get_ego_age_distn()` and
-the aggregation in `aggregate_maternal_estimates()`.* This stage **resolves the
-age-standard ambiguity** flagged in the reference §6: MICS text says "the age
+**V5. Age-standardised rate.** ✅ **Resolved 2026-08-21 on the all-cause rate:
+MICS standardises by the age distribution of the *survey respondents*, which is
+what `get_ego_age_distn()` computes** (6.27 against a published 6.28). Originally
+posed as: *Tests `get_ego_age_distn()` and the aggregation in
+`aggregate_maternal_estimates()`*, and resolving the ambiguity flagged in the
+reference §6: MICS text says "the age
 distribution of the survey respondents" — which is what `get_ego_age_distn()`
 does — while IUSSP says "women aged 15–49 in the households surveyed" and MMEIG
 says "the female population of respondent households". Try both; only one will
@@ -729,7 +776,9 @@ reproduce.
 **V6. PM — proportion of female deaths that are maternal.** 10.0% overall.
 *Independent check on the all-cause denominator, which V2–V5 never exercise.*
 
-**V7. Adult mortality, both sexes.** TM.9.1 ₅m_x and TM.9.2 ₃₅q₁₅ by sex —
+**V7. Adult mortality, both sexes.** ✅ **Passes** — see the results table. This
+turned out to be the most useful stage of all, because it is the *control* for
+V3: same pipeline, no maternal recode. TM.9.1 ₅m_x and TM.9.2 ₃₅q₁₅ by sex —
 Zimbabwe 224 (W) / 219 (M), Iraq 49 / 86, Punjab 75 / 85. *A completely
 independent check that never touches the maternal recode*, and the only one that
 exercises the male roster. Note `nax = 2.5` for all groups in the MICS formula.
