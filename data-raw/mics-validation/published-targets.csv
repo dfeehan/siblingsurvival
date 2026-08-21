@@ -73,3 +73,30 @@ ZW2019,TM.9.1,allcause_deaths,m,total,668,deaths,
 ZW2019,TM.9.1,exposure,m,total,110089,woman-years,male exposure
 ZW2019,TM.9.1,allcause_rate,f,age_adjusted,6.28,per 1000 person-years,standardised by the respondents age distribution - see V5
 ZW2019,TM.9.1,allcause_rate,m,age_adjusted,6.09,per 1000 person-years,
+IQ2018,TM.9.1,exposure,f,"[15,20)",75074,woman-years,Iraq reproduces to ratio 1.00 on every cell
+IQ2018,TM.9.1,exposure,f,"[20,25)",85301,woman-years,
+IQ2018,TM.9.1,exposure,f,"[25,30)",87266,woman-years,
+IQ2018,TM.9.1,exposure,f,"[30,35)",83542,woman-years,
+IQ2018,TM.9.1,exposure,f,"[35,40)",68154,woman-years,
+IQ2018,TM.9.1,exposure,f,"[40,45)",45682,woman-years,
+IQ2018,TM.9.1,exposure,f,"[45,50)",26274,woman-years,
+IQ2018,TM.9.1,exposure,f,total,471294,woman-years,
+IQ2018,TM.9.1,exposure,m,total,485398,woman-years,
+IQ2018,TM.9.1,allcause_deaths,f,"[15,20)",41,deaths,
+IQ2018,TM.9.1,allcause_deaths,f,"[20,25)",52,deaths,
+IQ2018,TM.9.1,allcause_deaths,f,"[25,30)",79,deaths,
+IQ2018,TM.9.1,allcause_deaths,f,"[30,35)",95,deaths,
+IQ2018,TM.9.1,allcause_deaths,f,"[35,40)",110,deaths,
+IQ2018,TM.9.1,allcause_deaths,f,"[40,45)",135,deaths,
+IQ2018,TM.9.1,allcause_deaths,f,"[45,50)",63,deaths,
+IQ2018,TM.9.1,allcause_deaths,f,total,574,deaths,PM denominator; 64/574 = 11.2%
+IQ2018,TM.9.1,allcause_deaths,m,total,1158,deaths,
+IQ2018,TM.9.3,maternal_deaths,f,"[15,20)",7,deaths,NB the printed column is PREGNANCY-RELATED despite the label
+IQ2018,TM.9.3,maternal_deaths,f,"[20,25)",12,deaths,
+IQ2018,TM.9.3,maternal_deaths,f,"[25,30)",13,deaths,
+IQ2018,TM.9.3,maternal_deaths,f,"[30,35)",13,deaths,
+IQ2018,TM.9.3,maternal_deaths,f,"[35,40)",5,deaths,
+IQ2018,TM.9.3,maternal_deaths,f,"[40,45)",11,deaths,
+IQ2018,TM.9.3,maternal_deaths,f,"[45,50)",2,deaths,
+IQ2018,TM.9.3,maternal_deaths,f,total,64,deaths,ours 64.9 pregnancy-related = ratio 1.008
+IQ2018,TM.9.3,pm,f,age_adjusted,11.2,percent,ours 11.3 pregnancy-related

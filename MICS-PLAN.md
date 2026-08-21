@@ -690,7 +690,44 @@ implements. The residual 0.34% is age-patterned — exact at 40–49, worst at
 15–19 — and about a quarter of it is siblings dropped for missing sex or
 survival status (keeping them gives 0.9974). Not chased further.
 
-**V3's shortfall is in the definition, not the machinery.** The report's own
+> ## ✅ RESOLVED 2026-08-21 by Iraq 2018
+>
+> **TM.9.3's numerator is *pregnancy-related* deaths, not maternal deaths.**
+> Iraq 2018 reproduces to within 1%:
+>
+> | | ours | published | ratio |
+> |---|---|---|---|
+> | female exposure | 471,232 | 471,294 | **1.0000** |
+> | male exposure | 485,061 | 485,398 | **0.9993** |
+> | female all-cause deaths | 574 | 574 | **1.0007** |
+> | male all-cause deaths | 1,158 | 1,158 | **0.9996** |
+> | ₃₅q₁₅ women / men | 49.5 / 85.8 | 49 / 86 | ✅ |
+> | **TM.9.3, pregnancy-related** | **64.9** | **64.4** | **1.008** |
+> | TM.9.3, maternal | 54.2 | 64.4 | 0.848 |
+>
+> Every age group of TM.9.1 matches at ratio 1.00. The PM follows too: ours
+> 11.3% against a published 11.2%.
+>
+> So **the methodology text is authoritative and table footnote A is the stale
+> boilerplate** — the reverse of what `notes/mics-maternal-mortality-reference.md`
+> §8 concluded. The column is *labelled* "Maternal Deaths" and footnoted as
+> excluding accidents and violence, but the number printed is the
+> pregnancy-related count, on the two-month window, with no cause exclusion.
+>
+> **Zimbabwe 2019 is the anomaly, not the package.** It fails to reproduce on
+> *every* quantity, including ones with no maternal recode at all — exposure
+> 0.997, female all-cause deaths 0.987 — while Iraq is exact on all of them. Its
+> published tables are already known to be internally inconsistent: the
+> sampling-error appendix gives an MMR of 413.637 against the report's own
+> headline of 462, whereas Iraq's SE table agrees with its TM.9.3. Treat
+> Zimbabwe's TM.9.1/TM.9.3 as unreliable rather than chasing them further.
+>
+> **Consequence for the package:** `add_maternal_deaths(style = "mics6")` should
+> produce both columns, but any comparison against published MICS figures must
+> use `sib.preg_related.death.date`, not `sib.maternal.death.date`. Worth stating
+> in the docs, since the published column name says otherwise.
+
+The original analysis, kept because it shows what was ruled out. The report's own
 methodology text is internally inconsistent about which estimand TM.9.3 uses:
 
 > "Age-specific mortality rates are calculated by dividing the number of
