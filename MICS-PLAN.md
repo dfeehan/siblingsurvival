@@ -46,9 +46,14 @@ MICS has run **two structurally different** mortality modules under the same
 | Respondents | All adults 15+, both sexes, proxy allowed | Women 15–49 | Women 15–49 |
 | Brothers enumerated? | No — sisters only | Yes | Yes |
 | Roster numbering | — | `MM4`–`MM14` | `MM14`–`MM28` |
-| Data file | inside `hl.sav` | women's file | dedicated **`mm.sav`** |
+| Data file | inside `hl.sav` | dedicated **`mm.sav`** * | dedicated **`mm.sav`** |
 | Reference period | ~10–14 yrs | 7 years | 7 years |
 | Estimand | — | Pregnancy-related, 2 months, **no** cause exclusion | **Maternal**, 42 days, **excl.** violence/accidents |
+
+\* The methods reference says MICS4/5 keep the roster in the women's file.
+Checking the archive, every MICS4/5 survey that fielded the module ships a
+separate `mm.sav`, and every one that lacks `mm.sav` has no `MM` variables in
+`wm.sav` either. See the inventory section.
 
 **MICS2/3 are out.** Summary sisterhood counts, asked in the household
 questionnaire, sisters only, no per-sibling roster, no ages at death. There is
@@ -89,25 +94,96 @@ standalone form.
 Questionnaire Topics*, not the Base Questionnaire, and only a minority of
 countries fielded it. Presence of `mm.sav` is the practical test.
 
-**The blocker is data access.** Registration is per-survey at mics.unicef.org.
-The four shortlisted MICS6 surveys, chosen because they are in countries already
-in the DHS sample and so support a within-country comparison of the two
-instruments:
+**Data access is no longer the blocker.** A local archive of 229 MICS surveys
+(MICS2–MICS7) is in hand. See the inventory section below — it changes the
+survey plan substantially.
 
-| Survey | |
-|---|---|
-| Benin | 2021–22 |
-| Gambia | 2018 |
-| Malawi | 2019–20 |
-| Sierra Leone | 2017 |
+**Everything is now buildable and validatable.** The synthetic fixture (M8) is
+still worth building first, because it makes the contract explicit and runs in
+CI where the microdata cannot, but validation against real files (V1–V7) no
+longer waits on anything.
 
-For *validation* (see below) a different set matters more — surveys whose
-published tables are already transcribed in the methods reference:
-**Zimbabwe 2019**, **Iraq 2018**, **Pakistan Punjab 2017-18** and **Pakistan
-Sindh 2018-19**.
 
-**Everything except a real-data validation can be built before a file arrives**,
-against a synthetic fixture (M8). That is the point of the sequencing.
+Inventory: which surveys actually have a sibling history
+----
+
+Scanned a local archive of **229 MICS surveys** (MICS2–MICS7) on 2026-08-21,
+opening every survey's dataset zip and reading the variable names out of each
+`mm.sav`. Full results in `data-raw/mics-inventory.csv`.
+
+**Only 13 of 229 surveys have a usable sibling history.**
+
+| | MICS2 | MICS3 | MICS4 | MICS5 | MICS6 | MICS7 |
+|---|---|---|---|---|---|---|
+| surveys in archive | 42 | 45 | 42 | 34 | 61 | 5 |
+| **with sibling roster** | 0 | 0 | **2** | **7** | **4** | 0 |
+
+The 13:
+
+| Survey | Round | Scheme | Sibling rows | CMC dates | psu | Estimand |
+|---|---|---|---|---|---|---|
+| BTN_2010 | MICS4 | `MM5`–`MM13` | 60,333 | **none** | yes | pregnancy-related |
+| MRT_2011 | MICS4 | `MM5`–`MM13` | 67,412 | `MM7C`/`MM8C` | no | pregnancy-related |
+| BEN_2014 | MICS5 | `MM5`–`MM13` | 80,643 | `MM7C`/`MM8C` | no | pregnancy-related |
+| COG_2014 | MICS5 | `MM5`–`MM13` | 51,672 | `MM7C`/`MM8C` | no | pregnancy-related |
+| GNB_2014 | MICS5 | `MM5`–`MM13` | 46,102 | `MM7C`/`MM8C` | no | pregnancy-related |
+| STP_2014 | MICS5 | `MM5`–`MM13` | 15,601 | `MM7C`/`MM8C` | no | pregnancy-related |
+| MWI_2013 | MICS5 | `MM5`–`MM13` | 133,054 | `MM7C`/`MM8C` | no | pregnancy-related |
+| ZWE_2014 | MICS5 | `MM5`–`MM13` | 71,994 | `MM7C`/`MM8C` | no | pregnancy-related |
+| GIN_2016 | MICS5 | `MM5`–`MM13` | 38,132 | `MM7C`/`MM8C` | no | pregnancy-related |
+| IRQ_2018 | MICS6 | `MM15`–`MM27` | 186,790 | `MM17C`/`MM18C` | yes | **maternal** + PR |
+| MDG_2018 | MICS6 | `MM15`–`MM27` | 89,420 | `MM17C`/`MM18C` | no | **maternal** + PR |
+| ZWE_2019 | MICS6 | `MM15`–`MM27` | 47,835 | `MM17C`/`MM18C` | yes | **maternal** + PR |
+| COM_2022 | MICS6 | `MM15`–`MM27` | 37,491 | `MM17C`/`MM18C` | yes | **maternal** + PR |
+
+### ⚠ The analysis shortlist does not survive this
+
+**None of Benin 2021, Gambia 2018, Malawi 2019 or Sierra Leone 2017 fielded the
+module.** The audit's shortlist was built from a survey *catalogue*, on country
+and round, without checking whether MM was actually collected — and MM is an
+optional module. Verified directly: Gambia 2018's `wm.sav` has 409 variables and
+**zero** `MM`-prefixed ones.
+
+**But Benin and Malawi are both available one round earlier**, as `BEN_2014` and
+`MWI_2013`. So the within-country DHS↔MICS design survives — it just moves to
+MICS5.
+
+**This makes MICS4/5 support essential rather than optional.** MICS6 alone gives
+4 surveys; adding MICS4/5 gives 13. That reverses the priority in M5: write the
+**MICS4/5 varmap first**, since it covers nine of the thirteen.
+
+### Two traps the scan turned up
+
+1. **MICS3 `mm.sav` is the *Men's* file, not maternal mortality.** CAF_2006,
+   GHA_2006 and MWI_2006 all have an `mm.sav` containing `MM4` "Man's Line
+   number", `MM7` "Results of Men's interview", and `mmweight` "men's sample
+   weight". Filename collision, nothing more. Any inventory built by globbing for
+   `mm.sav` will pick these up.
+2. **MICS4/5 surveys without `mm.sav` genuinely did not field the module** — the
+   roster is not tucked inside `wm.sav`. Checked NGA_2011, THA_2012, IRQ_2011,
+   NGA_2016, SDN_2014 and CMR_2014: all have zero `MM`-prefixed variables in
+   `wm.sav`. So **`mm.sav` presence is the definitive test**, contrary to the
+   methods reference's suggestion that MICS4/5 keep the roster in the women's
+   file.
+
+### What the inventory changes downstream
+
+- **`psu` is usually absent.** Only 4 of 13 carry it in `mm.sav`; `stratum` is
+  rarer still. `get_sib_df()` hardcodes `psu` as required, so the prep must
+  construct it — `HH1` is the cluster. See M2.
+- **`BTN_2010` is the derivation-fallback case.** It is the only survey with no
+  CMC columns at all, so it exercises M1 exactly as Pakistan Sindh would have.
+  Sindh is not in this archive.
+- **`MDG_2018` has no `WDOB`**, so respondent age cannot come from
+  `(WDOI - WDOB)/12` there and must be joined from `wm.sav`. This is why `wm.df`
+  is optional rather than unused.
+- **Zimbabwe appears twice** — `ZWE_2014` (MICS5) and `ZWE_2019` (MICS6) — and
+  the methods reference has published numbers for both (614 and 462). That is a
+  within-country, across-round, across-estimand validation pair, and the best
+  test of the MICS4/5 and MICS6 branches against each other.
+- **Variable counts range 23–48**, confirming that country customisation is the
+  norm. `check_varmap_cols()` reporting missing varmap entries is the right
+  behaviour; the prep must not require the full set.
 
 
 The deliverable: `prep_mics_sib_histories()`
@@ -285,7 +361,11 @@ in `mm.sav`; only `caseid` genuinely has to be constructed.
 - **`survey`** — from the required argument.
 - **`doi`** — `WDOI`, or CMC from `WM6Y`/`WM6M` as a fallback:
   `cmc = (year - 1900) * 12 + month`.
-- **`psu`, `stratum`, `wwgt`** — map straight from `psu`, `stratum`, `wmweight`.
+- **`psu`** — map from `psu` **when present, which is only 4 of the 13 usable
+  surveys**; otherwise construct it from `HH1` (the cluster). `get_sib_df()`
+  hardcodes `psu` as required, so this cannot be skipped. `stratum` is rarer
+  still and is not required by the pipeline.
+- **`wwgt`** — from `wmweight`.
 - **Joining `wm.sav` is optional**, for covariates beyond the background
   variables `mm.sav` already carries (`welevel`, `MSTATUS`, `CEB`, `religion`,
   `windex5`, …). Join on `WM1`/`WM2`/`WM3` when needed.
@@ -535,17 +615,23 @@ check a survey's `mm.sav` **before** requesting it: whether the module was
 fielded at all, whether `MM17C`/`MM18C` are present, and what country-specific
 items were added. Registration is only needed for the actual `.sav` files.
 
-- Zimbabwe 2019: `catalog/4180/data-dictionary/F6?file_name=mm.sav`
+- Zimbabwe 2019: `catalog/4180/data-dictionary/F6?file_name=mm.sav` (matches the real file exactly — 48 variables)
 - Pakistan Sindh 2018-19: `catalog/4181/data-dictionary/F6`
 
 ### Which surveys, and why each
 
+All four are in the local archive.
+
 | Survey | Why |
 |---|---|
-| **Zimbabwe 2019** | Primary. Fullest published tables — TM.9.3 age-specific, TM.9.1/9.2 adult mortality, DQ.7.1/7.2 data quality. Has `MM17C`/`MM18C` |
-| **Iraq 2018** | Second country. Its sampling-error table *agrees* with TM.9.3, unlike Zimbabwe's |
-| **Pakistan Sindh 2018-19** | **Confirmed to lack `MM17C`/`MM18C`** while carrying `WDOI`/`WDOB` — exercises the M1 derivation fallback, the code path Zimbabwe never reaches. Also adds `MM22A`, so it tests tolerance of country-specific items. 147,316 sibling rows |
-| **Pakistan Punjab 2017-18** | Published point estimates but **no CIs** — confirms the pipeline does not assume uncertainty is available |
+| **ZWE_2019** | Primary. Fullest published tables — TM.9.3 age-specific, TM.9.1/9.2 adult mortality, DQ.7.1/7.2 data quality. 47,835 sibling rows |
+| **ZWE_2014** | Same country one round earlier, MICS5 scheme, published MMR 614 against 2019's 462. Validates the MICS4/5 branch *and* the estimand difference, in a setting where everything else is held roughly constant |
+| **IRQ_2018** | Second country, MICS6. Its sampling-error table *agrees* with TM.9.3, unlike Zimbabwe's. 186,790 rows, and has `psu` but no `stratum` |
+| **BTN_2010** | **The only survey in the archive with no CMC columns at all** — exercises the M1 derivation fallback, the code path every other survey skips |
+
+Pakistan Punjab and Sindh, named in the first draft, are **not in the archive**.
+Punjab's role (a survey publishing point estimates with no CIs) is worth keeping
+in mind but no longer has a test case; Sindh's role is taken by BTN_2010.
 
 ### Staged checks
 
@@ -624,15 +710,11 @@ From the reference, so they are not mistaken for pipeline bugs:
 Sequence
 ----
 
-1. **Request MICS microdata access now**, in parallel with everything else — it
-   is the long pole, and nothing below waits on it except V1–V7. Prioritise
-   **Zimbabwe 2019**: it is the validation key, having the fullest published
-   tables, even though it is not on the analysis shortlist. Then the four
-   shortlisted surveys, then **Pakistan Sindh 2018-19** for the derivation
-   fallback. Check each survey's public data dictionary first — it says whether
-   the module was fielded before you spend a registration on it.
+1. ~~Request MICS microdata access~~ — **done**; a 229-survey archive is in hand
+   and the 13 usable surveys are inventoried in `data-raw/mics-inventory.csv`.
+   Nothing is now blocked on data.
 
-   Also worth a browser session: the **MICS6 Tabulation Plan** and the
+   Still worth a browser session: the **MICS6 Tabulation Plan** and the
    **Standard SPSS Syntax** are Cloudflare-blocked from a non-browser client and
    absent from the Wayback Machine, but the reference calls the syntax "the only
    authoritative statement of the estimation algorithm". Retrieving it could
@@ -646,8 +728,10 @@ Sequence
 4. **`prep_mics_sib_histories()` skeleton** — the signature above, `lowercase`
    (M3), the `reshape = FALSE` path (M4), and delegation to the shared internals.
 5. **M2** — the two-file join and `caseid`.
-6. **M5** — the MICS6 varmap first, then MICS4/5, then MICS7. Regenerate from a
-   corrected crosswalk rather than hand-editing the draft.
+6. **M5** — the **MICS4/5 varmap first**, since it covers nine of the thirteen
+   usable surveys, then MICS6 for the other four. No MICS7 survey in the archive
+   fielded the module, so that varmap can wait. Regenerate from a corrected
+   crosswalk rather than hand-editing the draft.
 7. **M6, M7** — the maternal recode and the guards. M6 needs the `na.action`
    decision made first.
 8. **V1–V7** — validate against Zimbabwe 2019 as soon as the file is in hand,
