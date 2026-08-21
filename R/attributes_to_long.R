@@ -159,7 +159,7 @@ attributes.to.long <- function(df,
                              ego.vars,
                              these.altercols)
 
-                 if(length(intersect(names(ego.vars), names(these.altercols)) > 0)) {
+                 if(length(intersect(names(ego.vars), names(these.altercols))) > 0) {
                    stop("There appear to be overlapping names in the ego and sibling variables - this is not allowed.\n")
                  }
 

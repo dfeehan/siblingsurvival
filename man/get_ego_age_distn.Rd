@@ -21,5 +21,8 @@ get_ego_age_distribution
 \section{Details}{
 
 \code{ego_dat} is assumed to have two columns: \code{wwgt} and \code{age.cat}
+
+The age groups used are those returned by
+\link{reproductive_age_groups}.
 }
 

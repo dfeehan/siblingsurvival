@@ -174,6 +174,11 @@ get_visibility <- function(ego.dat,
 ##' typically used in calculating the maternal or pregnancy-related mortality
 ##' @section Details:
 ##' `ego_dat` is assumed to have two columns: `wwgt` and `age.cat`
+##'
+##' The age groups used are those returned by
+##' [siblingsurvival::reproductive_age_groups].
+##' @export
+##' @md
 get_ego_age_distn <- function(ego.dat,
                               only_females = TRUE) {
 
@@ -184,13 +189,7 @@ get_ego_age_distn <- function(ego.dat,
   respondent_age <- ego.dat %>%
     ## age.cat and wwgt are assumed to come with the dataset; they have
     ## ego age in 5-year groups and the women's weight
-    filter(age.cat %in% c("[15,20)",
-                          "[20,25)",
-                          "[25,30)",
-                          "[30,35)",
-                          "[35,40)",
-                          "[40,45)",
-                          "[45,50)")) %>%
+    filter(age.cat %in% reproductive_age_groups()) %>%
     group_by(age.cat) %>%
     # note that [siblingsurvival::prep_dhs_sib_histories]
     # will have already scaled these weights

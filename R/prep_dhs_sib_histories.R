@@ -63,20 +63,10 @@ prep_dhs_sib_histories <- function(df,
   # prepare ego data
   #########################
 
-  ## in some cases, variables in the varmap may not be in the specific DHS dataset
-  ## we are preparing (for example, some surveys don't have the 'literacy' variable, v155)
-  ## in those cases, we print a message reporting this but proceed
-  miss_col <- resp.attrib[which(! resp.attrib %in% names(df))]
-
-  if(length(miss_col > 0)) {
-    cat(glue::glue("
-
-                    Warning: Column(s) found in the varmap are missing in the dataset:
-                    {paste0(miss_col, collapse=',')}
-                    These will be ignored...
-
-                    "))
-  }
+  ## in some cases, variables in the varmap may not be in the specific dataset
+  ## we are preparing (for example, some surveys don't have the 'literacy'
+  ## variable, v155); in those cases, we report it but proceed
+  miss_col <- check_varmap_cols(df, resp.attrib, sib.attrib, verbose=verbose)
 
   ego.dat <- get_ego_df(df, resp.attrib, verbose)
 
@@ -154,7 +144,8 @@ prep_dhs_sib_histories <- function(df,
                  miss.sex.pct = miss.sex.pct,
                  sibs.removed = sibs.removed.n,
                  sibs.removed.pct = sibs.removed.pct,
-                 ego.cols.notfound = list(miss_col))
+                 ego.cols.notfound = list(miss_col$ego),
+                 sib.cols.notfound = list(miss_col$sib))
 
   if (keep_varmap_only) {
     ego.dat <- ego.dat %>%
@@ -233,20 +224,10 @@ prep_nrsim_sib_histories <- function(df,
   # prepare ego data
   #########################
 
-  ## in some cases, variables in the varmap may not be in the specific DHS dataset
-  ## we are preparing (for example, some surveys don't have the 'literacy' variable, v155)
-  ## in those cases, we print a message reporting this but proceed
-  miss_col <- resp.attrib[which(! resp.attrib %in% names(df))]
-
-  if(length(miss_col > 0)) {
-    cat(glue::glue("
-
-                    Warning: Column(s) found in the varmap are missing in the dataset:
-                    {paste0(miss_col, collapse=',')}
-                    These will be ignored...
-
-                    "))
-  }
+  ## in some cases, variables in the varmap may not be in the specific dataset
+  ## we are preparing (for example, some surveys don't have the 'literacy'
+  ## variable, v155); in those cases, we report it but proceed
+  miss_col <- check_varmap_cols(df, resp.attrib, sib.attrib, verbose=verbose)
 
 
   #########################
@@ -323,7 +304,8 @@ prep_nrsim_sib_histories <- function(df,
                  miss.sex.pct = miss.sex.pct,
                  sibs.removed = sibs.removed.n,
                  sibs.removed.pct = sibs.removed.pct,
-                 ego.cols.notfound = list(miss_col))
+                 ego.cols.notfound = list(miss_col$ego),
+                 sib.cols.notfound = list(miss_col$sib))
 
   if (keep_varmap_only) {
     ego.dat <- ego.dat %>%
@@ -462,8 +444,11 @@ get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE) {
                                TRUE ~ sib.dob)) %>%
     # estimate birth date from a sib whose date of death and age at death
     # we have
+    # NB: the guard has to be on sib.death.age, since that is what the
+    #     approximation actually uses; guarding on sib.death.yrsago instead
+    #     silently produced NA whenever age at death was missing
     mutate(sib.dob = case_when((is.na(sib.dob) &
-                                  (! is.na(sib.death.yrsago)) &
+                                  (! is.na(sib.death.age)) &
                                   (! is.na(sib.death.date))  ) ~
                                  approx_birth_date_from_death(sib.death.date,
                                                               sib.death.age),

@@ -54,8 +54,8 @@ aggregate_maternal_estimates <- function(estimates,
                 select(time.period, sib.sex, sib.age,
                        any_of('event.name'),
                        asdr.hat.agg = asdr.hat)) %>%
-    # only need ages 15-50
-    filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))
+    # only need ages 15-49
+    filter(sib.age %in% reproductive_age_groups())
 
   if (only_females) {
 
@@ -154,8 +154,8 @@ aggregate_maternal_estimates <- function(estimates,
                          boot_idx,
                          any_of('event.name'),
                          asdr.hat.agg = asdr.hat)) %>%
-      # only need ages 15-50
-      filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))
+      # only need ages 15-49
+      filter(sib.age %in% reproductive_age_groups())
 
     if (only_females) {
 

@@ -1,3 +1,49 @@
+# siblingsurvival 0.3.0.9000 (development)
+
+## New features
+
+* `get_ego_age_distn()` is now exported. It was already documented and used by
+  `aggregate_maternal_estimates()`, but callers who wanted the respondent age
+  distribution for their own age-specific output had to reach for `:::`.
+* Added `reproductive_age_groups()`, an exported accessor giving the seven
+  5-year age groups covering ages 15-49. This is now the single definition used
+  by both `get_ego_age_distn()` and `aggregate_maternal_estimates()`, which
+  previously each carried their own copy of the age-group list.
+* `sibling_estimator()` now defaults `sib.id` to `'sibid'`, which is the sibling
+  id column that `prep_dhs_sib_histories()` and `prep_nrsim_sib_histories()`
+  create. Callers that pass `sib.id` explicitly are unaffected.
+* `sibling_estimator()` now checks up front that the columns named by `ego.id`,
+  `sib.id`, `sib.frame.indicator`, `sib.sex` and `weights` exist in `sib.dat`,
+  and errors with a message naming both the arguments at fault and the columns
+  that are actually present. Previously a mismatched name produced an opaque
+  tidyselect error deep in the call stack.
+* `prep_dhs_sib_histories()` and `prep_nrsim_sib_histories()` now report
+  *sibling* variables from the varmap that are missing from the dataset, not
+  just ego variables. Sibling variables are matched as prefixes (`mm3` matches
+  `mm3_01`, `mm3_02`, ...), using the same regular expression as
+  `attributes.to.long()`. The `summ` tibble gained a `sib.cols.notfound` column
+  alongside the existing `ego.cols.notfound`.
+
+## Bug fixes
+
+* Fixed the derivation of `sib.dob` from a sibling's age at death in
+  `get_sib_df()`. The condition was guarded on `sib.death.yrsago` but the
+  approximation is computed from `sib.death.age`, so a sibling with a known age
+  at death but no years-since-death got a silent `NA` birth date. Now guarded on
+  `sib.death.age`.
+* Fixed a misplaced parenthesis in `attributes.to.long()`
+  (`length(intersect(...) > 0)` rather than `length(intersect(...)) > 0`) in the
+  check for overlapping ego and alter variable names. The check happened to
+  behave correctly, but only by accident.
+
+## Tests
+
+* Added `tests/testthat/test_prep_cleanup.R` covering the export of
+  `get_ego_age_distn()`, `reproductive_age_groups()` (including that it is
+  equivalent to the exclusion filter it replaced for the standard `'5yr'` age
+  groups), the missing-sibling-variable reporting, the `sib.dob` derivation
+  regression, and the `sibling_estimator()` `sib.id` default and error message.
+
 # siblingsurvival 0.3.0
 
 ## New features
