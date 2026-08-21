@@ -46,8 +46,38 @@
   compute them once and pass them in. Results are unchanged either way, and
   there is a test asserting that.
 
+* `get_ego_age_distn(only_females = FALSE)` now returns a **separate** age
+  distribution for each respondent sex: the result gains a `sex` column and
+  `agegrp_prop` sums to 1 *within* each sex. Previously it pooled the sexes into
+  a single distribution with no `sex` column, which
+  `aggregate_maternal_estimates()` could not join against.
+  `only_females = TRUE`, the default and by far the common case, is unchanged.
+
 ## Bug fixes
 
+* Fixed `aggregate_maternal_estimates()`, whose bootstrap branch joined the
+  visibility results on age alone while the point-estimate branch joined on age
+  *and* sex. When the respondents include both sexes, every bootstrap row
+  matched twice, so the bootstrap estimates -- and therefore the confidence
+  intervals -- came out inflated by exactly the number of sexes present. With
+  bootstrap weights set equal to the real weights, which must reproduce the
+  point estimate exactly, the bootstrap mean was 2x the point estimate. This was
+  masked in practice because DHS respondents are all female, so
+  `ego_vis_agg` has a single sex and the duplication does not fire. Callers doing
+  this join themselves should check for the same missing key.
+* Fixed `aggregate_maternal_estimates(only_females = FALSE)`, which errored
+  outright with `Join columns in 'y' must be present in the data`. Three defects
+  were stacked in that one branch: it joined `age_prop` on a `sex` column that
+  `get_ego_age_distn()` never produced; it then grouped by `sex`, which the join
+  consumes into `sib.sex`; and it removed a `dummy` column that its grouping
+  never created. It now groups by `sib.sex`, and results are reported per
+  sibling sex.
+* `aggregate_maternal_estimates(only_females = FALSE)` warns when a sibling sex
+  has no respondents of that sex, naming the sexes involved, instead of silently
+  returning `NA`. A reference age distribution and a visibility adjustment can
+  only come from respondents of the same sex, so for the usual survey that
+  interviews only women, male sibling estimates are `NA` -- which is the honest
+  answer, but should not be silent.
 * `prep_nrsim_sib_histories()` no longer divides weights by `1e6`. Its
   `weight.scale` defaults to `1`, on the grounds that weights outside the DHS
   are typically already normalized to average 1. Previously any varmap mapping a
@@ -76,6 +106,10 @@
   prep functions, the new required-column guards, and that
   `aggregate_maternal_estimates()` returns identical results whether `age_prop`
   and `vis_res` are computed internally or supplied.
+* Added `tests/testthat/test_maternal_aggregation.R` covering the bootstrap join
+  (with bootstrap weights equal to the real weights, so the replicate mean must
+  reproduce the point estimate), the `only_females = FALSE` path, the warning for
+  an uninterviewed sex, and the per-sex `get_ego_age_distn()` output.
 
 # siblingsurvival 0.3.0
 

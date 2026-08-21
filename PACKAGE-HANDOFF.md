@@ -435,6 +435,83 @@ varmap and leans entirely on these derivations — so B5 should assert on the
 `sib.dob` non-`NA` rate, not just on row counts.
 
 
+E. The `maternal_estimators.R` TODOs — **DONE 2026-08-20**
+----
+
+Added after the initial handoff. `R/maternal_estimators.R` carried six `TODO`
+markers, including `TODO NEED TO ADAPT BOOTSTRAP VERSION BELOW` and
+`TODO LEFT OFF HERE`. **None were stale**; each described a live defect. The
+bootstrap block had been written but never reconciled against the
+point-estimate block, and the two had drifted.
+
+### E1. The bootstrap join dropped the sex key
+
+The point-estimate branch joined the visibility results on age *and* sex; the
+bootstrap branch joined on age alone. When `ego_vis_agg` contains both sexes,
+every bootstrap row matches twice.
+
+Demonstrated with bootstrap weights set equal to the real weights, which must
+reproduce the point estimate exactly:
+
+    point ind.est      : 0.001383984
+    bootstrap mean     : 0.002767967
+    ratio              : 2
+
+So the confidence intervals were centred on twice the point estimate, silently.
+
+**This is currently unreachable in the analysis** — DHS respondents are all
+female, so `ego_vis_agg` has a single sex and the duplication never fires. But
+the analysis carries the same landmine in its own code:
+`code/R/estimate.R:134` does
+`left_join(vis_df$ego_vis_agg, by = c("sib.age" = "age.cat"))` — same missing
+key. Benign today for the same reason; worth fixing there too.
+
+This is what the `TODO` at the old line 86 was asking ("test that this works
+even if `vis_res$ego_vis_agg` has males and females?"). The answer was no.
+
+### E2. `only_females = FALSE` errored outright
+
+    Join columns in `y` must be present in the data.
+
+Three defects stacked in one branch:
+
+- it joined `age_prop` on a `sex` column that `get_ego_age_distn()` **never
+  produced** — that function grouped by `age.cat` only, in both modes;
+- it then grouped by `sex`, which the join consumes into `sib.sex`;
+- it removed a `dummy` column that its own grouping never created.
+
+The path had almost certainly never been run. The analysis calls
+`aggregate_maternal_estimates(..., only_females = TRUE)` and uses
+`get_ego_age_distn(only_females = FALSE)` directly, which works standalone.
+
+**Resolved as:** per-sex reference distributions.
+`get_ego_age_distn(only_females = FALSE)` now returns a `sex` column with
+`agegrp_prop` summing to 1 *within* each sex, and both joins key on sex.
+Results are reported per sibling sex. `only_females = TRUE` is untouched.
+
+> ⚠ **This changes the return shape of `get_ego_age_distn(only_females = FALSE)`**,
+> which the analysis repo calls at `code/R/estimate.R:129` and then joins by
+> `age.cat` alone at `:135`. That join will now also pull in a `sex` column and
+> may collide with the `sex` coming from the `ego_vis_agg` join one line above.
+> **Check that call site before re-running the analysis.**
+
+### E3. An uninterviewed sex now warns instead of returning a silent NA
+
+A reference age distribution and a visibility adjustment can only come from
+respondents of the same sex. In the usual survey only women are interviewed, so
+male sibling estimates under `only_females = FALSE` are `NA`. That is the honest
+answer — you cannot estimate a visibility adjustment for a sex that was never
+interviewed — but it is now announced rather than silent.
+
+### Still open in that file
+
+`adj.factor` and `adj.factor.allage` come out **identical for both sexes**,
+because `get_visibility()` computes them as scalars over all egos
+(`S.adj.factor`, `approx.S.adj.factor`) rather than per sex. Only
+`adj.factor.agespec` varies. That is pre-existing behaviour, left alone here,
+but worth deciding whether it is intended.
+
+
 Suggested order
 ----
 
@@ -462,6 +539,9 @@ Suggested order
    question. B1 now has eight requirements, not four.
 7. **D3** — needs a documentary answer (the DHS questionnaire history), not a
    code change.
+8. ~~**E1–E3**~~ — done; see section E. Two follow-ups land in the *analysis*
+   repo, not here: the same missing sex key at `code/R/estimate.R:134`, and the
+   changed `get_ego_age_distn(only_females = FALSE)` shape at `:129`/`:135`.
 
 
 Context the next session will want

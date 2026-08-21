@@ -170,13 +170,24 @@ get_visibility <- function(ego.dat,
 ##' @param ego.dat the ego dataset (probably from [siblingsurvival::prep_dhs_sib_histories])
 ##' @param only_females should only females be used to calculate age distribution? (default: True)
 ##'
-##' @return dataframe with distribution of respondent ages by 5-year category,
-##' typically used in calculating the maternal or pregnancy-related mortality
+##' @return dataframe with distribution of respondent ages by 5-year category.
+##' Columns `age.cat`, `total` and `agegrp_prop`, plus `sex` when
+##' `only_females = FALSE`; see Details
 ##' @section Details:
-##' `ego_dat` is assumed to have two columns: `wwgt` and `age.cat`
+##' `ego_dat` is assumed to have the columns `wwgt`, `age.cat` and `sex`
 ##'
 ##' The age groups used are those returned by
 ##' [siblingsurvival::reproductive_age_groups].
+##'
+##' When `only_females = TRUE` (the default), respondents are restricted to
+##' females and a single age distribution is returned, with `agegrp_prop`
+##' summing to 1 across age groups.
+##'
+##' When `only_females = FALSE`, a **separate** age distribution is returned for
+##' each respondent sex: the result gains a `sex` column, and `agegrp_prop` sums
+##' to 1 *within* each sex. This is what
+##' [siblingsurvival::aggregate_maternal_estimates] needs in order to weight
+##' each sex's age-specific rates by its own respondents' age structure.
 ##' @export
 ##' @md
 get_ego_age_distn <- function(ego.dat,
@@ -189,13 +200,28 @@ get_ego_age_distn <- function(ego.dat,
   respondent_age <- ego.dat %>%
     ## age.cat and wwgt are assumed to come with the dataset; they have
     ## ego age in 5-year groups and the women's weight
-    filter(age.cat %in% reproductive_age_groups()) %>%
-    group_by(age.cat) %>%
-    # note that [siblingsurvival::prep_dhs_sib_histories]
-    # will have already scaled these weights
-    summarize(total = sum(wwgt))
+    filter(age.cat %in% reproductive_age_groups())
 
-  respondent_age$agegrp_prop <- respondent_age$total / (sum(respondent_age$total))
+  if(only_females) {
+
+    respondent_age <- respondent_age %>%
+      group_by(age.cat) %>%
+      # note that [siblingsurvival::prep_dhs_sib_histories]
+      # will have already scaled these weights
+      summarize(total = sum(wwgt), .groups = 'drop') %>%
+      mutate(agegrp_prop = total / sum(total))
+
+  } else {
+
+    ## one age distribution per respondent sex, each summing to 1
+    respondent_age <- respondent_age %>%
+      group_by(sex, age.cat) %>%
+      summarize(total = sum(wwgt), .groups = 'drop') %>%
+      group_by(sex) %>%
+      mutate(agegrp_prop = total / sum(total)) %>%
+      ungroup()
+
+  }
 
   return(respondent_age)
 }

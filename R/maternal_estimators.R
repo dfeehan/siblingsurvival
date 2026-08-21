@@ -1,3 +1,39 @@
+##' warn when a sibling sex has no matching respondents
+##'
+##' Called from [siblingsurvival::aggregate_maternal_estimates] when
+##' `only_females = FALSE`. In most sibling history surveys only women are
+##' interviewed, so there is no respondent age distribution and no visibility
+##' adjustment for male siblings, and their estimates come out `NA`. That is the
+##' honest answer -- you cannot estimate a visibility adjustment for a sex that
+##' was never interviewed -- but it should not be silent.
+##'
+##' @param res the joined estimate dataframe
+##' @param ego.dat the prepped ego data, used to report which sexes were interviewed
+##' @return `res`, unchanged; called for the warning
+##'
+warn_uninterviewed_sex <- function(res, ego.dat) {
+
+  unmatched <- res %>%
+    filter(is.na(agegrp_prop) | is.na(adj.factor)) %>%
+    pull(sib.sex) %>%
+    unique()
+
+  if (length(unmatched) > 0) {
+
+    ego.sexes <- sort(unique(as.character(ego.dat$sex)))
+
+    warning(glue::glue(
+      "No respondent information for sibling sex(es): ",
+      "{paste0(sort(unmatched), collapse=', ')}. ",
+      "The respondents in ego.dat are: {paste0(ego.sexes, collapse=', ')}. ",
+      "Estimates for those siblings will be NA -- a reference age distribution ",
+      "and a visibility adjustment can only come from respondents of the same ",
+      "sex, and that sex was not interviewed."))
+  }
+
+  invisible(res)
+}
+
 ##' calculate total rate based on point estimates
 ##'
 ##' @param estimates the output of [siblingsurvival::sibling_estimator]
@@ -83,7 +119,9 @@ aggregate_maternal_estimates <- function(estimates,
       filter(sib.sex  == 'f') %>%
       left_join(age_prop,
                 by=c('sib.age'='age.cat')) %>%
-      ## TODO - test that this works even if vis_res$ego_vis_agg has males and females?
+      ## NB: keying on sex as well as age matters when ego_vis_agg has both
+      ## sexes -- joining on age alone duplicates every row once per sex.
+      ## The bootstrap branch below has to use the identical key.
       left_join(vis_res$ego_vis_agg,
                 by=c('sib.age'='age.cat',
                      'sib.sex'='sex')) %>%
@@ -92,8 +130,11 @@ aggregate_maternal_estimates <- function(estimates,
 
   } else {
 
+    ## both joins key on sex as well as age: each sibling sex is weighted by
+    ## its own respondents' age structure, and adjusted by its own respondents'
+    ## visibility. Note the join consumes the `sex` column from each of the two
+    ## right-hand tables, so `sib.sex` is what survives to group by.
     res <- res %>%
-      ## TODO NEED TO TEST THESE TWO JOINS
       left_join(age_prop,
                 by=c('sib.age'='age.cat',
                      'sib.sex'='sex')) %>%
@@ -101,8 +142,9 @@ aggregate_maternal_estimates <- function(estimates,
                 by=c('sib.age'='age.cat',
                      'sib.sex'='sex')) %>%
       mutate(dummy=1) %>%
-      ## TODO IS THIS RIGHT?
-      group_by(sex)
+      group_by(dummy, sib.sex)
+
+    warn_uninterviewed_sex(res, ego.dat)
 
   }
 
@@ -114,13 +156,10 @@ aggregate_maternal_estimates <- function(estimates,
               adj.factor.meanagespec = sum(adj.factor.agespec*agegrp_prop)) %>%
     mutate(ratio.agg.ind = agg.est / ind.est) %>%
     mutate(ratio.ind.agg = ind.est  / agg.est) %>%
+    ## `dummy` exists only to give summarize() a single group in the
+    ## only_females branch; ungroup first, or select() refuses to drop it
+    ungroup() %>%
     select(-dummy)
-
-  ## TODO NEED TO ADAPT BOOTSTRAP VERSION BELOW
-  ## TODO LEFT OFF HERE
-  ##   - check that this works w/ females and with both
-  ##   - see the other TODOs above here
-  ##   - then also adapt bootstrap code below...
 
   ## if there are bootstrap results, also calculate aggregate for those
   if ('boot.asdr.ind' %in% names(estimates)) {
@@ -140,12 +179,13 @@ aggregate_maternal_estimates <- function(estimates,
                            list( .ci.low = ~ quantile(.x, .025, na.rm=TRUE),
                                  .ci.high = ~ quantile(.x, .975, na.rm=TRUE),
                                  .mean = ~ mean(.x, na.rm=TRUE)))) %>%
+          ungroup() %>%
           select(-dummy) %>%
           rename_with(~ stringr::str_replace(.x, "_", ""))
       } else {
         res <- total_boot_res %>%
           mutate(dummy=1) %>%
-          group_by(dummy, sex) %>%
+          group_by(dummy, sib.sex) %>%
           summarize(across(c(ind.est, agg.est,
                              adj.factor, adj.factor.allage, adj.factor.meanagespec,
                              ratio.agg.ind,
@@ -153,6 +193,7 @@ aggregate_maternal_estimates <- function(estimates,
                            list( .ci.low = ~ quantile(.x, .025, na.rm=TRUE),
                                  .ci.high = ~ quantile(.x, .975, na.rm=TRUE),
                                  .mean = ~ mean(.x, na.rm=TRUE)))) %>%
+          ungroup() %>%
           select(-dummy) %>%
           rename_with(~ stringr::str_replace(.x, "_", ""))
 
@@ -182,7 +223,12 @@ aggregate_maternal_estimates <- function(estimates,
         # only need females
         filter(sib.sex  == 'f') %>%
         left_join(age_prop, by=c('sib.age'='age.cat')) %>%
-        left_join(vis_res$ego_vis_agg, by=c('sib.age'='age.cat')) %>%
+        ## NB: this join has to match the one in the point-estimate branch
+        ## above. Joining on age alone duplicates every row once per sex
+        ## present in ego_vis_agg, which silently multiplies the bootstrap
+        ## estimates (exactly 2x when respondents include both sexes).
+        left_join(vis_res$ego_vis_agg, by=c('sib.age'='age.cat',
+                                            'sib.sex'='sex')) %>%
         group_by(boot_idx)
 
     } else {
@@ -194,7 +240,7 @@ aggregate_maternal_estimates <- function(estimates,
         left_join(vis_res$ego_vis_agg,
                   by=c('sib.age'='age.cat',
                        'sib.sex'='sex')) %>%
-        group_by(boot_idx, sex)
+        group_by(boot_idx, sib.sex)
     }
 
     res_boot <- res_boot %>%

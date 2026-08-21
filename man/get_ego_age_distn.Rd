@@ -12,17 +12,28 @@ get_ego_age_distn(ego.dat, only_females = TRUE)
 \item{only_females}{should only females be used to calculate age distribution? (default: True)}
 }
 \value{
-dataframe with distribution of respondent ages by 5-year category,
-typically used in calculating the maternal or pregnancy-related mortality
+dataframe with distribution of respondent ages by 5-year category.
+Columns \code{age.cat}, \code{total} and \code{agegrp_prop}, plus \code{sex} when
+\code{only_females = FALSE}; see Details
 }
 \description{
 get_ego_age_distribution
 }
 \section{Details}{
 
-\code{ego_dat} is assumed to have two columns: \code{wwgt} and \code{age.cat}
+\code{ego_dat} is assumed to have the columns \code{wwgt}, \code{age.cat} and \code{sex}
 
 The age groups used are those returned by
 \link{reproductive_age_groups}.
+
+When \code{only_females = TRUE} (the default), respondents are restricted to
+females and a single age distribution is returned, with \code{agegrp_prop}
+summing to 1 across age groups.
+
+When \code{only_females = FALSE}, a \strong{separate} age distribution is returned for
+each respondent sex: the result gains a \code{sex} column, and \code{agegrp_prop} sums
+to 1 \emph{within} each sex. This is what
+\link{aggregate_maternal_estimates} needs in order to weight
+each sex's age-specific rates by its own respondents' age structure.
 }
 
