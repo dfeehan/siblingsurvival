@@ -14,7 +14,7 @@ utils::globalVariables(c(
   "normalized_diff", "num.hat", "occ", "qty",
   "ratio.agg.ind", "ratio.ind.agg", "rawqty",
   "sex", "sib.age", "sib.alive", "sib.death.date", "sib.died.accident",
-  "sib.died.pregnant", "sib.exp", "sib.maternal.death.date", "sib.occ",
+  "sib.died.pregnant", "sib.dob", "sib.exp", "sib.maternal.death.date", "sib.occ",
   "sib.preg_related.death.date", "sib.sex", "sib.size", "sib.time.delivery.death",
   "sibhist_varmap_dhs6", "sibvar",
   "caseid", "doi", "new.varname", "orig.varname", "sibhist_varmap_mics6",

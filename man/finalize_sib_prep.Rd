@@ -44,3 +44,12 @@ by \link{prep_dhs_sib_histories},
 \link{prep_mics_sib_histories} so that the three preps cannot
 drift apart.
 }
+\section{Details}{
+
+Unless \code{keep_missing = TRUE}, three kinds of sibling report are dropped:
+those with unknown survival status, those with unknown sex, and those with
+no usable date of birth. The last cannot be placed in an age group, so they
+contribute neither exposure nor events -- and left in, a single one turns an
+entire exposure cell into \code{NA}, since the estimator sums over the cell.
+}
+

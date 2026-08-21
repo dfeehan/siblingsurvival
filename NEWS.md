@@ -84,8 +84,25 @@
   `aggregate_maternal_estimates()` could not join against.
   `only_females = TRUE`, the default and by far the common case, is unchanged.
 
+## Documentation
+
+* Added the vignette "Working with MICS sibling history data", covering which
+  MICS rounds carry a usable sibling history, what the MICS prep does that the
+  DHS path does not, and the results of validating the package against the
+  published tables of three MICS6 surveys. It records two conventions that MICS
+  documents leave unstated -- the seven-year reference window is
+  `[doi - 84, doi)`, and age standardisation uses the interviewed women -- and
+  one that is actively mislabelled: the column headed "Maternal Deaths" in table
+  TM.9.3 of MICS reports contains the **pregnancy-related** count.
+
 ## Bug fixes
 
+* Sibling reports with no usable date of birth are now dropped along with those
+  missing sex or survival status, and counted in `summ$miss.dob`. They cannot be
+  placed in an age group, so they contribute neither exposure nor events -- but
+  left in, a single one turned an entire exposure cell into `NA`, since the
+  estimator sums over the cell. Found on Madagascar 2018, where 13 living
+  siblings have neither a reported age nor an imputed date of birth.
 * `prep_mics_sib_histories()` now recodes MICS's 98 (don't know) and 99 (no
   response) values to `NA` on the numeric sibling items -- `sib.age`,
   `sib.death.yrsago`, `sib.death.age`, `sib.days.postpartum.death` and

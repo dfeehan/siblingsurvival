@@ -18,6 +18,13 @@
 ##' @param verbose see [siblingsurvival::prep_dhs_sib_histories]
 ##' @return a list with entries `survey`, `ego.dat`, `sib.dat` and `summ`
 ##'
+##' @section Details:
+##' Unless `keep_missing = TRUE`, three kinds of sibling report are dropped:
+##' those with unknown survival status, those with unknown sex, and those with
+##' no usable date of birth. The last cannot be placed in an age group, so they
+##' contribute neither exposure nor events -- and left in, a single one turns an
+##' entire exposure cell into `NA`, since the estimator sums over the cell.
+##'
 finalize_sib_prep <- function(ego.dat,
                               sib.dat,
                               cur.survey,
@@ -44,6 +51,19 @@ finalize_sib_prep <- function(ego.dat,
   miss.sex <- pre.n-post.n
   miss.sex.pct <- 100 * miss.sex / pre.n
 
+  ## CALCULATE % of siblings with no usable date of birth.
+  ##
+  ## These cannot be placed in an age group at all, so they contribute neither
+  ## exposure nor events. Left in, a single such sibling turns the entire
+  ## exposure denominator into NA, because the estimator sums over the cell --
+  ## which is silent and looks like a much bigger problem than it is.
+  if ('sib.dob' %in% names(sib.dat)) {
+    miss.dob <- sum(is.na(sib.dat$sib.dob))
+  } else {
+    miss.dob <- 0
+  }
+  miss.dob.pct <- 100 * miss.dob / nrow(sib.dat)
+
   if(verbose) {
 
     cat(paste0(miss.alive, " out of ", n.sib.raw, " (", round(miss.alive.pct,2), "%)",
@@ -51,6 +71,12 @@ finalize_sib_prep <- function(ego.dat,
 
     cat(paste0(miss.sex, " out of ", n.sib.raw, " (", round(miss.sex.pct,2), "%)",
                " reports about sibs have unknown sex.\n"))
+
+    if (miss.dob > 0) {
+      cat(paste0(miss.dob, " out of ", n.sib.raw, " (", round(miss.dob.pct,2), "%)",
+                 " reports about sibs have no usable date of birth",
+                 " (no reported age and no date to derive one from).\n"))
+    }
   }
 
   sibs.removed.n <- 0
@@ -61,7 +87,14 @@ finalize_sib_prep <- function(ego.dat,
     ## take siblings missing sex and missing survival status out of the analysis,
     if(verbose) cat("Removing reported sibs missing survival status or sex.\n")
     pre.n <- nrow(sib.dat)
-    sib.dat <- sib.dat %>% filter(sib.alive %in% c(0,1)) %>% filter(sib.sex %in% c('f', 'm'))
+    sib.dat <- sib.dat %>%
+      filter(sib.alive %in% c(0,1)) %>%
+      filter(sib.sex %in% c('f', 'm'))
+
+    ## drop siblings that cannot be placed in an age group; see above
+    if ('sib.dob' %in% names(sib.dat)) {
+      sib.dat <- sib.dat %>% filter(! is.na(sib.dob))
+    }
     post.n <- nrow(sib.dat)
     sibs.removed.n <- pre.n - post.n
     sibs.removed.pct <- 100 * sibs.removed.n / n.sib.raw
@@ -82,6 +115,8 @@ finalize_sib_prep <- function(ego.dat,
                  miss.alive.pct = miss.alive.pct,
                  miss.sex = miss.sex,
                  miss.sex.pct = miss.sex.pct,
+                 miss.dob = miss.dob,
+                 miss.dob.pct = miss.dob.pct,
                  sibs.removed = sibs.removed.n,
                  sibs.removed.pct = sibs.removed.pct,
                  ego.cols.notfound = list(miss_col$ego),

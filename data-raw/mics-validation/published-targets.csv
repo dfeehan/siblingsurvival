@@ -100,3 +100,24 @@ IQ2018,TM.9.3,maternal_deaths,f,"[40,45)",11,deaths,
 IQ2018,TM.9.3,maternal_deaths,f,"[45,50)",2,deaths,
 IQ2018,TM.9.3,maternal_deaths,f,total,64,deaths,ours 64.9 pregnancy-related = ratio 1.008
 IQ2018,TM.9.3,pm,f,age_adjusted,11.2,percent,ours 11.3 pregnancy-related
+MDG2018,TM.9.1,exposure,f,"[15,20)",37665,woman-years,Madagascar 2018; mm.sav has no WDOB so wm.df is required
+MDG2018,TM.9.1,exposure,f,"[20,25)",40018,woman-years,
+MDG2018,TM.9.1,exposure,f,"[25,30)",36607,woman-years,
+MDG2018,TM.9.1,exposure,f,"[30,35)",32337,woman-years,
+MDG2018,TM.9.1,exposure,f,"[35,40)",26582,woman-years,
+MDG2018,TM.9.1,exposure,f,"[40,45)",18345,woman-years,
+MDG2018,TM.9.1,exposure,f,"[45,50)",11405,woman-years,
+MDG2018,TM.9.1,exposure,f,total,202959,woman-years,
+MDG2018,TM.9.1,exposure,m,total,208274,woman-years,
+MDG2018,TM.9.1,allcause_deaths,f,"[15,20)",93,deaths,
+MDG2018,TM.9.1,allcause_deaths,f,"[20,25)",90,deaths,
+MDG2018,TM.9.1,allcause_deaths,f,"[25,30)",98,deaths,
+MDG2018,TM.9.1,allcause_deaths,f,"[30,35)",115,deaths,
+MDG2018,TM.9.1,allcause_deaths,f,"[35,40)",71,deaths,
+MDG2018,TM.9.1,allcause_deaths,f,"[40,45)",89,deaths,
+MDG2018,TM.9.1,allcause_deaths,f,"[45,50)",60,deaths,
+MDG2018,TM.9.1,allcause_deaths,f,total,617,deaths,PM denominator; 137/617 = 22.1%
+MDG2018,TM.9.1,allcause_deaths,m,total,840,deaths,
+MDG2018,TM.9.3,maternal_deaths,f,total,137,deaths,printed column is PREGNANCY-RELATED; ours 140.4 = ratio 1.025
+MDG2018,TM.9.3,pm,f,age_adjusted,22.1,percent,ours 22.8
+MDG2018,TM.9.3,maternal_rate,f,age_adjusted,0.65,per 1000 woman-years,ours 0.67
