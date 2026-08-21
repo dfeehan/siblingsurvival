@@ -94,75 +94,16 @@ prep_dhs_sib_histories <- function(df,
   }
 
   #########################
-  # calculate some summary statistics
+  # summarize, filter, and assemble the result
   #########################
-  n.ego <- nrow(ego.dat)
-  n.sib.raw <- nrow(sib.dat)
-
-  ## CALCULATE % of siblings with unknown survival status
-  pre.n <- nrow(sib.dat)
-  tmp <- sib.dat %>% filter(sib.alive %in% c(0,1))
-  post.n <- nrow(tmp)
-  miss.alive <- pre.n-post.n
-  miss.alive.pct <- 100 * miss.alive / pre.n
-
-  ## CALCULATE % of siblings with unknown sex
-  pre.n <- nrow(sib.dat)
-  tmp <- sib.dat %>% filter(sib.sex %in% c('f', 'm'))
-  post.n <- nrow(tmp)
-  miss.sex <- pre.n-post.n
-  miss.sex.pct <- 100 * miss.sex / pre.n
-
-  if(verbose) {
-
-    cat(paste0(miss.alive, " out of ", n.sib.raw, " (", round(miss.alive.pct,2), "%)",
-              " reports about sibs have unknown survival status.\n"))
-
-    cat(paste0(miss.sex, " out of ", n.sib.raw, " (", round(100*(pre.n-post.n)/pre.n,2), "%)",
-               " reports about sibs have unknown sex.\n"))
-  }
-
-  sibs.removed.n <- 0
-  sibs.removed.pct <- 0
-
-  if(! keep_missing) {
-
-    ## take siblings missing sex and missing survival status out of the analysis,
-    cat("Removing reported sibs missing survival status or sex.\n")
-    pre.n <- nrow(sib.dat)
-    sib.dat <- sib.dat %>% filter(sib.alive %in% c(0,1)) %>% filter(sib.sex %in% c('f', 'm'))
-    post.n <- nrow(sib.dat)
-    sibs.removed.n <- pre.n - post.n
-    sibs.removed.pct <- 100 * sibs.removed.n / n.sib.raw
-
-    cat("... this removes ", pre.n-post.n, " out of ", pre.n," (", round(100*(pre.n-post.n)/pre.n,2), "%)",
-        " sibling reports.")
-  }
-
-  n.sib <- nrow(sib.dat)
-
-  summ <- tibble(survey=cur.survey,
-                 n.ego = n.ego,
-                 n.sib.raw = n.sib.raw,
-                 n.sib = n.sib,
-                 miss.alive = miss.alive,
-                 miss.alive.pct = miss.alive.pct,
-                 miss.sex = miss.sex,
-                 miss.sex.pct = miss.sex.pct,
-                 sibs.removed = sibs.removed.n,
-                 sibs.removed.pct = sibs.removed.pct,
-                 ego.cols.notfound = list(miss_col$ego),
-                 sib.cols.notfound = list(miss_col$sib))
-
-  if (keep_varmap_only) {
-    ego.dat <- ego.dat %>%
-      select(all_of(c(names(resp.attrib), 'sex', 'age.cat', 'age.cat10', 'wwgt')))
-  }
-
-  return(list(survey=cur.survey,
-              ego.dat = ego.dat,
-              sib.dat = sib.dat,
-              summ = summ))
+  return(finalize_sib_prep(ego.dat = ego.dat,
+                           sib.dat = sib.dat,
+                           cur.survey = cur.survey,
+                           miss_col = miss_col,
+                           resp.attrib = resp.attrib,
+                           keep_missing = keep_missing,
+                           keep_varmap_only = keep_varmap_only,
+                           verbose = verbose))
 }
 
 ##' prepare a dataset from nrsimulatr for sibling analysis
@@ -263,75 +204,16 @@ prep_nrsim_sib_histories <- function(df,
   sib.dat <- get_sib_df(ego.dat, sib.attrib, verbose)
 
   #########################
-  # calculate some summary statistics
+  # summarize, filter, and assemble the result
   #########################
-  n.ego <- nrow(ego.dat)
-  n.sib.raw <- nrow(sib.dat)
-
-  ## CALCULATE % of siblings with unknown survival status
-  pre.n <- nrow(sib.dat)
-  tmp <- sib.dat %>% filter(sib.alive %in% c(0,1))
-  post.n <- nrow(tmp)
-  miss.alive <- pre.n-post.n
-  miss.alive.pct <- 100 * miss.alive / pre.n
-
-  ## CALCULATE % of siblings with unknown sex
-  pre.n <- nrow(sib.dat)
-  tmp <- sib.dat %>% filter(sib.sex %in% c('f', 'm'))
-  post.n <- nrow(tmp)
-  miss.sex <- pre.n-post.n
-  miss.sex.pct <- 100 * miss.sex / pre.n
-
-  if(verbose) {
-
-    cat(paste0(miss.alive, " out of ", n.sib.raw, " (", round(miss.alive.pct,2), "%)",
-               " reports about sibs have unknown survival status.\n"))
-
-    cat(paste0(miss.sex, " out of ", n.sib.raw, " (", round(100*(pre.n-post.n)/pre.n,2), "%)",
-               " reports about sibs have unknown sex.\n"))
-  }
-
-  sibs.removed.n <- 0
-  sibs.removed.pct <- 0
-
-  if(! keep_missing) {
-
-    ## take siblings missing sex and missing survival status out of the analysis,
-    cat("Removing reported sibs missing survival status or sex.\n")
-    pre.n <- nrow(sib.dat)
-    sib.dat <- sib.dat %>% filter(sib.alive %in% c(0,1)) %>% filter(sib.sex %in% c('f', 'm'))
-    post.n <- nrow(sib.dat)
-    sibs.removed.n <- pre.n - post.n
-    sibs.removed.pct <- 100 * sibs.removed.n / n.sib.raw
-
-    cat("... this removes ", pre.n-post.n, " out of ", pre.n," (", round(100*(pre.n-post.n)/pre.n,2), "%)",
-        " sibling reports.")
-  }
-
-  n.sib <- nrow(sib.dat)
-
-  summ <- tibble(survey=cur.survey,
-                 n.ego = n.ego,
-                 n.sib.raw = n.sib.raw,
-                 n.sib = n.sib,
-                 miss.alive = miss.alive,
-                 miss.alive.pct = miss.alive.pct,
-                 miss.sex = miss.sex,
-                 miss.sex.pct = miss.sex.pct,
-                 sibs.removed = sibs.removed.n,
-                 sibs.removed.pct = sibs.removed.pct,
-                 ego.cols.notfound = list(miss_col$ego),
-                 sib.cols.notfound = list(miss_col$sib))
-
-  if (keep_varmap_only) {
-    ego.dat <- ego.dat %>%
-      select(all_of(c(names(resp.attrib), 'sex', 'age.cat', 'age.cat10', 'wwgt')))
-  }
-
-  return(list(survey=cur.survey,
-              ego.dat = ego.dat,
-              sib.dat = sib.dat,
-              summ = summ))
+  return(finalize_sib_prep(ego.dat = ego.dat,
+                           sib.dat = sib.dat,
+                           cur.survey = cur.survey,
+                           miss_col = miss_col,
+                           resp.attrib = resp.attrib,
+                           keep_missing = keep_missing,
+                           keep_varmap_only = keep_varmap_only,
+                           verbose = verbose))
 }
 
 ##' helper to prep the ego dataset
@@ -425,9 +307,12 @@ get_ego_df <- function(df, resp.attrib, verbose=FALSE, weight.scale=1e6) {
 ##' @param ego.dat the prepped ego dataset
 ##' @param sib.attrib vector with sibling attribute columns (see [siblingsurvival::prep_dhs_sib_histories])
 ##' @param verbose see [siblingsurvival::prep_dhs_sib_histories]
+##' @param reshape is `ego.dat` wide, with one column per sibling attribute per
+##'        sibling (TRUE, the DHS layout), or already one row per reported
+##'        sibling (FALSE, the MICS `mm.sav` layout)?
 ##' @return a prepped sibling dataset, used in [siblingsurvival::prep_dhs_sib_histories]
 ##'
-get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE) {
+get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE, reshape=TRUE) {
 
   ## these ego columns are carried onto every sibling row
   required.ego <- c('caseid', 'wwgt', 'psu', 'doi', 'sex')
@@ -441,16 +326,30 @@ get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE) {
       "code), since the sibling date derivations are arithmetic in months.\n"))
   }
 
-  sib.dat <- attributes.to.long(ego.dat,
-                                attribute.prefix=sib.attrib,
-                                ego.vars=c('caseid', 'wwgt',
-                                           'psu', 'doi', 'sex'),
-                                idvar="caseid")
+  if (reshape) {
 
-  ## the derivations below reference these unconditionally, so a varmap that
-  ## omits any of them fails inside case_when() with an opaque error
-  required.sib <- c('sib.sex', 'sib.alive', 'sib.age', 'sib.dob',
-                    'sib.death.date', 'sib.death.yrsago', 'sib.death.age')
+    ## wide data (one row per respondent, one column per sibling attribute
+    ## per sibling), as the DHS publishes it
+    sib.dat <- attributes.to.long(ego.dat,
+                                  attribute.prefix=sib.attrib,
+                                  ego.vars=c('caseid', 'wwgt',
+                                             'psu', 'doi', 'sex'),
+                                  idvar="caseid")
+
+  } else {
+
+    ## already one row per reported sibling, as MICS publishes it in mm.sav.
+    ## the caller has renamed via the varmap and attached the ego columns,
+    ## so there is nothing to reshape
+    sib.dat <- ego.dat
+
+  }
+
+  ## Two groups of columns, and the distinction matters.
+  ##
+  ## These have to be supplied: nothing can reconstruct them.
+  required.sib <- c('sib.sex', 'sib.alive', 'sib.age',
+                    'sib.death.yrsago', 'sib.death.age')
   missing.sib <- required.sib[! required.sib %in% names(sib.dat)]
 
   if (length(missing.sib) > 0) {
@@ -459,6 +358,30 @@ get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE) {
       "{paste0(missing.sib, collapse=', ')}.\n",
       "The varmap needs a row mapping each of them (with sibvar=1); the ",
       "sibling data has columns: {paste0(names(sib.dat), collapse=', ')}\n"))
+  }
+
+  ## These are *derived* when not supplied. The DHS reports both as CMC dates
+  ## (mm4, mm8) and MICS often does too (MM17C/MM18C in MICS6, MM7C/MM8C in
+  ## MICS4/5), but some surveys report only ages and years-since-death. In that
+  ## case initialize them to NA and let the case_when()s below fill them in.
+  derived.sib <- c('sib.dob', 'sib.death.date')
+  absent.derived <- derived.sib[! derived.sib %in% names(sib.dat)]
+
+  if (length(absent.derived) > 0) {
+
+    if (verbose) {
+      cat(glue::glue("
+
+                      No {paste0(absent.derived, collapse=' or ')} column(s) in the data; \\
+                      these will be approximated from reported ages and \\
+                      years-since-death.
+
+                      "))
+    }
+
+    for (this.col in absent.derived) {
+      sib.dat[[this.col]] <- NA_real_
+    }
   }
 
   sib.dat <- sib.dat %>%

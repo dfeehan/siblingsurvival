@@ -26,6 +26,6 @@ LinkingTo:
 Imports:
     Rcpp, glue, dplyr, rlang, plyr, stringr, tidyr, purrr, forcats, tidyselect
 Depends: 
-    R (>= 2.10)
+    R (>= 3.5)
 Config/testthat/edition: 3
 URL: http://dennisfeehan.org/siblingsurvival/

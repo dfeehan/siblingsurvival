@@ -4,7 +4,7 @@
 \alias{get_sib_df}
 \title{helper to prep the sib dataset}
 \usage{
-get_sib_df(ego.dat, sib.attrib, verbose = FALSE)
+get_sib_df(ego.dat, sib.attrib, verbose = FALSE, reshape = TRUE)
 }
 \arguments{
 \item{ego.dat}{the prepped ego dataset}
@@ -12,6 +12,10 @@ get_sib_df(ego.dat, sib.attrib, verbose = FALSE)
 \item{sib.attrib}{vector with sibling attribute columns (see \link{prep_dhs_sib_histories})}
 
 \item{verbose}{see \link{prep_dhs_sib_histories}}
+
+\item{reshape}{is \code{ego.dat} wide, with one column per sibling attribute per
+sibling (TRUE, the DHS layout), or already one row per reported
+sibling (FALSE, the MICS \code{mm.sav} layout)?}
 }
 \value{
 a prepped sibling dataset, used in \link{prep_dhs_sib_histories}

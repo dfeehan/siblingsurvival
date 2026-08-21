@@ -17,6 +17,7 @@ utils::globalVariables(c(
   "sib.died.pregnant", "sib.exp", "sib.maternal.death.date", "sib.occ",
   "sib.preg_related.death.date", "sib.sex", "sib.size", "sib.time.delivery.death",
   "sibhist_varmap_dhs6", "sibvar",
+  "caseid", "doi", "new.varname", "orig.varname", "sibhist_varmap_mics6",
   "time.period", "total", "value",
   "wwgt", "y.Dcell", "y.Dcell.ind", "y.F",
   "y.Falpha.Fminusalpha", "y.Fminusalpha.Falpha",

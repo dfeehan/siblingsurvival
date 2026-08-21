@@ -1,5 +1,36 @@
 # siblingsurvival 0.3.0.9000 (development)
 
+## MICS support
+
+* Added `prep_mics_sib_histories()`, which prepares a MICS maternal mortality
+  file (`mm.sav`) for analysis. MICS publishes the sibling history with **one
+  row per reported sibling**, unlike the DHS wide women's file, so no reshape is
+  needed. The function constructs the columns MICS does not supply -- `caseid`
+  from cluster/household/line, `doi` from `WDOI` or from year and month,
+  respondent `age` from `(WDOI - WDOB)/12`, `psu` from the cluster, and `sex`
+  -- then delegates to the same internals the DHS path uses.
+* Added `sibhist_varmap_mics4`, `sibhist_varmap_mics5`, `sibhist_varmap_mics6`
+  and `sibhist_varmap_mics7`. MICS4/5 use a roster numbering of `MM5`--`MM13`;
+  MICS6 renumbered to `MM15`--`MM27` and added the violence and accident items,
+  so MICS6/7 support maternal mortality while MICS4/5 support pregnancy-related
+  mortality only -- the same split as DHS phases 2--6 versus 7+.
+* MICS codes survival status as 1 yes / 2 no / 8 don't know, while this package
+  (following the DHS) expects 1 alive / 0 dead. `prep_mics_sib_histories()`
+  recodes it. Passing the MICS codes through unchanged would make every dead
+  sibling look like missing survival status and silently drive every mortality
+  estimate to zero.
+* `prep_mics_sib_histories()` refuses to run a varmap that maps `mm16` to
+  `sib.died.accident`. `MM16` means opposite things in the two systems: "Is
+  (name) still alive?" in MICS6, "died of violence or an accident" in DHS
+  phase 7 and later.
+* `get_sib_df()` gained a `reshape` argument, so the same function serves the
+  wide DHS layout and the long MICS layout.
+* `get_sib_df()` now treats `sib.dob` and `sib.death.date` as **derived** rather
+  than required. They are used when the varmap supplies them (`MM17C`/`MM18C` in
+  MICS6, `MM7C`/`MM8C` in MICS4/5, `mm4`/`mm8` in the DHS) and approximated from
+  reported ages and years-since-death otherwise. Some surveys ship no CMC
+  columns at all.
+
 ## New features
 
 * `get_ego_age_distn()` is now exported. It was already documented and used by
