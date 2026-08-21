@@ -2,6 +2,26 @@
 
 ## MICS support
 
+* `add_maternal_deaths()` gained `style` and `na.action`. `style` selects the
+  questionnaire coding -- `"dhs"` (the default), `"mics6"` (also MICS7) or
+  `"mics4"` (also MICS5) -- and the classification rules are factored into
+  `is_preg_related_dhs()`, `is_maternal_dhs()`, `is_preg_related_mics()` and
+  `is_maternal_mics()`. Everything else, including the `-1` sentinel, the `NA`
+  fill and the male blanking, is shared. Existing DHS call sites are unaffected.
+* **`na.action` has no default for the MICS styles.** It decides whether a
+  sister who died within two months of the end of a pregnancy, but whose day
+  count is missing, falls inside the 42-day maternal window -- a choice about
+  the estimand rather than a coding detail, so `add_maternal_deaths()` errors
+  with an explanation instead of picking one. It moves only
+  `sib.maternal.death.date`, never `sib.preg_related.death.date`. For
+  `style = "dhs"` it defaults to `"include"`, which is what this package has
+  always done.
+* The MICS classification respects three questionnaire skip patterns that are
+  easy to get wrong: a childbirth death (`MM23 = 1`) is unconditionally
+  maternal even though `MM26`/`MM27` are `NA` by design; sisters who died before
+  age 12 are routed past the maternity items and must not be swept in; and male
+  siblings get `NA` rather than `FALSE`.
+
 * Added `prep_mics_sib_histories()`, which prepares a MICS maternal mortality
   file (`mm.sav`) for analysis. MICS publishes the sibling history with **one
   row per reported sibling**, unlike the DHS wide women's file, so no reshape is

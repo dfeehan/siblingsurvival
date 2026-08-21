@@ -20,6 +20,11 @@
 ##' @param weight.scale divide the weight by this number. Defaults to `1`, since
 ##'        MICS weights are already normalized; see Details
 ##' @param add_maternal should maternal/pregnancy-related death info be added?
+##' @param style which MICS roster coding the data use: `"mics6"` (the default,
+##'        also correct for MICS7) or `"mics4"` (also correct for MICS5). Only
+##'        used when `add_maternal = TRUE`
+##' @param na.action required when `add_maternal = TRUE`; see
+##'        [siblingsurvival::add_maternal_deaths]
 ##' @param keep_missing should we keep reported sibs that are missing sex or survival status?
 ##' @param keep_varmap_only should we only keep ego variables mentioned in the varmap?
 ##' @param verbose report detailed summaries?
@@ -78,9 +83,13 @@ prep_mics_sib_histories <- function(mm.df,
                                     lowercase=TRUE,
                                     weight.scale=1,
                                     add_maternal=FALSE,
+                                    style=c('mics6', 'mics4'),
+                                    na.action=NULL,
                                     keep_missing=FALSE,
                                     keep_varmap_only=FALSE,
                                     verbose=TRUE) {
+
+  style <- match.arg(style)
 
   if (missing(survey) || is.null(survey) || length(survey) != 1) {
     stop("`survey` is required: MICS has no v000 equivalent, so the survey id ",
@@ -223,7 +232,11 @@ prep_mics_sib_histories <- function(mm.df,
   #########################
   if (add_maternal) {
     if (verbose) cat("Adding pregnancy-related/maternal death info\n")
-    sib.dat <- add_maternal_deaths(sib.dat, verbose=verbose)
+    sib.dat <- add_maternal_deaths(sib.dat,
+                                   style=style,
+                                   na.action=na.action,
+                                   keep_missing=keep_missing,
+                                   verbose=verbose)
   }
 
   #########################

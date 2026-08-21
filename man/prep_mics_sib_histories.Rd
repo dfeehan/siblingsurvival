@@ -16,6 +16,8 @@ prep_mics_sib_histories(
   lowercase = TRUE,
   weight.scale = 1,
   add_maternal = FALSE,
+  style = c("mics6", "mics4"),
+  na.action = NULL,
   keep_missing = FALSE,
   keep_varmap_only = FALSE,
   verbose = TRUE
@@ -52,6 +54,13 @@ See Details}
 MICS weights are already normalized; see Details}
 
 \item{add_maternal}{should maternal/pregnancy-related death info be added?}
+
+\item{style}{which MICS roster coding the data use: \code{"mics6"} (the default,
+also correct for MICS7) or \code{"mics4"} (also correct for MICS5). Only
+used when \code{add_maternal = TRUE}}
+
+\item{na.action}{required when \code{add_maternal = TRUE}; see
+\link{add_maternal_deaths}}
 
 \item{keep_missing}{should we keep reported sibs that are missing sex or survival status?}
 

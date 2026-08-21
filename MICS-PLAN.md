@@ -476,7 +476,7 @@ age, `MM8` years since death, `MM9` age at death, `MM10` pregnant, `MM11`
 childbirth, `MM12` within two months, `MM13` live births. No violence/accident
 items, no CMC columns.
 
-### M6. `add_maternal_deaths()` needs a MICS branch ⚠
+### M6. `add_maternal_deaths()` needs a MICS branch — **DONE 2026-08-21** ⚠
 
 **MICS6 supports true maternal mortality, contrary to the first draft.** Both
 estimands are computable, which is what makes the DHS comparison work.
@@ -973,8 +973,10 @@ Sequence
    usable surveys, then MICS6 for the other four. No MICS7 survey in the archive
    fielded the module, so that varmap can wait. Regenerate from a corrected
    crosswalk rather than hand-editing the draft.
-7. **M6, M7** — the maternal recode and the guards. M6 needs the `na.action`
-   decision made first.
+7. ~~**M6, M7**~~ — done. The classification rules are factored into
+   `R/maternal_classification.R` as `is_preg_related_dhs()`,
+   `is_maternal_dhs()`, `is_preg_related_mics()` and `is_maternal_mics()`, with
+   `add_maternal_deaths(style=, na.action=)` dispatching between them.
 8. **V1–V7** — validate against Zimbabwe 2019 as soon as the file is in hand,
    then Iraq, then Sindh for the derivation fallback.
 9. **Then the analysis**: the four shortlisted surveys, DHS↔MICS within country.
@@ -983,8 +985,22 @@ Sequence
 Open decisions
 ----
 
-1. ⏳ **`na.action` for MICS missing/DK on `MM22`–`MM25`** (M6). **DEFERRED
-   2026-08-21 — must be settled before M6 is written; do not let this slip.**
+1. ✅ **`na.action`** (M6) — **DECIDED 2026-08-21: no default; the caller must
+   state it for the MICS styles.** `add_maternal_deaths()` errors with a message
+   explaining the choice rather than picking one. `style = "dhs"` keeps
+   `"include"`, which is what the package has always done, so existing results
+   do not move.
+
+   The evidence that shaped it: `na.action` governs exactly one case — a sister
+   who died within two months (`MM24 = 1`) whose day count (`MM25`) is missing.
+   Across three MICS6 surveys that is **5 of 38 such deaths in Iraq 2018** and
+   **none at all** in Zimbabwe 2019 or Madagascar 2018. The DK codes on
+   `MM22`/`MM23`/`MM24` are 1–7 rows per survey, and no female death aged 12+
+   goes entirely unasked. It moves only `sib.maternal.death.date`, never
+   `sib.preg_related.death.date` — and since published MICS tables report the
+   pregnancy-related count, it does not affect any validated comparison.
+
+   *Original framing, kept for the record:*
    *Empirical note from V3:* on Zimbabwe 2019 the choice makes **no difference
    at all** — `MM25` is never missing when `MM24 == 1`, and the `9 = no
    response` codes on `MM22`/`MM23`/`MM24` number 6, 7 and 7 rows out of 47,835.

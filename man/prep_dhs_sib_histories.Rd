@@ -8,6 +8,7 @@ prep_dhs_sib_histories(
   df,
   varmap = sibhist_varmap_dhs6,
   add_maternal = FALSE,
+  na.action = NULL,
   keep_missing = FALSE,
   keep_varmap_only = FALSE,
   weight.scale = 1e+06,
@@ -20,6 +21,10 @@ prep_dhs_sib_histories(
 \item{varmap}{see Details}
 
 \item{add_maternal}{should maternal/pregnancy-related death info be added? (Default: FALSE)}
+
+\item{na.action}{only used when \code{add_maternal = TRUE}; defaults to
+\code{"include"} for DHS data, which is what this package has always done.
+See \link{add_maternal_deaths}}
 
 \item{keep_missing}{should we keep reported sibs that are missing sex or survival status?}
 

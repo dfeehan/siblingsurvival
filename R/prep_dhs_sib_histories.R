@@ -3,6 +3,9 @@
 ##' @param df the raw DHS dataset (indvidual recode)
 ##' @param varmap see Details
 ##' @param add_maternal should maternal/pregnancy-related death info be added? (Default: FALSE)
+##' @param na.action only used when `add_maternal = TRUE`; defaults to
+##'        `"include"` for DHS data, which is what this package has always done.
+##'        See [siblingsurvival::add_maternal_deaths]
 ##' @param keep_missing should we keep reported sibs that are missing sex or survival status?
 ##' @param keep_varmap_only should we only keep ego variables mentioned in the varmap? (Default: FALSE)
 ##' @param weight.scale divide the women's weight by this number. Defaults to
@@ -51,6 +54,7 @@
 prep_dhs_sib_histories <- function(df,
                                    varmap=sibhist_varmap_dhs6,
                                    add_maternal=FALSE,
+                                   na.action=NULL,
                                    keep_missing=FALSE,
                                    keep_varmap_only=FALSE,
                                    weight.scale=1e6,
@@ -89,8 +93,12 @@ prep_dhs_sib_histories <- function(df,
   # add maternal vars, if needed
   #########################
   if (add_maternal) {
-    cat("Adding pregnancy-related/maternal death info")
-    sib.dat <- add_maternal_deaths(sib.dat)
+    if (verbose) cat("Adding pregnancy-related/maternal death info\n")
+    sib.dat <- add_maternal_deaths(sib.dat,
+                                   style='dhs',
+                                   na.action=na.action,
+                                   keep_missing=keep_missing,
+                                   verbose=verbose)
   }
 
   #########################
@@ -462,145 +470,151 @@ get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE, reshape=TRUE) {
 
 }
 
-##' take a prepared DHS sibling dataset and add maternal death info
+##' add pregnancy-related and maternal death info to a sibling dataset
 ##'
-##' @param sib_df the prepped DHS dataset (probably from [siblingsurvival::prep_dhs_sib_histories])
-##' @param keep_missing should we keep reported sibs that are missing sex or survival status?
+##' @param sib_df the prepped sibling dataset (probably from
+##'        [siblingsurvival::prep_dhs_sib_histories] or
+##'        [siblingsurvival::prep_mics_sib_histories])
+##' @param style which questionnaire the coding follows: `"dhs"` (the default),
+##'        `"mics6"` for MICS6/MICS7, or `"mics4"` for MICS4/MICS5
+##' @param na.action how to treat a death that falls in the right window but
+##'        whose timing detail is missing -- `"include"` counts it, `"exclude"`
+##'        does not. **Required for the MICS styles**; see Details
+##' @param keep_missing not currently used
 ##' @param verbose report detailed summaries?
-##' @return a dataframe with columns `sib.preg_related.death.date` and `sib.maternal.death.date` added
+##' @return `sib_df` with columns `sib.preg_related.death.date` and
+##'         `sib.maternal.death.date` added
 ##' @examples
 ##'   # TODO - write example code
 ##' @section Details:
 ##'
-##' This function checks to see if there is a column called `sib.died.accident`.
-##' If so, then it is possible to estimate whether or not each death is maternal;
-##' the resulting death dates are in the column `sib.maternal.death.date`.
+##' Two quantities are computed, and they are not the same thing:
 ##'
-##' For siblings, you should be sure to include
-##' * `sib.death.date` (the date of the sibling's death)
-##' * `sib.alive` (whether or not the sib is alive)
-##' * `sib.sex` (the sex of the sibling).
+##' * **pregnancy-related** -- died while pregnant, during childbirth, or within
+##'   two months of the end of a pregnancy, *whatever the cause*
+##' * **maternal** -- as above but within 42 days, and excluding deaths due to
+##'   violence or an accident
 ##'
-##' Returns a dataframe TODO
+##' `sib.maternal.death.date` is only computable when the data identify
+##' accidental deaths, which means DHS phase 7 and later, or MICS6 and later.
+##' Otherwise it is `NA` and only the pregnancy-related column is usable -- the
+##' same limitation applies to DHS phases 2--6 and to MICS4/MICS5.
+##'
+##' Siblings who did not die of the relevant cause get a death date of `-1`
+##' rather than `NA`, so that they still contribute exposure. Both columns are
+##' set to `NA` for male siblings.
+##'
+##' **Note for MICS users:** the tables published in MICS survey reports under
+##' the heading "Maternal mortality", with a column labelled "Maternal Deaths",
+##' actually report the **pregnancy-related** count. Compare against
+##' `sib.preg_related.death.date`, not `sib.maternal.death.date`. See the
+##' vignette "Working with MICS sibling history data".
+##'
+##' ## Choosing `na.action`
+##'
+##' `na.action` has **no default for the MICS styles**, because it is a
+##' substantive choice about the estimand rather than a coding detail, and it
+##' should be made deliberately and reported.
+##'
+##' In MICS, the number of days after the end of a pregnancy (`MM25`) is asked
+##' only of sisters who died within two months (`MM24 = 1`). When that day count
+##' is missing, `na.action` decides whether she falls inside the 42-day maternal
+##' window. In three MICS6 surveys examined this affected 5 of 38 such deaths in
+##' Iraq 2018 and none at all in Zimbabwe 2019 or Madagascar 2018, so the choice
+##' is usually immaterial -- but not always, and it only ever moves the maternal
+##' column, never the pregnancy-related one.
+##'
+##' For `style = "dhs"`, `na.action` defaults to `"include"`, which is what this
+##' package has always done: a missing `sib.time.delivery.death` was treated as
+##' falling in the window. That default is kept so existing results do not move.
 ##'
 ##' @export
 ##' @md
 add_maternal_deaths <- function(sib_df,
-                                keep_missing=FALSE,
-                                verbose=TRUE) {
+                                style = c("dhs", "mics6", "mics4"),
+                                na.action = NULL,
+                                keep_missing = FALSE,
+                                verbose = TRUE) {
 
-  ## TODO - keep_missing and verbose are not really used, but we might want
-  ##        to do so. think about this...
+  style <- match.arg(style)
 
-  ## blake says to get pregnancy-related deaths (instead of maternal deaths) we remove
-  ## sib.died.accident == 0
+  if (is.null(na.action)) {
 
-  ##################################################
-  ## pregnancy-related deaths
-  ## (should be available for all DHS versions)
+    if (style == "dhs") {
+      ## the behaviour this package has always had; kept so that existing
+      ## results do not silently change
+      na.action <- "include"
+    } else {
+      stop(glue::glue(
+        "`na.action` is required for style = '{style}'.\n",
+        "In MICS the number of days after the end of a pregnancy (MM25) is ",
+        "asked only of sisters who died within two months (MM24 = 1). When it ",
+        "is missing, you have to say whether she counts as inside the 42-day ",
+        "maternal window:\n",
+        "  na.action = 'include'  -- count her as maternal\n",
+        "  na.action = 'exclude'  -- require an observed day count\n",
+        "This is a choice about the estimand, so it has no default. It moves ",
+        "only sib.maternal.death.date, never sib.preg_related.death.date.\n"))
+    }
+  }
 
-  ##################################################
-  ## TODO - we should comment this in detail
-  ##################################################
-  sib_df <- sib_df %>%
-    mutate(sib.preg_related.death.date = sib.death.date) %>%
-    mutate(
-      sib.preg_related.death.date = ifelse(
-        # need a comment explaining this
-        !((sib.died.pregnant == 3 |
-             # NOTE: remember that when we look at DHSes going back in time,
-             # we are focusing on pregnancy-related deaths NOT maternal deaths
-             # because sib.died.accident is not always available
-             #
-             # Sibling died while pregnant
-             (sib.died.pregnant == 2) |
-             # Sibling died within 6 weeks after delivery
-             (sib.died.pregnant == 5) |
-             # Sibling died since delivery
-             sib.died.pregnant == 4) &
-            # Death since delivery is within 42 days of birth and is not unknown or inconsistent with other data
-            ((sib.time.delivery.death >= 100 & sib.time.delivery.death <= 141) |
-               sib.time.delivery.death == 997 |
-               sib.time.delivery.death == 998 |
-               is.na(sib.time.delivery.death))),
-        # if the above condition is met, then this is not a preg_related death
-        # so we want sib.preg_related.death.date to be -1
-        -1,
-        # if the above condition is NOT met, then this IS a preg_related deat
-        # so we want sib.preg_related.death.date to be the death date
-        sib.preg_related.death.date  # Keep the original sib.death.date if conditions are true
-      )
-    )
+  na.action <- match.arg(na.action, c("include", "exclude"))
 
-  ## siblings who didn't die from preg_related deaths get their death dates
-  ## recoded to -1 so we don't lose the exposures they
-  ## contribute...
-  sib_df$sib.preg_related.death.date[ is.na(sib_df$sib.preg_related.death.date) ] <- -1
+  #########################
+  # pregnancy-related deaths
+  #########################
+  ## available for every DHS phase and every MICS round with a sibling roster
+  if (style == "dhs") {
+    is.pr <- is_preg_related_dhs(sib_df, na.action)
+  } else {
+    is.pr <- is_preg_related_mics(sib_df)
+  }
 
-  ## NB: at the end of this function, we set preg_related.death.date to NA for all males...
+  ## siblings who did not die a pregnancy-related death get -1 rather than NA,
+  ## so that we keep the exposure they contribute
+  sib_df$sib.preg_related.death.date <- ifelse(is.pr, sib_df$sib.death.date, -1)
+  sib_df$sib.preg_related.death.date[is.na(sib_df$sib.preg_related.death.date)] <- -1
 
-  ##################################################
-  ## maternal deaths
-  ## (only available for more recent DHS, roughly post 2021)
+  #########################
+  # maternal deaths
+  #########################
+  ## only possible where accidental deaths are identified: DHS phase 7 and
+  ## later, MICS6 and later
+  can.do.maternal <- 'sib.died.accident' %in% names(sib_df)
 
-  ##################################################
-  ## TODO - we should comment this in detail
-  ##################################################
-  if ('sib.died.accident' %in% names(sib_df)) {
-    sib_df <- sib_df %>%
-      mutate(sib.maternal.death.date = sib.death.date) %>%
-      mutate(
-        sib.maternal.death.date = ifelse(
-          # need a comment explaining this
-          !((sib.died.pregnant == 3 |
-               # NOTE: remember that when we look at DHSes going back in time,
-               # we are focusing on pregnancy-related deaths NOT maternal deaths
-               # because sib.died.accident is not always available
-               #
-               # Sibling died during pregnancy and not due to accident
-               (sib.died.pregnant == 2 & sib.died.accident == 0) |
-               # Sibling died within 6 week after delivery and not due to accident
-               (sib.died.pregnant == 5 & sib.died.accident == 0) |
-               # Sibling died since delivery
-               sib.died.pregnant == 4) &
-              # Death since delivery is within 42 days of birth and is not unknown or inconsistent with other data
-              ((sib.time.delivery.death >= 100 & sib.time.delivery.death <= 141) |
-                 sib.time.delivery.death == 997 |
-                 sib.time.delivery.death == 998 |
-                 is.na(sib.time.delivery.death))),
-          # if the above condition is met, then this is not a maternal death
-          # so we want sib.maternal.death.date to be -1
-          -1,
-          # if the above condition is NOT met, then this IS a maternal death
-          # so we want sib.maternal.death.date to be the death date
-          sib.maternal.death.date  # Keep the original sib.death.date if conditions are true
-        )
-      )
+  if (can.do.maternal) {
 
-    ## siblings who didn't die from maternal deaths get their death dates
-    ## recoded to -1 so we don't lose the exposures they
-    ## contribute...
-    sib_df$sib.maternal.death.date[ is.na(sib_df$sib.maternal.death.date) ] <- -1
+    if (style == "dhs") {
+      is.mat <- is_maternal_dhs(sib_df, na.action)
+    } else {
+      is.mat <- is_maternal_mics(sib_df, na.action)
+    }
+
+    sib_df$sib.maternal.death.date <- ifelse(is.mat, sib_df$sib.death.date, -1)
+    sib_df$sib.maternal.death.date[is.na(sib_df$sib.maternal.death.date)] <- -1
 
   } else {
 
-    cat("\n...sib.died.accident column not found; only pregnancy-related deaths can be identified here\n")
-    ## if there is no 'sib.died.accident' column, then it is not possible to get
-    ## maternal death rates from this dataset (which would be true of many
-    ## older DHS)
+    if (verbose) {
+      cat("\n...sib.died.accident column not found; only pregnancy-related deaths can be identified here\n")
+    }
     sib_df$sib.maternal.death.date <- NA
-
   }
 
-  ## NB: at the end of this function, we set maternal.death.date to NA for all males...
-
-  ## FOR MALES, set
-  ##  sib.preg.related.death.date AND sib.maternal.death.date to NA
+  #########################
+  # males
+  #########################
   sib_df <- sib_df %>%
     mutate(sib.preg_related.death.date = ifelse(sib.sex == 'm', NA, sib.preg_related.death.date)) %>%
-    mutate(sib.maternal.death.date = ifelse(sib.sex == 'm', NA, sib.maternal.death.date))
+    mutate(sib.maternal.death.date     = ifelse(sib.sex == 'm', NA, sib.maternal.death.date))
 
+  if (verbose) {
+    n.pr  <- sum(sib_df$sib.preg_related.death.date > 0, na.rm = TRUE)
+    n.mat <- sum(sib_df$sib.maternal.death.date > 0, na.rm = TRUE)
+    cat(paste0("Identified ", n.pr, " pregnancy-related death(s)",
+               if (can.do.maternal) paste0(" and ", n.mat, " maternal death(s)") else "",
+               " (style = '", style, "', na.action = '", na.action, "').\n"))
+  }
 
   return(sib_df)
-
 }
