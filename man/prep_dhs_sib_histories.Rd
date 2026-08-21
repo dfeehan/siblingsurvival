@@ -10,6 +10,7 @@ prep_dhs_sib_histories(
   add_maternal = FALSE,
   keep_missing = FALSE,
   keep_varmap_only = FALSE,
+  weight.scale = 1e+06,
   verbose = TRUE
 )
 }
@@ -24,6 +25,9 @@ prep_dhs_sib_histories(
 
 \item{keep_varmap_only}{should we only keep ego variables mentioned in the varmap? (Default: FALSE)}
 
+\item{weight.scale}{divide the women's weight by this number. Defaults to
+\code{1e6}, which is correct for the DHS; see Details}
+
 \item{verbose}{report detailed summaries?}
 }
 \value{
@@ -34,6 +38,10 @@ prepare a DHS dataset for analysis
 }
 \section{Details}{
 
+
+The DHS publishes women's weights multiplied by 1,000,000, so the default
+\code{weight.scale = 1e6} recovers weights that average 1. Surveys whose weights
+are already normalized should pass \code{weight.scale = 1}.
 
 Note that if the dataframe does not have a column called 'sex', then
 one will be added, and we will assume respondents are all female (sex='f'). If you

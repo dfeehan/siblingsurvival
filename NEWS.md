@@ -24,8 +24,37 @@
   `attributes.to.long()`. The `summ` tibble gained a `sib.cols.notfound` column
   alongside the existing `ego.cols.notfound`.
 
+* `prep_dhs_sib_histories()` and `prep_nrsim_sib_histories()` gained a
+  `weight.scale` argument. `get_ego_df()` used to divide any column named
+  `wwgt` by `1e6` whenever it was present, announcing "assuming we have a DHS
+  survey". That is right for the DHS, which publishes women's weights multiplied
+  by 1,000,000, and wrong by six orders of magnitude for anything else.
+  `prep_dhs_sib_histories()` keeps `1e6` as its default; see Bug fixes for
+  `prep_nrsim_sib_histories()`.
+* `get_ego_df()` and `get_sib_df()` now check for the columns they require and
+  error with a message naming the missing ones, rather than failing inside a
+  `mutate()` or `case_when()` with (for example) `object 'age' not found`.
+  `get_ego_df()` requires `age` and `survey`; `get_sib_df()` requires `caseid`,
+  `wwgt`, `psu`, `doi` and `sex` on the ego data, and `sib.sex`, `sib.alive`,
+  `sib.age`, `sib.dob`, `sib.death.date`, `sib.death.yrsago` and
+  `sib.death.age` on the siblings. The `doi` message notes that it has to be a
+  CMC (century month code), since the date derivations are arithmetic in months.
+* `aggregate_maternal_estimates()` gained optional `age_prop` and `vis_res`
+  arguments. Both are computed internally when not supplied, as before. Callers
+  that need the respondent age distribution or the visibility results for their
+  own output, or that call this function more than once per survey, can now
+  compute them once and pass them in. Results are unchanged either way, and
+  there is a test asserting that.
+
 ## Bug fixes
 
+* `prep_nrsim_sib_histories()` no longer divides weights by `1e6`. Its
+  `weight.scale` defaults to `1`, on the grounds that weights outside the DHS
+  are typically already normalized to average 1. Previously any varmap mapping a
+  weight to `wwgt` -- which every varmap must, since everything downstream
+  expects that name -- had its weights silently divided by a million.
+  **This changes results** for existing uses of `prep_nrsim_sib_histories()`;
+  pass `weight.scale = 1e6` to restore the old behaviour.
 * Fixed the derivation of `sib.dob` from a sibling's age at death in
   `get_sib_df()`. The condition was guarded on `sib.death.yrsago` but the
   approximation is computed from `sib.death.age`, so a sibling with a known age
@@ -43,6 +72,10 @@
   equivalent to the exclusion filter it replaced for the standard `'5yr'` age
   groups), the missing-sibling-variable reporting, the `sib.dob` derivation
   regression, and the `sibling_estimator()` `sib.id` default and error message.
+* Added `tests/testthat/test_weight_scale.R` covering weight scaling in both
+  prep functions, the new required-column guards, and that
+  `aggregate_maternal_estimates()` returns identical results whether `age_prop`
+  and `vis_res` are computed internally or supplied.
 
 # siblingsurvival 0.3.0
 

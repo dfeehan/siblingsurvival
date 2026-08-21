@@ -4,7 +4,7 @@
 \alias{get_ego_df}
 \title{helper to prep the ego dataset}
 \usage{
-get_ego_df(df, resp.attrib, verbose = FALSE)
+get_ego_df(df, resp.attrib, verbose = FALSE, weight.scale = 1e+06)
 }
 \arguments{
 \item{df}{the survey dataset}
@@ -12,6 +12,12 @@ get_ego_df(df, resp.attrib, verbose = FALSE)
 \item{resp.attrib}{vector with respondent attribute columns (see \link{prep_dhs_sib_histories})}
 
 \item{verbose}{see \link{prep_dhs_sib_histories}}
+
+\item{weight.scale}{divide the \code{wwgt} column by this number. DHS weights are
+published multiplied by 1,000,000, so \code{1e6} recovers weights that
+average 1; surveys whose weights are already normalized (MICS, and
+simulated data) should pass \code{1}. See
+\link{prep_dhs_sib_histories}}
 }
 \value{
 a prepped ego dataset, used in \link{prep_dhs_sib_histories}

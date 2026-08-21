@@ -4,6 +4,12 @@
 ##' @param ego.dat the prepped ego data
 ##' @param sib.dat the prepped sibling data
 ##' @param only_females only keep female estimates? Defaults to TRUE; see Details, below
+##' @param age_prop optional, the respondent age distribution from
+##'        [siblingsurvival::get_ego_age_distn]. Computed internally when `NULL`
+##'        (the default); pass it in to avoid recomputing it; see Details
+##' @param vis_res optional, the visibility results from
+##'        [siblingsurvival::get_visibility]. Computed internally when `NULL`
+##'        (the default); pass it in to avoid recomputing it; see Details
 ##'
 ##' @returns either a tibble with the estimates aggregated across age groups
 ##' OR, if there are bootstrap results, then a list with three entries:
@@ -24,22 +30,35 @@
 ##' in that case, setting the parameter `only_female=FALSE` will include
 ##' male estimates, too (but will still restrict to ages 15-49)
 ##'
+##' `age_prop` and `vis_res` are computed from `ego.dat` and `sib.dat` when they
+##' are not supplied, which is the usual case. They are exposed because callers
+##' frequently need them for their own age-specific output, and frequently call
+##' this function more than once per survey (for example, once for all-cause and
+##' once for pregnancy-related mortality). Computing them once and passing them
+##' in avoids repeating identical work; it does not change any result.
 ##'
 ##' @export
+##' @md
 aggregate_maternal_estimates <- function(estimates,
                                          ego.dat,
                                          sib.dat,
-                                         only_females = TRUE) {
+                                         only_females = TRUE,
+                                         age_prop = NULL,
+                                         vis_res = NULL) {
 
 
   # get age distribution of respondents
-  age_prop <- get_ego_age_distn(ego.dat,
-                                only_females)
+  if (is.null(age_prop)) {
+    age_prop <- get_ego_age_distn(ego.dat,
+                                  only_females)
+  }
 
-  vis_res <- get_visibility(ego.dat,
-                            ego.id='caseid',
-                            sib.dat,
-                            sib.frame.indicator='in.F')
+  if (is.null(vis_res)) {
+    vis_res <- get_visibility(ego.dat,
+                              ego.id='caseid',
+                              sib.dat,
+                              sib.frame.indicator='in.F')
+  }
 
   ## assumption:
   ##   estimates$asdr.ind and estimates$asdr.agg

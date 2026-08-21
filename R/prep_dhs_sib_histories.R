@@ -5,11 +5,17 @@
 ##' @param add_maternal should maternal/pregnancy-related death info be added? (Default: FALSE)
 ##' @param keep_missing should we keep reported sibs that are missing sex or survival status?
 ##' @param keep_varmap_only should we only keep ego variables mentioned in the varmap? (Default: FALSE)
+##' @param weight.scale divide the women's weight by this number. Defaults to
+##'        `1e6`, which is correct for the DHS; see Details
 ##' @param verbose report detailed summaries?
 ##' @return a list; see Details
 ##' @examples
 ##'   # TODO - write example code
 ##' @section Details:
+##'
+##' The DHS publishes women's weights multiplied by 1,000,000, so the default
+##' `weight.scale = 1e6` recovers weights that average 1. Surveys whose weights
+##' are already normalized should pass `weight.scale = 1`.
 ##'
 ##' Note that if the dataframe does not have a column called 'sex', then
 ##' one will be added, and we will assume respondents are all female (sex='f'). If you
@@ -47,6 +53,7 @@ prep_dhs_sib_histories <- function(df,
                                    add_maternal=FALSE,
                                    keep_missing=FALSE,
                                    keep_varmap_only=FALSE,
+                                   weight.scale=1e6,
                                    verbose=TRUE) {
 
   ## ego (respondent) variables to grab
@@ -68,7 +75,7 @@ prep_dhs_sib_histories <- function(df,
   ## variable, v155); in those cases, we report it but proceed
   miss_col <- check_varmap_cols(df, resp.attrib, sib.attrib, verbose=verbose)
 
-  ego.dat <- get_ego_df(df, resp.attrib, verbose)
+  ego.dat <- get_ego_df(df, resp.attrib, verbose, weight.scale=weight.scale)
 
   cur.survey <- ego.dat$survey[1]
 
@@ -164,6 +171,8 @@ prep_dhs_sib_histories <- function(df,
 ##' @param varmap see Details; defaults to NULL
 ##' @param keep_missing should we keep reported sibs that are missing sex or survival status?
 ##' @param keep_varmap_only should we only keep ego variables mentioned in the varmap? (Default: FALSE)
+##' @param weight.scale divide the weight by this number. Defaults to `1`, since
+##'        non-DHS weights are typically already normalized; see Details
 ##' @param verbose report detailed summaries?
 ##' @return a list; see Details
 ##' @examples
@@ -172,6 +181,11 @@ prep_dhs_sib_histories <- function(df,
 ##'
 ##' This function is similar to [siblingsurvival::prep_dhs_sib_histories], but it
 ##' is not customized to work with DHS survey data.
+##'
+##' In particular, `weight.scale` defaults to `1` here, because weights outside
+##' the DHS are typically already normalized to average 1. Pass
+##' `weight.scale = 1e6` if you are preparing data that follows the DHS
+##' convention of publishing weights multiplied by 1,000,000.
 ##'
 ##' Note that if the dataframe does not have a column called 'sex', then
 ##' one will be added, and we will assume respondents are all female (sex='f'). If you
@@ -208,6 +222,7 @@ prep_nrsim_sib_histories <- function(df,
                                      varmap,
                                      keep_missing=FALSE,
                                      keep_varmap_only=FALSE,
+                                     weight.scale=1,
                                      verbose=TRUE) {
 
   ## ego (respondent) variables to grab
@@ -236,7 +251,8 @@ prep_nrsim_sib_histories <- function(df,
 
   ego.dat <- get_ego_df(df,
                         resp.attrib,
-                        verbose)
+                        verbose,
+                        weight.scale=weight.scale)
 
   cur.survey <- ego.dat$survey[1]
 
@@ -323,15 +339,18 @@ prep_nrsim_sib_histories <- function(df,
 ##' @param df the survey dataset
 ##' @param resp.attrib vector with respondent attribute columns (see [siblingsurvival::prep_dhs_sib_histories])
 ##' @param verbose see [siblingsurvival::prep_dhs_sib_histories]
+##' @param weight.scale divide the `wwgt` column by this number. DHS weights are
+##'        published multiplied by 1,000,000, so `1e6` recovers weights that
+##'        average 1; surveys whose weights are already normalized (MICS, and
+##'        simulated data) should pass `1`. See
+##'        [siblingsurvival::prep_dhs_sib_histories]
 ##' @return a prepped ego dataset, used in [siblingsurvival::prep_dhs_sib_histories]
 ##'
-get_ego_df <- function(df, resp.attrib, verbose=FALSE) {
+get_ego_df <- function(df, resp.attrib, verbose=FALSE, weight.scale=1e6) {
 
   ## TODO - to make more generic...
   ##   - customizable weight variable
   ##   - customizable age variable
-  ##   - need 'survey' column
-  ##   - figure out when/where to prep weights (ie, for DHS divide by 1e6)
 
   ego.dat <- df %>%
     as_tibble() %>%
@@ -348,18 +367,35 @@ get_ego_df <- function(df, resp.attrib, verbose=FALSE) {
     ego.dat$sex <- 'f'
   }
 
-  # if wwgt variable is found, assume we have a DHS survey + scale the weights
-  # accordingly
-  if('wwgt' %in% names(ego.dat)) {
+  ## the ego dataset has to have an age (in single years) and a survey id;
+  ## check for them here rather than letting the failure surface as an opaque
+  ## error inside the mutate() and the survey lookup below
+  required.ego <- c('age', 'survey')
+  missing.ego <- required.ego[! required.ego %in% names(ego.dat)]
+
+  if (length(missing.ego) > 0) {
+    stop(glue::glue(
+      "The ego dataset is missing required column(s): ",
+      "{paste0(missing.ego, collapse=', ')}.\n",
+      "These come from the varmap: it needs a row mapping each of them ",
+      "(with sibvar=0). The ego dataset has columns: ",
+      "{paste0(names(ego.dat), collapse=', ')}\n"))
+  }
+
+  ## rescale the weights if we were asked to.
+  ##
+  ## DHS publishes women's weights multiplied by 1,000,000, so dividing by 1e6
+  ## recovers weights that average 1 (see DHS documentation). Surveys whose
+  ## weights are already normalized -- MICS wmweight, and simulated data --
+  ## must pass weight.scale=1, since dividing those by 1e6 would be wrong by
+  ## six orders of magnitude and nothing downstream would complain.
+  if('wwgt' %in% names(ego.dat) && weight.scale != 1) {
     if(verbose) {
-      cat(paste0("\nFound wwgt column; assuming we have a DHS survey and scaling weights.\n"))
+      cat(paste0("\nScaling wwgt by 1/", format(weight.scale, scientific=FALSE),
+                 " (pass weight.scale=1 if these weights are already normalized).\n"))
     }
-    ## specific to the DHS...
     ego.dat <- ego.dat %>%
-      mutate(
-        ## we'll rescale the weights, dividing them by 1,000,000
-        ## (so that their average is 1); see DHS documentation
-        wwgt=wwgt/1e6)
+      mutate(wwgt = wwgt / weight.scale)
 
   }
 
@@ -393,11 +429,37 @@ get_ego_df <- function(df, resp.attrib, verbose=FALSE) {
 ##'
 get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE) {
 
+  ## these ego columns are carried onto every sibling row
+  required.ego <- c('caseid', 'wwgt', 'psu', 'doi', 'sex')
+  missing.ego <- required.ego[! required.ego %in% names(ego.dat)]
+
+  if (length(missing.ego) > 0) {
+    stop(glue::glue(
+      "The ego dataset is missing column(s) needed to build the sibling data: ",
+      "{paste0(missing.ego, collapse=', ')}.\n",
+      "Note that 'doi' has to be the date of interview as a CMC (century month ",
+      "code), since the sibling date derivations are arithmetic in months.\n"))
+  }
+
   sib.dat <- attributes.to.long(ego.dat,
                                 attribute.prefix=sib.attrib,
                                 ego.vars=c('caseid', 'wwgt',
                                            'psu', 'doi', 'sex'),
                                 idvar="caseid")
+
+  ## the derivations below reference these unconditionally, so a varmap that
+  ## omits any of them fails inside case_when() with an opaque error
+  required.sib <- c('sib.sex', 'sib.alive', 'sib.age', 'sib.dob',
+                    'sib.death.date', 'sib.death.yrsago', 'sib.death.age')
+  missing.sib <- required.sib[! required.sib %in% names(sib.dat)]
+
+  if (length(missing.sib) > 0) {
+    stop(glue::glue(
+      "The sibling data is missing required column(s): ",
+      "{paste0(missing.sib, collapse=', ')}.\n",
+      "The varmap needs a row mapping each of them (with sibvar=1); the ",
+      "sibling data has columns: {paste0(names(sib.dat), collapse=', ')}\n"))
+  }
 
   sib.dat <- sib.dat %>%
     mutate(sib.sex = ifelse(sib.sex == 2, 'f', 'm'))

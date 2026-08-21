@@ -125,6 +125,18 @@ Six things MICS needs that DHS does not (the last two found 2026-08-20):
   `sib.sex = ifelse(sib.sex == 2, 'f', 'm')`. Anything that is not literally
   `2` — including a `9` don't-know — silently becomes `'m'`. Same class of
   silent-wrong failure as B2, and it needs the MICS MM5 coding confirmed.
+  (The draft varmap already carries this warning in its `comments` column.)
+- **Map an ego `age` in single years.** `get_ego_df()` builds `age.cat` and
+  `age.cat10` from a column called `age`, unconditionally. Found by feeding a
+  minimal varmap through `prep_nrsim_sib_histories()`.
+- **Map `sib.death.yrsago` *and* `sib.death.age`.** The birth- and death-date
+  derivations in `get_sib_df()` reference both unconditionally, so a varmap that
+  omits either fails. The MICS draft varmap has both (`mm8`, `mm9`), so this is
+  satisfied — but see the note under B4: "unconditional on survey family" also
+  means "unconditional on variable presence".
+
+  Both of these now produce a message naming the missing column rather than an
+  opaque `case_when()` error (done 2026-08-20).
 
 > **On "try `prep_nrsim_sib_histories()` first" (verified 2026-08-20):** worth
 > doing, but be clear about what it buys. `prep_nrsim_sib_histories()` calls the
@@ -147,6 +159,28 @@ wrong by a factor of 10^6.
 current DHS behaviour as the default, and have the MICS prep pass `1`. Three
 lines. There is already a `TODO` at line 352 anticipating exactly this
 ("figure out when/where to prep weights (ie, for DHS divide by 1e6)").
+
+> **DONE 2026-08-20 — and this was a live bug, not just a MICS hazard.**
+>
+> `prep_nrsim_sib_histories()` — the function whose whole purpose is *non-DHS*
+> data — calls the same `get_ego_df()`, which keys off the *column name* `wwgt`
+> rather than the survey family. Every varmap has to map its weight to `wwgt`,
+> because everything downstream expects that name. So non-DHS data going through
+> the existing generic prep was already wrong by 10^6. Demonstrated on a
+> synthetic NR-SIM file with mean-1 weights:
+>
+>     input  weights: 1 1.2 0.8
+>     output weights: 1e-06 1.2e-06 8e-07
+>
+> `weight.scale` is now plumbed through `get_ego_df()`,
+> `prep_dhs_sib_histories()` (default `1e6`, unchanged) and
+> `prep_nrsim_sib_histories()` (default **`1`**). The nrsim default is a
+> deliberate behaviour change, recorded in `NEWS.md`; it changes results by a
+> factor of a million, so it will be obvious rather than subtle. Pass
+> `weight.scale = 1e6` to restore the old behaviour.
+>
+> The MICS prep should pass `weight.scale = 1`, or inherit it if it is built on
+> `prep_nrsim_sib_histories()`.
 
 ### B3. `add_maternal_deaths()` needs a MICS branch
 
@@ -268,6 +302,9 @@ times per survey**, from identical inputs.
 **Suggested change:** optional `age_prop = NULL` and `vis_res = NULL` arguments,
 computed internally when not supplied. Backwards compatible, and it removes the
 redundancy without changing any result.
+
+> **DONE 2026-08-20**, exactly as suggested, with a test asserting that the
+> results are identical whether the two are computed internally or supplied.
 
 ### C3. Make the reproductive age-group filter a package-level definition
 
@@ -408,17 +445,23 @@ Suggested order
 2. ~~**C1, C3, A2, D1, D2, D4**~~ — done on the `mics` branch, 22 new tests in
    `tests/testthat/test_prep_cleanup.R`, full suite 101 passing / 0 failing.
    Version bumped to `0.3.0.9000`; `NEWS.md` updated. **Not yet committed.**
-3. **B5 scaffolding** — set up the synthetic MICS fixture next, so B1–B4 are
-   test-driven rather than validated by eye against a dataset that has not
-   arrived.
-4. **B2** — `weight.scale`. Small, self-contained, and the highest-consequence
-   silent failure on the list. Remember to plumb it through
-   `prep_nrsim_sib_histories()` as well as `prep_dhs_sib_histories()`, since both
-   call `get_ego_df()`.
-5. **B3, B4, B1** — the MICS prep proper, once the audit has answered the layout
-   question. B1 now has six requirements, not four.
-6. **C2, D3** — cleanup, any time. D3 needs a documentary answer (the DHS
-   questionnaire history), not a code change.
+3. ~~**B2, C2**, plus required-column guards~~ — done on `mics`. B2 turned out to
+   be a live bug in `prep_nrsim_sib_histories()`, not only a MICS hazard.
+4. **Request MICS microdata access.** This is the long pole and nothing in the
+   package unblocks it: the audit's Q4 (does the roster survive into the released
+   microdata, and in what layout) cannot be answered without a file, and Q8
+   records that no survey has been requested yet. Registration is per-survey. The
+   four shortlisted MICS6 surveys are Benin 2021-22, Gambia 2018, Malawi 2019-20
+   and Sierra Leone 2017.
+5. **B5 scaffolding** — the synthetic MICS fixture, so B1–B4 are test-driven
+   rather than validated by eye against a dataset that has not arrived. Build it
+   as `tests/testthat/helper-simulate-mics.R`; a fabricated fixture should not
+   ship as package data that looks like real MICS. Add `model_mics_dat` only once
+   a real file is in hand.
+6. **B3, B4, B1** — the MICS prep proper, once the audit has answered the layout
+   question. B1 now has eight requirements, not four.
+7. **D3** — needs a documentary answer (the DHS questionnaire history), not a
+   code change.
 
 
 Context the next session will want
