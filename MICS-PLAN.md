@@ -727,6 +727,36 @@ So MICS classifies proportionally more female deaths as maternal than *any*
 reading of the questionnaire items produces — and it does so while agreeing with
 us on the denominator to within 1.3%.
 
+**Against the unrounded published counts** — recovered as `PM × all-cause
+deaths`, since TM.9.3 prints deaths as integers — the pregnancy-related reading
+gets to 92%, and the residual is concentrated rather than uniform:
+
+| age | ours (PR) | published (unrounded) | gap | all-cause gap |
+|---|---|---|---|---|
+| 15–19 | 1.6 | 3.5 | **−1.9** | **−5** |
+| 20–24 | 10.6 | 10.2 | +0.4 | 0 |
+| 25–29 | 8.4 | 8.7 | −0.3 | +1 |
+| 30–34 | 17.2 | 18.7 | **−1.5** | **−3** |
+| 35–39 | 15.1 | 14.7 | +0.4 | 0 |
+| 40–44 | 8.0 | 10.0 | **−2.0** | **−4** |
+| 45–49 | 2.0 | 2.1 | −0.1 | +2 |
+| **total** | **62.7** | **67.9** | **−5.2** | **−9** |
+
+The three age groups with a maternal shortfall are exactly the three with an
+all-cause shortfall, which suggests deaths being *missed* rather than
+*misclassified*. But the maternal gap is a far larger share of the all-cause gap
+(38–50%) than the PM in those groups (8–13%), so the missing deaths would have to
+be disproportionately maternal — which no mechanism we can find explains.
+
+Ruled out as the source of the missing deaths:
+
+- *Siblings dropped for missing sex or survival status.* `keep_missing = TRUE`
+  gives identical all-cause counts in every age group.
+- *Missing date fields.* No female death in the file has a missing `MM18`,
+  `MM19` or `MM18C`.
+- *Age binning.* CMC-derived age gives 663 female deaths against reported
+  `MM19`'s 656; the published figure is 674, so neither reaches it.
+
 > **This makes retrieving the MICS6 Standard SPSS Syntax a blocker rather than a
 > nice-to-have.** The methods reference calls it "the only authoritative
 > statement of the estimation algorithm", and it is Cloudflare-403 from a
