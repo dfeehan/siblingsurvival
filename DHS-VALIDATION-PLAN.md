@@ -90,19 +90,31 @@ paper, and it is the DHS analogue of the MICS `preg.window` finding.
 
     replace mdeaths_in_`li'=1 if deaths_in_`li'==1 & mm9>=2 & mm9<=5 & mm16!=1 & mm16!=2
 
-plus an **upfront recode** at `:314`, which runs *before* both flags:
+So the reference excludes violence/accident across all of `mm9` 2--5, uniformly.
+The package's `is_maternal_dhs()` applies `not.accident` to codes 2 and 5 only,
+leaves code 3 unconditional, and includes code 4. Its comment says this matches
+"the behaviour this package has always had", so it is a known choice --- but it
+should be re-examined against the reference rather than preserved by inertia.
 
+**One ambiguity to resolve in D4, not by reading.** `AM_rates.do:307-320`
+contains, *inside a comment block and therefore not executed*:
+
+    If mm9=2, and mm16=1 or 2, recode mm9 to 1
     replace mm9=1 if mm9==2 & (mm16==1 | mm16==2)
 
-So DHS excludes violence/accident from the maternal count across all of `mm9`
-2--5, *and* separately removes accident deaths among `mm9 = 2` from the
-pregnancy-related count as well.
+introduced as "Important for redefinition of Pregnancy Related Mortality Ratio
+(PRMR) in surveys from 2016 onwards", citing
+`blog.dhsprogram.com/mmr-prmr/`. So DHS documents a rule that would remove
+accident deaths from the *pregnancy-related* count in recent surveys, but the
+reference code as shipped does not apply it: `prdeaths` is `mm9` 2--6 with no
+cause condition at all.
 
-The package's `is_maternal_dhs()` applies `not.accident` to codes 2 and 5 only,
-leaves code 3 unconditional, includes code 4, and does no upfront recode. The
-in-code comment says this matches "the behaviour this package has always had",
-so it is a known choice --- but it should be re-examined against the reference
-rather than preserved by inertia.
+Only 5 of the 43 surveys in the sample carry `mm16`, so this affects a small
+subset --- but it is precisely the shape of the MICS finding (a documented rule
+the shipped code does not implement), and it can only be settled by running both
+variants against a published table for one of those 5.
+
+Note this makes H2 far narrower than H1: **H1 governs all 43 surveys, H2 only 5.**
 
 ### H3 The life table constant differs, and this time it is documented
 
@@ -134,18 +146,25 @@ This connects directly to the still-open `only_females = FALSE` questions in
 resolve those too, or may show that `only_females = FALSE` is answering a
 question DHS does not ask.
 
-### H5 The observation window
+### H5 The observation window --- resolved by reading, still confirm numerically
 
-`AM_rates.do:230-231`
+`AM_rates.do:230-231` with the documented defaults `lw = -6, uw = 0`:
 
-    gen start_month=doi+12*lw-12
-    gen end_month=doi+12*uw-1
+    gen start_month=doi+12*lw-12      ->  doi - 84
+    gen end_month=doi+12*uw-1         ->  doi - 1
 
-with *"As is standard DHS practice, exposure or events in the month of interview
-are ignored."* Same rule the MICS syntax uses. Expect
-`cell_config(time.periods = '7yr_beforeinterview')` to agree; confirm rather than
-assume, and check the *lower* bound too, which is where the MICS convention was
-non-obvious.
+so the window is `[doi - 84, doi - 1]`, **identical to the MICS convention**, with
+*"As is standard DHS practice, exposure or events in the month of interview are
+ignored."* Expect `cell_config(time.periods = '7yr_beforeinterview')` to agree.
+
+But note one genuine **DHS/MICS divergence** in `get_exposure_and_deaths`:
+
+    replace last_`li'=mm8 if first_`li'<=mm8 & last_`li'>=mm8 & mm8<.
+
+DHS ends a decedent's exposure *at* the month of death, inclusive. The MICS
+syntax ends it at `MM18C - 1`, the month before. The package should not be made
+to satisfy both at once; find out which it currently does and document the
+choice.
 
 ### H6 Unknown survival status
 
@@ -166,18 +185,51 @@ without `mm16`; a sibling with `mm4` present but `mm8` missing; `mm9 = 98`.
 
 Mirrors V1--V7 from `MICS-PLAN.md`, which worked well.
 
-**D1. Data and target selection.** ~5,134 DHS files are already local under
-`~/Dropbox/dhs/data/20250202/`, so no download is needed for the microdata. The
-work is choosing surveys and getting the *published* numbers, which means final
-report PDFs from dhsprogram.com.
+**D1. Data and target selection. --- DONE, 2026-08-21.**
 
-Selection criteria --- aim for about five surveys:
+The paper's sample is already fixed: **43 DHS surveys**, listed in
+`out/survey-index.rds` in the analysis repo and held as `.DTA` under
+`data/dhs/`. Since the paper covers every DHS country with a maternal module,
+coverage of *phases* rather than countries is what matters, and running cleanly
+on all 43 is a first-class deliverable rather than a closing formality.
 
-* at least two **phase 7+** surveys (`mm16` present, so maternal is computable)
-  and two **pre-2016** (pregnancy-related only), since H1/H2 bite differently
-* at least one country that also appears in the MICS 13, so the DHS↔MICS
-  comparison in the paper gets validated end to end
-* one survey with a known-awkward feature, to be the DHS analogue of São Tomé
+Phase spread of the 43: 1 in phase 2, 9 in 3, 11 in 4, 7 in 5, 9 in 6, 5 in 7,
+1 in 8.
+
+Three things found while inventorying, all worth knowing before starting:
+
+* **Only 5 of the 43 carry `mm16`** --- `GAIR71FL`, `ZAIR71FL`, `LBIR7AFL`,
+  `MLIR7AFL`, `GMIR81FL`. Maternal mortality proper is computable for those
+  five; the other 38 support pregnancy-related only. Note `RWIR70FL` is phase 7
+  but predates the 2016 introduction of `mm16` and does *not* have it, so phase
+  alone is not a safe proxy. **This is why H1 dominates H2.**
+* **`mm15` is absent from `MWIR22FL`** (Malawi 1992, the one phase-2 survey).
+* **`GAIR41FL` (Gabon 2000) cannot be read at all** with `haven::read_dta()`
+  defaults --- it fails with "Unable to convert string to the requested
+  encoding (invalid byte sequence)". `encoding = "latin1"` reads it fine
+  (3,361 variables). The analysis pipeline will hit this too; see
+  `ANALYSIS-REPO-CHANGES.md`.
+
+Validation set --- **seven surveys, one per phase**, using Rwanda as a
+within-country series across phases 5/6/7 so that differences there are
+attributable to the questionnaire rather than to the population, and Malawi and
+Benin for the overlap with the MICS 13:
+
+| Survey | Country | Phase | Why |
+|---|---|---|---|
+| `MWIR22FL` | Malawi 1992 | 2 | oldest; no `mm15`; MICS-overlap country |
+| `BJIR31FL` | Benin 1996 | 3 | MICS-overlap country |
+| `MWIR41FL` | Malawi 2000 | 4 | largest phase; MICS-overlap country |
+| `RWIR53FL` | Rwanda 2005 | 5 | start of the Rwanda series |
+| `RWIR61FL` | Rwanda 2010 | 6 | |
+| `RWIR70FL` | Rwanda 2014-15 | 7 | phase 7 *without* `mm16` |
+| `GMIR81FL` | Gambia 2019-20 | 8 | newest; **has `mm16`**, so H2 is testable |
+
+`GMIR81FL` is the only one of the seven that can test H2 and the commented-out
+PRMR recode. If that turns out to be the crux, add a second `mm16` survey from
+the remaining four.
+
+Published targets still have to come from final-report PDFs on dhsprogram.com.
 
 **D2. Build the replica.** Transcribe `AM_rates.do` literally into
 `data-raw/dhs-validation/stata-reference-replica.R`, the same way

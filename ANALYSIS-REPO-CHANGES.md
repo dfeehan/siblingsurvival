@@ -127,6 +127,21 @@ column is not found. The workaround noted in `STATUS.md` can be simplified or
 left as-is; it is no longer load-bearing.
 
 
+B4. Gabon 2000 cannot be read with `read_dta()` defaults
+----
+
+`data/dhs/GAIR41FL.DTA` fails with *"Unable to convert string to the requested
+encoding (invalid byte sequence)"*. It is one of the 43 surveys in
+`out/survey-index.rds`, so whatever the pipeline currently does with it, it is
+not estimating from it.
+
+`haven::read_dta(path, encoding = "latin1")` reads it fine (3,361 variables).
+`"ISO-8859-1"` also works; `"windows-1252"` does not.
+
+Worth checking whether the pipeline is silently skipping it, or erroring, or
+whether the 43 has quietly been 42 all along.
+
+
 C. The MICS plan needs revising
 ----
 
