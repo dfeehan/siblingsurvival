@@ -103,6 +103,25 @@ used only code 6 --- see H1b in `DHS-VALIDATION-PLAN.md`. Pregnancy-related is
 computable for all 43 and is insensitive to that, which is a further reason to
 make it the paper's estimand.
 
+### A0b. Every estimate moves slightly: the event boundary convention changed
+
+`window_intersect()` treated observation windows as `(start, end]`; it now treats
+them as `[start, end)`. The old form disagreed with the exposure calculation at
+the first month of a window --- a death there contributed exposure but could not
+be counted as an event.
+
+Effect is small but systematic and in one direction (a few more deaths counted).
+Three of seven validation surveys were each missing exactly one death, always in
+month `doi - 84`. With this fixed, **all seven reproduce the DHS reference
+exactly**.
+
+Nothing to change in the analysis code, but it is another reason to regenerate
+cached results alongside A0.
+
+If any analysis code builds `sib.dat` by hand rather than via the prep
+functions, note that `end.obs` for a sibling who died must be `death + 1`, not
+`death`. The prep functions already do this.
+
 ### A4. Expect the numbers to move slightly
 
 Several fixes on the package side change DHS results, all small but real:

@@ -1,5 +1,36 @@
 # siblingsurvival 0.3.0.9000 (development)
 
+## Breaking: events on a window boundary are now counted consistently
+
+* **`window_intersect()` in `src/compute_occ_exp.cpp` now treats windows as
+  `[start, end)` rather than `(start, end]`.** This changes every estimate
+  slightly, in the direction of counting a small number of previously-dropped
+  deaths.
+
+  The two forms are both consistent partitions, so neither double-counts. But
+  the right-open form disagreed with the exposure calculation at the *first*
+  month of an observation window: a death in that month contributed a month of
+  exposure yet could not be counted as an event, so the numerator and
+  denominator disagreed about whether that month was in the window.
+
+  Found by validating against The DHS Program's own tabulation code: three of
+  seven surveys spanning DHS phases 2--8 were each missing a death, always one
+  that occurred in month `doi - 84` exactly. With the fix, **all seven surveys
+  reproduce the reference exactly** -- exposure, all-cause deaths and
+  pregnancy-related deaths, both sexes.
+
+  It also puts an event falling exactly on an age-group boundary into the later
+  group, which is what `floor((death - dob)/width)` does and what both the DHS
+  and MICS reference implementations assume.
+
+  MICS results move only marginally, and toward the published values: Zimbabwe
+  2019's female all-cause rate goes from 6.27 to 6.28 against a published 6.28.
+
+  Note for anyone constructing `sib.dat` by hand: observation windows being
+  left-closed means a sibling observed through the month of death needs
+  `end.obs = death + 1`. That is what `prep_dhs_sib_histories()` and
+  `prep_mics_sib_histories()` already produce.
+
 ## Breaking: the DHS pregnancy-related definition is fixed
 
 * **`is_preg_related_dhs()` now counts `mm9` 2 through 6, and no longer consults

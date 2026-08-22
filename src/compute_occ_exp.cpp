@@ -13,9 +13,18 @@ using namespace Rcpp;
 //' given two intervals, figure out the intersection between the
 //' first and the second
 //'
-//' NOTE that the intervals are treated as half-open (start,finish]
+//' NOTE that the intervals are treated as half-open [start,finish)
 //' so that an event that happens exactly at time b is counted in
-//' (a,b] but not in (b, c]
+//' [b,c) but not in [a,b)
+//'
+//' The left-closed form matters at the edges of the observation period. An
+//' event in the very first month of a window contributes exposure to that
+//' window, so it must also be able to be counted there; the right-open form
+//' [a,b] would take the exposure and drop the event, leaving the numerator and
+//' denominator disagreeing about whether that month is in the window. It also
+//' puts an event exactly on an age-group boundary into the later group, which
+//' is what floor((death - dob)/width) does and what The DHS Program's own
+//' tabulation code assumes.
 //'
 //' @param a the first window; here, we use all three components
 //'              (start, finish, event)
@@ -41,8 +50,7 @@ NumericVector window_intersect(NumericVector a, NumericVector b)
   result[0] = std::max(a[0], b[0]);
   result[1] = std::min(a[1], b[1]);
 
-  //if (a[2] >= result[0] && a[2] < result[1]) {
-  if (a[2] > result[0] && a[2] <= result[1]) {
+  if (a[2] >= result[0] && a[2] < result[1]) {
     result[2] = a[2];
   } else {
     result[2] = NO_EVENT;

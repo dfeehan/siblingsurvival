@@ -365,6 +365,32 @@ This is another argument for pregnancy-related as the paper's estimand: it is
 computable for all 43 surveys and is insensitive to which code a questionnaire
 happened to use.
 
+### H9. Found in passing: the event boundary convention was inconsistent (FIXED)
+
+Not one of the original hypotheses --- it surfaced from running the package
+against the replica on all seven surveys.
+
+Female exposure matched the reference **exactly in all seven**, confirming H5
+(window) and H6 (unknown survival status). But three surveys were each short by
+about one death: Benin by 1.0, Malawi 2000 by 2.2, Rwanda 2005 by 2.1.
+
+Every one was a sibling who died in month `doi - 84` exactly --- the first month
+of the window. `window_intersect()` treated windows as `(start, end]`, so an
+event at the left edge was excluded, while the exposure calculation counted that
+same month. The numerator and denominator disagreed about whether the month was
+in the window.
+
+Changing to `[start, end)` makes **all seven surveys match the reference exactly
+on every quantity**. It also assigns an event falling exactly on an age-group
+boundary to the later group, matching `floor((death - dob)/60)`, which is what
+both reference implementations use. MICS moves marginally and toward the
+published values.
+
+This one is worth noting as a *method* result: it was invisible to every
+synthetic test, because the hand-built fixtures set `end_obs = death` while the
+package's own prep sets `end_obs = death + 1`. Only real data with a death in
+one specific month exposed it.
+
 **D3. Extract published targets** into
 `data-raw/dhs-validation/published-targets.csv`, same schema as the MICS file so
 tooling is shared. Take exposure and death counts by age and sex, the age-adjusted
