@@ -314,6 +314,53 @@ Surveys use code 5 *or* code 6 for postpartum deaths, and a couple use both.
 Whichever they use is a property of the survey, not of the population, so the
 resulting bias is essentially arbitrary across the 43.
 
+### H1b. The `mm9` 5/6 split is a questionnaire artefact, so the 42-day cut is not always identified
+
+Follows from the H1 work and constrains the *maternal* estimand rather than the
+pregnancy-related one.
+
+The reference splits the two estimands on this boundary:
+
+| `mm9` | Meaning | Maternal (42 d) | Pregnancy-related (2 mo) |
+|---|---|---|---|
+| 2 | died while pregnant | yes | yes |
+| 3 | died during delivery | yes | yes |
+| 5 | 6 weeks after delivery | yes | yes |
+| 6 | "ADDITIONAL BETWEEN 6 WEEKS AND 2 MONTHS" | **no** | yes |
+
+so `mdied = mm9 2..5` is exactly a 42-day cut and `prdied = mm9 2..6` is exactly
+a two-month one --- the same distinction the MICS work settled, and the package's
+*maternal* column already gets this right. H1 is a defect in the
+*pregnancy-related* column only.
+
+But the two codes are not a reliable partition. Among the five surveys that carry
+`mm16`, and so are the only ones where maternal is computable at all:
+
+| Survey | `mm9`=5 | `mm9`=6 | |
+|---|---|---|---|
+| GAIR71FL | 14 | 1 | both bands used |
+| LBIR7AFL | 23 | 7 | both bands used |
+| MLIR7AFL | 26 | 16 | both bands used |
+| GMIR81FL | 68 | 8 | both bands used |
+| **ZAIR71FL** | **0** | **26** | **only code 6** |
+
+South Africa 2016 recording zero deaths within six weeks of delivery, and 26
+between six weeks and two months, is not credible as a description of the
+population; it is much more likely that its questionnaire asked only about the
+two-month window, so every postpartum death was coded 6. Where that happens,
+`mm9 <= 5` drops *all* postpartum deaths and the maternal count degenerates to
+"died pregnant or during delivery".
+
+**Consequence:** maternal counts are not comparable across surveys that code
+differently, and this is a property of the DHS definition, not of this package.
+The same artefact explains the `5 = 0, 6 = everything` pattern in Benin, Malawi
+2000 and the three Rwanda surveys --- harmless there, because pregnancy-related
+spans both codes.
+
+This is another argument for pregnancy-related as the paper's estimand: it is
+computable for all 43 surveys and is insensitive to which code a questionnaire
+happened to use.
+
 **D3. Extract published targets** into
 `data-raw/dhs-validation/published-targets.csv`, same schema as the MICS file so
 tooling is shared. Take exposure and death counts by age and sex, the age-adjusted
