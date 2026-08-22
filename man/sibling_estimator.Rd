@@ -7,7 +7,7 @@
 sibling_estimator(
   sib.dat,
   ego.id,
-  sib.id,
+  sib.id = "sibid",
   sib.frame.indicator,
   sib.sex = "sex",
   cell.config,
@@ -22,7 +22,7 @@ sibling_estimator(
 
 \item{ego.id}{String with the name of the column of \code{sib.dat} that has the ID of the survey respondent}
 
-\item{sib.id}{String with the name of the column of \code{sib.dat} that has the sibling ID}
+\item{sib.id}{String with the name of the column of \code{sib.dat} that has the sibling ID. Defaults to \code{'sibid'}, which is the column created by \code{\link{prep_dhs_sib_histories}} and \code{\link{prep_nrsim_sib_histories}}.}
 
 \item{sib.frame.indicator}{String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population}
 

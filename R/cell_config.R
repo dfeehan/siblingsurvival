@@ -88,8 +88,12 @@ cell_config <- function(age.groups,
     } else {
       stop(glue::glue("No setting found for time.periods {time.periods}."))
     }
-  } else{
+  } else if (is.null(time.periods)) {
     stop("No time periods specified.")
+  } else {
+    # using a custom time.periods object from make.time.periods() (which is OK,
+    # and is what the documentation promises) -- mirrors the age.groups handling
+    # above
   }
 
   cell_config_res$start.obs <- start.obs

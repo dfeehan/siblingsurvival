@@ -2,7 +2,7 @@
 ##'
 ##' @param sib.dat The long-form sibling history dataset (likely produced by [prep_dhs_sib_histories])
 ##' @param ego.id  String with the name of the column of \code{sib.dat} that has the ID of the survey respondent
-##' @param sib.id  String with the name of the column of \code{sib.dat} that has the sibling ID
+##' @param sib.id  String with the name of the column of \code{sib.dat} that has the sibling ID. Defaults to \code{'sibid'}, which is the column created by \code{\link{prep_dhs_sib_histories}} and \code{\link{prep_nrsim_sib_histories}}.
 ##' @param sib.frame.indicator String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population
 ##' @param sib.sex String with the name fo the column of \code{sib.dat} that has the sibling's sex
 ##' @param cell.config An object containing the configuration of cells; see TODO for more information
@@ -21,8 +21,9 @@
 sibling_estimator <- function(sib.dat,
                               # the name of the id of the ego in the sibling histories
                               ego.id,
-                              # the name of the id of the sib in the sibling histories
-                              sib.id,
+                              # the name of the id of the sib in the sibling histories;
+                              # 'sibid' is what the prep_*_sib_histories functions create
+                              sib.id = 'sibid',
                               # the name of the indicator for whether or not each sib is on the
                               # frame
                               sib.frame.indicator,
@@ -36,6 +37,23 @@ sibling_estimator <- function(sib.dat,
                               # but the formal results are based on exposed/not exposed; use this setting to
                               # discretize exposure
                               discretize.exp=FALSE) {
+
+  ## check up front that the columns we were given actually exist, so that a
+  ## mismatched name (eg sib.id='sib.id' when prep created 'sibid') produces a
+  ## message that names the columns available rather than an opaque tidyselect error
+  requested.cols <- c(ego.id=ego.id,
+                      sib.id=sib.id,
+                      sib.frame.indicator=sib.frame.indicator,
+                      sib.sex=sib.sex,
+                      weights=weights)
+  missing.cols <- requested.cols[! requested.cols %in% names(sib.dat)]
+
+  if (length(missing.cols) > 0) {
+    stop(glue::glue(
+      "Column(s) requested but not found in sib.dat: ",
+      "{paste0(names(missing.cols), \"='\", missing.cols, \"'\", collapse=', ')}.\n",
+      "sib.dat has columns: {paste0(names(sib.dat), collapse=', ')}\n"))
+  }
 
   sib.dat <- sib.dat %>%
     dplyr::mutate(.ego.id     = !!sym(ego.id),

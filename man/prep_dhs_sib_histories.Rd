@@ -8,8 +8,10 @@ prep_dhs_sib_histories(
   df,
   varmap = sibhist_varmap_dhs6,
   add_maternal = FALSE,
+  na.action = NULL,
   keep_missing = FALSE,
   keep_varmap_only = FALSE,
+  weight.scale = 1e+06,
   verbose = TRUE
 )
 }
@@ -20,9 +22,16 @@ prep_dhs_sib_histories(
 
 \item{add_maternal}{should maternal/pregnancy-related death info be added? (Default: FALSE)}
 
+\item{na.action}{only used when \code{add_maternal = TRUE}; defaults to
+\code{"include"} for DHS data, which is what this package has always done.
+See \link{add_maternal_deaths}}
+
 \item{keep_missing}{should we keep reported sibs that are missing sex or survival status?}
 
 \item{keep_varmap_only}{should we only keep ego variables mentioned in the varmap? (Default: FALSE)}
+
+\item{weight.scale}{divide the women's weight by this number. Defaults to
+\code{1e6}, which is correct for the DHS; see Details}
 
 \item{verbose}{report detailed summaries?}
 }
@@ -34,6 +43,10 @@ prepare a DHS dataset for analysis
 }
 \section{Details}{
 
+
+The DHS publishes women's weights multiplied by 1,000,000, so the default
+\code{weight.scale = 1e6} recovers weights that average 1. Surveys whose weights
+are already normalized should pass \code{weight.scale = 1}.
 
 Note that if the dataframe does not have a column called 'sex', then
 one will be added, and we will assume respondents are all female (sex='f'). If you

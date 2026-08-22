@@ -4,7 +4,14 @@
 \alias{aggregate_maternal_estimates}
 \title{calculate total rate based on point estimates}
 \usage{
-aggregate_maternal_estimates(estimates, ego.dat, sib.dat, only_females = TRUE)
+aggregate_maternal_estimates(
+  estimates,
+  ego.dat,
+  sib.dat,
+  only_females = TRUE,
+  age_prop = NULL,
+  vis_res = NULL
+)
 }
 \arguments{
 \item{estimates}{the output of \link{sibling_estimator}}
@@ -14,6 +21,14 @@ aggregate_maternal_estimates(estimates, ego.dat, sib.dat, only_females = TRUE)
 \item{sib.dat}{the prepped sibling data}
 
 \item{only_females}{only keep female estimates? Defaults to TRUE; see Details, below}
+
+\item{age_prop}{optional, the respondent age distribution from
+\link{get_ego_age_distn}. Computed internally when \code{NULL}
+(the default); pass it in to avoid recomputing it; see Details}
+
+\item{vis_res}{optional, the visibility results from
+\link{get_visibility}. Computed internally when \code{NULL}
+(the default); pass it in to avoid recomputing it; see Details}
 }
 \value{
 either a tibble with the estimates aggregated across age groups
@@ -40,5 +55,12 @@ as this is what makes sense for aggregating maternal estimates.
 It might occasionally be useful to run this function for all-cause mortality;
 in that case, setting the parameter \code{only_female=FALSE} will include
 male estimates, too (but will still restrict to ages 15-49)
+
+\code{age_prop} and \code{vis_res} are computed from \code{ego.dat} and \code{sib.dat} when they
+are not supplied, which is the usual case. They are exposed because callers
+frequently need them for their own age-specific output, and frequently call
+this function more than once per survey (for example, once for all-cause and
+once for pregnancy-related mortality). Computing them once and passing them
+in avoids repeating identical work; it does not change any result.
 }
 

@@ -2,7 +2,7 @@
 ##'
 ##' this quantity, y.F, is related to the visibility of each respondent
 ##'
-##' @param sib.dat The long-form sibling dataset (likely produced by [siblingsurvival::prep_dhs_sib_histories])
+##' @param sib.dat The long-form sibling dataset (likely produced by a prep function such as [siblingsurvival::prep_dhs_sib_histories])
 ##' @param ego.id  String with the name of the column in \code{sib.dat} containing the survey respondent ID
 ##' @param sib.frame.indicator String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population
 ##' @return A tibble with a row for each survey respondent (each unique value of \code{ego.id}), and the number of sibs the respondent reported on the frame, including and not including herself
@@ -170,10 +170,26 @@ get_visibility <- function(ego.dat,
 ##' @param ego.dat the ego dataset (probably from [siblingsurvival::prep_dhs_sib_histories])
 ##' @param only_females should only females be used to calculate age distribution? (default: True)
 ##'
-##' @return dataframe with distribution of respondent ages by 5-year category,
-##' typically used in calculating the maternal or pregnancy-related mortality
+##' @return dataframe with distribution of respondent ages by 5-year category.
+##' Columns `age.cat`, `total` and `agegrp_prop`, plus `sex` when
+##' `only_females = FALSE`; see Details
 ##' @section Details:
-##' `ego_dat` is assumed to have two columns: `wwgt` and `age.cat`
+##' `ego_dat` is assumed to have the columns `wwgt`, `age.cat` and `sex`
+##'
+##' The age groups used are those returned by
+##' [siblingsurvival::reproductive_age_groups].
+##'
+##' When `only_females = TRUE` (the default), respondents are restricted to
+##' females and a single age distribution is returned, with `agegrp_prop`
+##' summing to 1 across age groups.
+##'
+##' When `only_females = FALSE`, a **separate** age distribution is returned for
+##' each respondent sex: the result gains a `sex` column, and `agegrp_prop` sums
+##' to 1 *within* each sex. This is what
+##' [siblingsurvival::aggregate_maternal_estimates] needs in order to weight
+##' each sex's age-specific rates by its own respondents' age structure.
+##' @export
+##' @md
 get_ego_age_distn <- function(ego.dat,
                               only_females = TRUE) {
 
@@ -184,19 +200,42 @@ get_ego_age_distn <- function(ego.dat,
   respondent_age <- ego.dat %>%
     ## age.cat and wwgt are assumed to come with the dataset; they have
     ## ego age in 5-year groups and the women's weight
-    filter(age.cat %in% c("[15,20)",
-                          "[20,25)",
-                          "[25,30)",
-                          "[30,35)",
-                          "[35,40)",
-                          "[40,45)",
-                          "[45,50)")) %>%
-    group_by(age.cat) %>%
-    # note that [siblingsurvival::prep_dhs_sib_histories]
-    # will have already scaled these weights
-    summarize(total = sum(wwgt))
+    filter(age.cat %in% reproductive_age_groups())
 
-  respondent_age$agegrp_prop <- respondent_age$total / (sum(respondent_age$total))
+  ## A respondent with no sampling weight cannot contribute to a weighted
+  ## distribution, and leaving her in makes `sum(wwgt)` NA -- which propagates
+  ## through the denominator and turns *every* agegrp_prop into NA, silently
+  ## NA-ing out any age-standardised rate computed from it. Sao Tome and
+  ## Principe 2014 has exactly one such respondent. The prep functions already
+  ## drop these rows from sib.dat; do the same here.
+  n.badwgt <- sum(is.na(respondent_age$wwgt))
+  if (n.badwgt > 0) {
+    warning(glue::glue(
+      "{n.badwgt} respondent(s) have no sampling weight and are dropped from ",
+      "the age distribution. Left in, they would make every group proportion NA."))
+    respondent_age <- respondent_age %>% filter(!is.na(wwgt))
+  }
+
+  if(only_females) {
+
+    respondent_age <- respondent_age %>%
+      group_by(age.cat) %>%
+      # note that [siblingsurvival::prep_dhs_sib_histories]
+      # will have already scaled these weights
+      summarize(total = sum(wwgt), .groups = 'drop') %>%
+      mutate(agegrp_prop = total / sum(total))
+
+  } else {
+
+    ## one age distribution per respondent sex, each summing to 1
+    respondent_age <- respondent_age %>%
+      group_by(sex, age.cat) %>%
+      summarize(total = sum(wwgt), .groups = 'drop') %>%
+      group_by(sex) %>%
+      mutate(agegrp_prop = total / sum(total)) %>%
+      ungroup()
+
+  }
 
   return(respondent_age)
 }

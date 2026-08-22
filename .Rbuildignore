@@ -12,3 +12,9 @@
 ^scratch$
 ^scratch-dev\.Rmd$
 ^scratch-dev\.nb\.html$
+^PACKAGE-HANDOFF\.md$
+^MICS-PLAN\.md$
+^notes$
+^data-raw$
+^ANALYSIS-REPO-CHANGES\.md$
+^DHS-VALIDATION-PLAN\.md$

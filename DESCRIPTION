@@ -1,7 +1,7 @@
 Package: siblingsurvival
 Type: Package
 Title: Tools for producing sibling survival estimates
-Version: 0.3.0
+Version: 0.3.0.9000
 Author: Dennis M. Feehan
 Maintainer: Dennis M. Feehan <feehan@berkeley.edu>
 Description: Tools for working with sibling history data
@@ -26,6 +26,6 @@ LinkingTo:
 Imports:
     Rcpp, glue, dplyr, rlang, plyr, stringr, tidyr, purrr, forcats, tidyselect
 Depends: 
-    R (>= 2.10)
+    R (>= 3.5)
 Config/testthat/edition: 3
 URL: http://dennisfeehan.org/siblingsurvival/
