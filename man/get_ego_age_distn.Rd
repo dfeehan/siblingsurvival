@@ -41,23 +41,33 @@ each respondent sex: the result gains a \code{sex} column, and \code{agegrp_prop
 to 1 \emph{within} each sex. This is what
 \link{aggregate_maternal_estimates} needs in order to weight
 each sex's age-specific rates by its own respondents' age structure.
-\subsection{This cannot give you a male age distribution for DHS data}{
+\subsection{There is no male age distribution in DHS data, and you do not need one}{
 
 \code{only_females = FALSE} splits whatever respondents are in \code{ego.dat}; it does
 not conjure a sex that was never interviewed. DHS sibling histories come from
 the women's file, so a DHS \code{ego.dat} is entirely female and
-\code{only_females = FALSE} simply returns the female distribution with a \code{sex}
-column attached.
+\code{only_females = FALSE} returns the female distribution with a \code{sex} column
+attached, and warns.
 
-That matters if you are trying to reproduce a published male \verb{35m15} or
-\verb{35q15}. The DHS Program standardises men's rates by
-the age distribution of \strong{men}, taken from the men's recode (\code{MR}) file, or
-the household (\code{PR}) file where there was no men's survey --- see
-\code{get_age_distributions} in \code{Chap16_AM/AM_rates.do}. Neither file is read by
-this package, so a male age-standardised rate has to be assembled outside
-it, from the age-specific rates this package does produce. Female
-quantities, including everything to do with pregnancy-related and maternal
-mortality, need no such thing.
+It would be reasonable to conclude from \code{Chap16_AM/AM_rates.do} that this
+blocks reproducing a published male rate, since its \code{get_age_distributions}
+takes the men's age distribution from the men's recode (\code{MR}) file. \strong{In
+practice it does not.} Published DHS reports standardise \emph{both} sexes by
+the age distribution of the survey respondents --- the women --- which is
+exactly what \code{only_females = TRUE} returns here.
+
+Checked against four published tables spanning DHS phases 4 to 8:\tabular{lll}{
+   Survey \tab male rate, this way \tab published \cr
+   Malawi 2000 \tab 11.064 \tab 11.1 \cr
+   Rwanda 2005 \tab 7.393 \tab 7.39 \cr
+   Rwanda 2014-15 \tab 2.961 \tab 2.96 \cr
+   Gambia 2019-20 \tab 3.133 \tab 3.13 \cr
+}
+
+
+Standardising men by a male distribution built from the \code{MR} file instead
+gives 11.162, 7.285 and 2.881 for the first three --- further from the
+published figures in every case.
 }
 }
 

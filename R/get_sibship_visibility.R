@@ -194,23 +194,33 @@ get_visibility <- function(ego.dat,
 ##' [siblingsurvival::aggregate_maternal_estimates] needs in order to weight
 ##' each sex's age-specific rates by its own respondents' age structure.
 ##'
-##' ## This cannot give you a male age distribution for DHS data
+##' ## There is no male age distribution in DHS data, and you do not need one
 ##'
 ##' `only_females = FALSE` splits whatever respondents are in `ego.dat`; it does
 ##' not conjure a sex that was never interviewed. DHS sibling histories come from
 ##' the women's file, so a DHS `ego.dat` is entirely female and
-##' `only_females = FALSE` simply returns the female distribution with a `sex`
-##' column attached.
+##' `only_females = FALSE` returns the female distribution with a `sex` column
+##' attached, and warns.
 ##'
-##' That matters if you are trying to reproduce a published male `35m15` or
-##' `35q15`. The DHS Program standardises men's rates by
-##' the age distribution of **men**, taken from the men's recode (`MR`) file, or
-##' the household (`PR`) file where there was no men's survey --- see
-##' `get_age_distributions` in `Chap16_AM/AM_rates.do`. Neither file is read by
-##' this package, so a male age-standardised rate has to be assembled outside
-##' it, from the age-specific rates this package does produce. Female
-##' quantities, including everything to do with pregnancy-related and maternal
-##' mortality, need no such thing.
+##' It would be reasonable to conclude from `Chap16_AM/AM_rates.do` that this
+##' blocks reproducing a published male rate, since its `get_age_distributions`
+##' takes the men's age distribution from the men's recode (`MR`) file. **In
+##' practice it does not.** Published DHS reports standardise *both* sexes by
+##' the age distribution of the survey respondents --- the women --- which is
+##' exactly what `only_females = TRUE` returns here.
+##'
+##' Checked against four published tables spanning DHS phases 4 to 8:
+##'
+##' | Survey | male rate, this way | published |
+##' |---|---|---|
+##' | Malawi 2000 | 11.064 | 11.1 |
+##' | Rwanda 2005 | 7.393 | 7.39 |
+##' | Rwanda 2014-15 | 2.961 | 2.96 |
+##' | Gambia 2019-20 | 3.133 | 3.13 |
+##'
+##' Standardising men by a male distribution built from the `MR` file instead
+##' gives 11.162, 7.285 and 2.881 for the first three --- further from the
+##' published figures in every case.
 ##' @export
 ##' @md
 get_ego_age_distn <- function(ego.dat,
@@ -235,12 +245,14 @@ get_ego_age_distn <- function(ego.dat,
       warning(glue::glue(
         "only_females = FALSE asks for one age distribution per respondent sex, ",
         "but the respondents in ego.dat are all '{paste0(ego.sexes, collapse=\"', '\")}'.\n",
-        "The result therefore covers that sex alone. Do not use it to ",
-        "age-standardise rates for any other sex -- a reference age ",
-        "distribution has to come from respondents of the same sex, and DHS and ",
-        "MICS sibling histories are collected from women only. For a male ",
-        "standardised rate you need a male age distribution from outside this ",
-        "package (the DHS men's MR file, or the household PR file)."))
+        "The result therefore covers that sex alone, and any estimate for ",
+        "another sex built from it will be NA rather than wrong.\n",
+        "If you are trying to reproduce published DHS figures, note that they ",
+        "standardise *both* sexes by the age distribution of the survey ",
+        "respondents -- which is what only_females = TRUE returns. Verified ",
+        "against Rwanda 2005 and 2014-15, Gambia 2019-20 and Malawi 2000: the ",
+        "published male rates match that standardisation, not one built from a ",
+        "male age distribution."))
     }
   }
 

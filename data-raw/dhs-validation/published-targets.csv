@@ -42,3 +42,143 @@ RWIR61FL,16.4,pregrelated_deaths,f,total,91,deaths,
 RWIR61FL,16.4,gfr,f,age_adjusted,149,per 1000 woman-years,out of package scope
 RWIR61FL,16.4,mmr,f,age_adjusted,476,per 100000 live births,implies an age-standardised rate of 0.708 - see the plan
 RWIR61FL,16.4,exposure_TOTALROW,f,total,165352,woman-years,ERROR IN THE REPORT: this is the 7-year exposure printed against 0-4 year age rows
+MWIR41FL,12.2,allcause_deaths,f,"[15,20)",132,deaths,Malawi 2000 DHS FR123
+MWIR41FL,12.2,exposure,f,"[15,20)",32383,person-years,
+MWIR41FL,12.2,allcause_deaths,m,"[15,20)",105,deaths,
+MWIR41FL,12.2,exposure,m,"[15,20)",31021,person-years,
+MWIR41FL,12.2,allcause_deaths,f,"[20,25)",287,deaths,Malawi 2000 DHS FR123
+MWIR41FL,12.2,exposure,f,"[20,25)",33485,person-years,
+MWIR41FL,12.2,allcause_deaths,m,"[20,25)",190,deaths,
+MWIR41FL,12.2,exposure,m,"[20,25)",32255,person-years,
+MWIR41FL,12.2,allcause_deaths,f,"[25,30)",315,deaths,Malawi 2000 DHS FR123
+MWIR41FL,12.2,exposure,f,"[25,30)",27706,person-years,
+MWIR41FL,12.2,allcause_deaths,m,"[25,30)",254,deaths,
+MWIR41FL,12.2,exposure,m,"[25,30)",27860,person-years,
+MWIR41FL,12.2,allcause_deaths,f,"[30,35)",326,deaths,Malawi 2000 DHS FR123
+MWIR41FL,12.2,exposure,f,"[30,35)",21063,person-years,
+MWIR41FL,12.2,allcause_deaths,m,"[30,35)",310,deaths,
+MWIR41FL,12.2,exposure,m,"[30,35)",21487,person-years,
+MWIR41FL,12.2,allcause_deaths,f,"[35,40)",262,deaths,Malawi 2000 DHS FR123
+MWIR41FL,12.2,exposure,f,"[35,40)",15263,person-years,
+MWIR41FL,12.2,allcause_deaths,m,"[35,40)",315,deaths,
+MWIR41FL,12.2,exposure,m,"[35,40)",15465,person-years,
+MWIR41FL,12.2,allcause_deaths,f,"[40,45)",173,deaths,Malawi 2000 DHS FR123
+MWIR41FL,12.2,exposure,f,"[40,45)",9682,person-years,
+MWIR41FL,12.2,allcause_deaths,m,"[40,45)",210,deaths,
+MWIR41FL,12.2,exposure,m,"[40,45)",9340,person-years,
+MWIR41FL,12.2,allcause_deaths,f,"[45,50)",104,deaths,Malawi 2000 DHS FR123
+MWIR41FL,12.2,exposure,f,"[45,50)",5592,person-years,
+MWIR41FL,12.2,allcause_deaths,m,"[45,50)",128,deaths,
+MWIR41FL,12.2,exposure,m,"[45,50)",5523,person-years,
+MWIR41FL,12.2,allcause_deaths,f,total,1599,deaths,window 0-6 years before survey
+MWIR41FL,12.2,exposure,f,total,145174,person-years,
+MWIR41FL,12.2,allcause_deaths,m,total,1511,deaths,
+MWIR41FL,12.2,exposure,m,total,142952,person-years,
+MWIR41FL,12.2,allcause_rate,f,age_adjusted,11.3,per 1000 person-years,
+MWIR41FL,12.2,allcause_rate,m,age_adjusted,11.1,per 1000 person-years,
+RWIR53FL,12.3,allcause_deaths,f,"[15,20)",63,deaths,Rwanda 2005 DHS FR183
+RWIR53FL,12.3,exposure,f,"[15,20)",19172,person-years,
+RWIR53FL,12.3,allcause_deaths,m,"[15,20)",71,deaths,
+RWIR53FL,12.3,exposure,m,"[15,20)",18730,person-years,
+RWIR53FL,12.3,allcause_deaths,f,"[20,25)",117,deaths,Rwanda 2005 DHS FR183
+RWIR53FL,12.3,exposure,f,"[20,25)",20920,person-years,
+RWIR53FL,12.3,allcause_deaths,m,"[20,25)",90,deaths,
+RWIR53FL,12.3,exposure,m,"[20,25)",19099,person-years,
+RWIR53FL,12.3,allcause_deaths,f,"[25,30)",113,deaths,Rwanda 2005 DHS FR183
+RWIR53FL,12.3,exposure,f,"[25,30)",17192,person-years,
+RWIR53FL,12.3,allcause_deaths,m,"[25,30)",94,deaths,
+RWIR53FL,12.3,exposure,m,"[25,30)",15531,person-years,
+RWIR53FL,12.3,allcause_deaths,f,"[30,35)",125,deaths,Rwanda 2005 DHS FR183
+RWIR53FL,12.3,exposure,f,"[30,35)",14632,person-years,
+RWIR53FL,12.3,allcause_deaths,m,"[30,35)",108,deaths,
+RWIR53FL,12.3,exposure,m,"[30,35)",12520,person-years,
+RWIR53FL,12.3,allcause_deaths,f,"[35,40)",106,deaths,Rwanda 2005 DHS FR183
+RWIR53FL,12.3,exposure,f,"[35,40)",11522,person-years,
+RWIR53FL,12.3,allcause_deaths,m,"[35,40)",120,deaths,
+RWIR53FL,12.3,exposure,m,"[35,40)",9644,person-years,
+RWIR53FL,12.3,allcause_deaths,f,"[40,45)",86,deaths,Rwanda 2005 DHS FR183
+RWIR53FL,12.3,exposure,f,"[40,45)",7932,person-years,
+RWIR53FL,12.3,allcause_deaths,m,"[40,45)",80,deaths,
+RWIR53FL,12.3,exposure,m,"[40,45)",6642,person-years,
+RWIR53FL,12.3,allcause_deaths,f,"[45,50)",51,deaths,Rwanda 2005 DHS FR183
+RWIR53FL,12.3,exposure,f,"[45,50)",4850,person-years,
+RWIR53FL,12.3,allcause_deaths,m,"[45,50)",50,deaths,
+RWIR53FL,12.3,exposure,m,"[45,50)",3819,person-years,
+RWIR53FL,12.3,allcause_deaths,f,total,659,deaths,window 0-4 years before survey
+RWIR53FL,12.3,exposure,f,total,96220,person-years,
+RWIR53FL,12.3,allcause_deaths,m,total,613,deaths,
+RWIR53FL,12.3,exposure,m,total,85986,person-years,
+RWIR53FL,12.3,allcause_rate,f,age_adjusted,6.86,per 1000 person-years,
+RWIR53FL,12.3,allcause_rate,m,age_adjusted,7.39,per 1000 person-years,
+RWIR70FL,16.3,allcause_deaths,f,"[15,20)",22,deaths,Rwanda 2014-15 DHS FR316
+RWIR70FL,16.3,exposure,f,"[15,20)",18347,person-years,
+RWIR70FL,16.3,allcause_deaths,m,"[15,20)",24,deaths,
+RWIR70FL,16.3,exposure,m,"[15,20)",18317,person-years,
+RWIR70FL,16.3,allcause_deaths,f,"[20,25)",40,deaths,Rwanda 2014-15 DHS FR316
+RWIR70FL,16.3,exposure,f,"[20,25)",23625,person-years,
+RWIR70FL,16.3,allcause_deaths,m,"[20,25)",53,deaths,
+RWIR70FL,16.3,exposure,m,"[20,25)",22515,person-years,
+RWIR70FL,16.3,allcause_deaths,f,"[25,30)",27,deaths,Rwanda 2014-15 DHS FR316
+RWIR70FL,16.3,exposure,f,"[25,30)",24795,person-years,
+RWIR70FL,16.3,allcause_deaths,m,"[25,30)",65,deaths,
+RWIR70FL,16.3,exposure,m,"[25,30)",23393,person-years,
+RWIR70FL,16.3,allcause_deaths,f,"[30,35)",41,deaths,Rwanda 2014-15 DHS FR316
+RWIR70FL,16.3,exposure,f,"[30,35)",21009,person-years,
+RWIR70FL,16.3,allcause_deaths,m,"[30,35)",51,deaths,
+RWIR70FL,16.3,exposure,m,"[30,35)",19041,person-years,
+RWIR70FL,16.3,allcause_deaths,f,"[35,40)",42,deaths,Rwanda 2014-15 DHS FR316
+RWIR70FL,16.3,exposure,f,"[35,40)",14680,person-years,
+RWIR70FL,16.3,allcause_deaths,m,"[35,40)",46,deaths,
+RWIR70FL,16.3,exposure,m,"[35,40)",13301,person-years,
+RWIR70FL,16.3,allcause_deaths,f,"[40,45)",37,deaths,Rwanda 2014-15 DHS FR316
+RWIR70FL,16.3,exposure,f,"[40,45)",9758,person-years,
+RWIR70FL,16.3,allcause_deaths,m,"[40,45)",47,deaths,
+RWIR70FL,16.3,exposure,m,"[40,45)",8641,person-years,
+RWIR70FL,16.3,allcause_deaths,f,"[45,50)",25,deaths,Rwanda 2014-15 DHS FR316
+RWIR70FL,16.3,exposure,f,"[45,50)",6068,person-years,
+RWIR70FL,16.3,allcause_deaths,m,"[45,50)",34,deaths,
+RWIR70FL,16.3,exposure,m,"[45,50)",5481,person-years,
+RWIR70FL,16.3,allcause_deaths,f,total,234,deaths,window 0-4 years before survey
+RWIR70FL,16.3,exposure,f,total,118281,person-years,
+RWIR70FL,16.3,allcause_deaths,m,total,320,deaths,
+RWIR70FL,16.3,exposure,m,total,110688,person-years,
+RWIR70FL,16.3,allcause_rate,f,age_adjusted,2.04,per 1000 person-years,
+RWIR70FL,16.3,allcause_rate,m,age_adjusted,2.96,per 1000 person-years,
+GMIR81FL,14.1,allcause_deaths,f,"[15,20)",25,deaths,Gambia 2019-20 DHS FR369
+GMIR81FL,14.1,exposure,f,"[15,20)",27304,person-years,
+GMIR81FL,14.1,allcause_deaths,m,"[15,20)",41,deaths,
+GMIR81FL,14.1,exposure,m,"[15,20)",28672,person-years,
+GMIR81FL,14.1,allcause_deaths,f,"[20,25)",48,deaths,Gambia 2019-20 DHS FR369
+GMIR81FL,14.1,exposure,f,"[20,25)",31026,person-years,
+GMIR81FL,14.1,allcause_deaths,m,"[20,25)",73,deaths,
+GMIR81FL,14.1,exposure,m,"[20,25)",31783,person-years,
+GMIR81FL,14.1,allcause_deaths,f,"[25,30)",65,deaths,Gambia 2019-20 DHS FR369
+GMIR81FL,14.1,exposure,f,"[25,30)",28993,person-years,
+GMIR81FL,14.1,allcause_deaths,m,"[25,30)",67,deaths,
+GMIR81FL,14.1,exposure,m,"[25,30)",29116,person-years,
+GMIR81FL,14.1,allcause_deaths,f,"[30,35)",76,deaths,Gambia 2019-20 DHS FR369
+GMIR81FL,14.1,exposure,f,"[30,35)",23333,person-years,
+GMIR81FL,14.1,allcause_deaths,m,"[30,35)",84,deaths,
+GMIR81FL,14.1,exposure,m,"[30,35)",24631,person-years,
+GMIR81FL,14.1,allcause_deaths,f,"[35,40)",59,deaths,Gambia 2019-20 DHS FR369
+GMIR81FL,14.1,exposure,f,"[35,40)",16550,person-years,
+GMIR81FL,14.1,allcause_deaths,m,"[35,40)",88,deaths,
+GMIR81FL,14.1,exposure,m,"[35,40)",17873,person-years,
+GMIR81FL,14.1,allcause_deaths,f,"[40,45)",66,deaths,Gambia 2019-20 DHS FR369
+GMIR81FL,14.1,exposure,f,"[40,45)",10539,person-years,
+GMIR81FL,14.1,allcause_deaths,m,"[40,45)",66,deaths,
+GMIR81FL,14.1,exposure,m,"[40,45)",10772,person-years,
+GMIR81FL,14.1,allcause_deaths,f,"[45,50)",35,deaths,Gambia 2019-20 DHS FR369
+GMIR81FL,14.1,exposure,f,"[45,50)",5567,person-years,
+GMIR81FL,14.1,allcause_deaths,m,"[45,50)",37,deaths,
+GMIR81FL,14.1,exposure,m,"[45,50)",5998,person-years,
+GMIR81FL,14.1,allcause_deaths,f,total,375,deaths,window 0-6 years before survey
+GMIR81FL,14.1,exposure,f,total,143312,person-years,
+GMIR81FL,14.1,allcause_deaths,m,total,455,deaths,
+GMIR81FL,14.1,exposure,m,total,148845,person-years,
+GMIR81FL,14.1,allcause_rate,f,age_adjusted,2.72,per 1000 person-years,
+GMIR81FL,14.1,allcause_rate,m,age_adjusted,3.13,per 1000 person-years,
+GMIR81FL,14.2,q35_15,f,,114,per 1000,Gambia 2019-20 DHS FR369
+GMIR81FL,14.2,q35_15,m,,124,per 1000,
+RWIR61FL,16.3,allcause_rate,f,age_adjusted,3.1,per 1000 person-years,printed with an age-adjusted footnote but matches the crude rate 3.083; see the plan
+RWIR61FL,16.3,allcause_rate,m,age_adjusted,3.6,per 1000 person-years,"likewise: crude is 3.636, respondents-standardised is 3.852"

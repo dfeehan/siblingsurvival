@@ -14,22 +14,33 @@ Ordered roughly by how much they would matter.
 1. Male age standardisation --- read an `MR` or `PR` file
 ----
 
-**Status: open. Deferred deliberately.** This is the H4 item in
+**Status: open, but much less important than it first looked.** H4 in
 `DHS-VALIDATION-PLAN.md`.
 
-The package cannot produce an age-standardised male rate, or a male
-\eqn{{}_{35}q_{15}}, the way DHS does. DHS sibling histories come from the
-women's questionnaire, so `ego.dat` is entirely female, and a male rate has to
-be standardised by the age distribution of **men** ---
-`get_age_distributions` in `Chap16_AM/AM_rates.do:450` takes it from the men's
-recode (`MR`) file, or the household (`PR`) file where there was no men's survey.
-Neither is read here.
+**Read this first.** The original premise --- that a male age distribution is
+*needed* to reproduce published male rates --- turned out to be wrong. Published
+DHS reports standardise both sexes by the age distribution of the survey
+respondents, which `get_ego_age_distn(only_females = TRUE)` already returns, and
+that reproduces published male rates on four surveys spanning phases 4 to 8
+(Malawi 2000, Rwanda 2005, Rwanda 2014-15, Gambia 2019-20). Standardising by an
+`MR`-derived male distribution instead moves *away* from the published figure in
+every case checked. So this is a nice-to-have for matching the current
+`AM_rates.do`, not a blocker for anything.
+
+What remains true: `Chap16_AM/AM_rates.do:450` does take the men's age
+distribution from the men's recode (`MR`) file, or the household (`PR`) file
+where there was no men's survey, and this package reads neither. So the package
+cannot reproduce *that particular calculation*.
+
+What is not true, and was the original motivation for this item: that you need it
+to get a published male rate. You do not --- see the table in H4.
 
 What is already done: `get_ego_age_distn()` warns when `only_females = FALSE` is
-asked of a single-sex sample, `aggregate_maternal_estimates()` warns through
-`warn_uninterviewed_sex()` and returns `NA` for the uninterviewed sex, and both
-behaviours are documented. So the package fails loudly rather than quietly. It
-just cannot do the calculation.
+asked of a single-sex sample and points at `only_females = TRUE` as the thing
+published reports actually use; `aggregate_maternal_estimates()` warns through
+`warn_uninterviewed_sex()` and returns `NA` for the uninterviewed sex. Both are
+documented, so the package fails loudly rather than quietly, and the loud failure
+now names the right remedy.
 
 Options, roughly in increasing order of commitment:
 
@@ -42,10 +53,13 @@ Options, roughly in increasing order of commitment:
   Small, self-contained, no new dependency.
 * **Read it inside the prep.** Most convenient for users, most coupling.
 
-Resolving this probably also resolves the `only_females = FALSE` question in
-`PACKAGE-HANDOFF.md` E4 and `ANALYSIS-REPO-CHANGES.md` A1 --- or shows that
-`only_females = FALSE` is answering a question DHS does not ask, which is an
-answer too.
+On the `only_females = FALSE` question in `PACKAGE-HANDOFF.md` E4 and
+`ANALYSIS-REPO-CHANGES.md` A1: the D8 evidence points at the second horn of that
+dilemma. Published DHS figures use one reference distribution for both sexes, so
+`only_females = FALSE` is answering a question the reports do not ask. That does
+not settle whether the two-sex path should exist --- it may be right for the
+`nrsim` case, where both sexes really are interviewed --- but it does mean
+nothing in the DHS pipeline depends on it.
 
 
 2. `adj.factor` and `adj.factor.allage` are global scalars

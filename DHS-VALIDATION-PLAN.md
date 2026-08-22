@@ -438,7 +438,37 @@ package should offer a small documented helper so the constant stops being
 retyped; that is a new exported function, so it needs a decision rather than a
 default.
 
-### H4. RESOLVED --- structural, documented
+### H4. RESOLVED --- and the premise was wrong: no male age distribution is needed
+
+**Superseded by D8 below.** `AM_rates.do` does take the men's age distribution
+from the `MR` file, and this package cannot. But published DHS reports do not
+appear to have been produced that way: they standardise **both** sexes by the
+age distribution of the survey respondents, which is exactly what
+`get_ego_age_distn(only_females = TRUE)` returns.
+
+Checked against four published male rates spanning DHS phases 4 to 8:
+
+| Survey | respondents' distribution | `MR` distribution | published |
+|---|---|---|---|
+| Malawi 2000 | 11.064 | 11.162 | **11.1** |
+| Rwanda 2005 | **7.393** | 7.285 | **7.39** |
+| Rwanda 2014-15 | **2.961** | 2.881 | **2.96** |
+| Gambia 2019-20 | **3.133** | --- | **3.13** |
+
+The respondents' distribution matches in all four; the `MR` one is further away
+in every case where it could be computed. So the package can reproduce published
+male adult mortality today, with no external file.
+
+`get_ego_age_distn()` now says so in its documentation and in the warning it
+raises, which previously asserted the opposite.
+
+**Still open, but much smaller:** if you want a male rate standardised the way
+the *current* `AM_rates.do` does it --- rather than the way the reports appear to
+have been --- that still needs an `MR` or `PR` file. Tracked as item 1 in
+`FUTURE-IMPROVEMENTS.md`, now correctly scoped as a nice-to-have rather than a
+blocker.
+
+### H4 (original text, kept for the record) --- structural, documented
 
 `get_age_distributions` in `AM_rates.do:450` takes the men's age distribution
 from the **MR** file, or the **PR** file where there was no men's survey. DHS
@@ -577,6 +607,45 @@ replica and compared.
 
 Before the two fixes in H7 and H9, 13 surveys disagreed on the male side and
 three on the female side. The table now reads 1.0000000 down every column.
+
+### D8. All-cause adult mortality against published tables
+
+The maternal work validated the cause-recoded columns. This checks the estimator
+underneath them, on a quantity involving no recode at all.
+`data-raw/dhs-validation/validate-allcause.R`, targets in
+`published-targets.csv`, results in `allcause-results.csv`.
+
+Five surveys, DHS phases 4 through 8, each against its own published table and
+its own window --- Malawi 2000 and Gambia publish 0--6 years, the three Rwanda
+surveys publish 0--4. **The window is part of the target.** Using a single window
+for all of them is the easiest way to fail a validation that would otherwise pass
+exactly.
+
+| Survey | Table | deaths | exposure | age-adj. rate |
+|---|---|---|---|---|
+| Malawi 2000 | 12.2 | 1.0002 / 0.9999 | **1.000000** | 1.0012 / 0.9967 |
+| Rwanda 2005 | 12.3 | 1.0007 / 0.9994 | **1.000000** | 1.0006 / 1.0004 |
+| Rwanda 2014-15 | 16.3 | 0.9997 / 0.9994 | **1.000000** | 0.9999 / 1.0005 |
+| Gambia 2019-20 | 14.1 | 0.9995 / 0.9997 | **1.000000** | 0.9989 / 1.0010 |
+| Rwanda 2010 | 16.3 | 0.9991 / 0.9998 | **1.000000** | 0.975 / 1.070 |
+
+(ratios ours/published, women / men)
+
+**Exposure matches to the person-year in every cell of every survey, both
+sexes** --- 70 cells. Deaths match to rounding throughout. Age-adjusted rates
+match to within 0.1% except Malawi 2000's men at 0.3%.
+
+`q15_to_50()` end-to-end: Gambia 2019-20 gives 113.5 and 124.4 against a
+published 114 and 124.
+
+**Rwanda 2010 is the exception, and again it is the report.** Its summary rates
+match the *crude* rates (3.083, 3.636 → printed 3.1, 3.6) rather than the
+standardised ones, despite an "age-adjusted" footnote --- while its age-specific
+deaths and exposure reproduce exactly. That is now the third independent sign of
+trouble in that report's summary rows, after the Table 16.4 total-exposure cell
+carrying a 7-year figure among 0--4 year rows, and its own MMR disagreeing with
+its sampling-error appendix. **Its age-specific cells are sound; its totals are
+not.**
 
 **D3. Extract published targets** into
 `data-raw/dhs-validation/published-targets.csv`, same schema as the MICS file so

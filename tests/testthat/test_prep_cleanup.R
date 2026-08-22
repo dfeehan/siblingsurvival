@@ -230,10 +230,13 @@ test_that("sib.sex: only codes 1 and 2 survive; others are dropped", {
 # a one-sex age distribution must not be usable for the other sex
 # =====================================================================
 # DHS and MICS interview women only, so get_ego_age_distn(only_females = FALSE)
-# on their data returns a female distribution and nothing else. Standardising
-# male rates with it would attribute women's age structure to men. The DHS
-# reference takes the male distribution from the men's MR file, which this
-# package does not read.
+# on their data returns a female distribution and nothing else, and anything
+# built from it for another sex comes out NA.
+#
+# Note the remedy is NOT a male age distribution: published DHS reports
+# standardise both sexes by the respondents' age distribution, which is
+# only_females = TRUE. Verified against four published tables spanning phases
+# 4 to 8 -- see DHS-VALIDATION-PLAN.md H4.
 
 test_that("get_ego_age_distn warns when asked to split a single-sex sample", {
   ego <- data.frame(sex = "f", wwgt = 1,
@@ -242,10 +245,11 @@ test_that("get_ego_age_distn warns when asked to split a single-sex sample", {
 
   expect_warning(get_ego_age_distn(ego, only_females = FALSE),
                  "age distribution per respondent sex")
-  # the message has to say what to do about it
+  # the message has to point at the remedy: published DHS figures standardise
+  # both sexes by the respondents' distribution, i.e. only_females = TRUE
   w <- tryCatch(get_ego_age_distn(ego, only_females = FALSE),
                 warning = function(w) conditionMessage(w))
-  expect_match(w, "same sex")
+  expect_match(w, "only_females = TRUE")
 })
 
 test_that("no warning when both sexes are present", {

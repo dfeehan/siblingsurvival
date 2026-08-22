@@ -163,6 +163,34 @@ All default to what The DHS Program does, so **nothing moves unless you ask**
   repo computes 35q15 anywhere with 2.5, it disagrees with both published
   sources**; switch to these. Validated against Gambia 2019-20.
 
+### A0e. All-cause adult mortality validates too --- and male rates are reproducible
+
+Independent of the maternal work: the package reproduces published DHS *all-cause*
+adult mortality on five surveys spanning phases 4 to 8. **Exposure matches to the
+person-year in every cell, both sexes** (70 cells); deaths match to rounding.
+
+The useful practical finding is about standardisation. **Published DHS reports
+standardise both sexes by the age distribution of the survey respondents** ---
+i.e. `get_ego_age_distn(only_females = TRUE)` --- not by a sex-specific
+distribution. Male rates come out right this way:
+
+| Survey | ours | published |
+|---|---|---|
+| Malawi 2000 | 11.064 | 11.1 |
+| Rwanda 2005 | 7.393 | 7.39 |
+| Rwanda 2014-15 | 2.961 | 2.96 |
+| Gambia 2019-20 | 3.133 | 3.13 |
+
+So if the analysis reports adult male mortality anywhere, use the respondents'
+age distribution for it. Using a male distribution from the men's `MR` file ---
+which is what the current `AM_rates.do` does --- moves *away* from the published
+figures.
+
+Also note **Rwanda 2010's published summary rows are unreliable**: its
+age-adjusted rates match the crude rates rather than the standardised ones,
+despite the footnote, while its age-specific cells reproduce exactly. Third
+independent sign of trouble in that report. Do not use its totals as a target.
+
 ### A4. Expect the numbers to move slightly
 
 Several fixes on the package side change DHS results, all small but real:
