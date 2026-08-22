@@ -84,6 +84,12 @@ does --- so code and docs already disagree, independent of DHS.
 This is the single highest-stakes item: it is the estimand underpinning the
 paper, and it is the DHS analogue of the MICS `preg.window` finding.
 
+> **DONE** (`c807f3b`). `is_preg_related_dhs()` counts `mm9` 2--6 and no longer
+> reads `mm12`. Its roxygen carries the full `mm9` code table, the line the
+> reference draws between this and the maternal column, and a "Changed in this
+> version" section quantifying the effect; the executable line cites
+> `AM_rates.do:725` in a comment.
+
 ### H2 ⚠ The maternal cause exclusion is applied to different codes
 
 `AM_rates.do:728`
@@ -95,6 +101,16 @@ The package's `is_maternal_dhs()` applies `not.accident` to codes 2 and 5 only,
 leaves code 3 unconditional, and includes code 4. Its comment says this matches
 "the behaviour this package has always had", so it is a known choice --- but it
 should be re-examined against the reference rather than preserved by inertia.
+
+> **DONE.** `is_maternal_dhs()` is now the reference rule verbatim ---
+> `mm9` 2--5 with `mm16` not 1 or 2 --- and no longer reads `mm12`. All five
+> surveys carrying `mm16` now match the reference exactly, South Africa 2016
+> included (previously 3 deaths high).
+>
+> The roxygen records *why* the old rule looked different but usually agreed:
+> `mm16` is never asked for a death during delivery, so treating a missing
+> `mm16` as "not an accident" and taking `mm9 = 3` unconditionally are the same
+> thing wherever the skip pattern holds.
 
 **One ambiguity to resolve in D4, not by reading.** `AM_rates.do:307-320`
 contains, *inside a comment block and therefore not executed*:
@@ -108,6 +124,11 @@ introduced as "Important for redefinition of Pregnancy Related Mortality Ratio
 accident deaths from the *pregnancy-related* count in recent surveys, but the
 reference code as shipped does not apply it: `prdeaths` is `mm9` 2--6 with no
 cause condition at all.
+
+> **DONE.** `add_maternal_deaths(prmr.accident.recode = TRUE)` applies it;
+> the default is `FALSE`, matching the shipped reference code and therefore
+> published tables. It touches `mm9 = 2` only, and can bite only on the five
+> surveys with `mm16`.
 
 Only 5 of the 43 surveys in the sample carry `mm16`, so this affects a small
 subset --- but it is precisely the shape of the MICS finding (a documented rule
@@ -131,6 +152,17 @@ it is a free exact match, and it means both major sources agree against us.
 **Decide:** match the sources, or keep 2.5 and document the divergence. Whichever,
 it should become an argument rather than a literal.
 
+> **DONE.** New exported `nmx_to_nqx()` and `q15_to_50()` in `R/life_table.R`,
+> both taking `nax` with a default of 2.6 --- the value both references use,
+> giving the denominator `1 + 2.4 * nmx`. Validated against The Gambia 2019-20
+> Table 14.2: 113.51 and 124.37 against a published 114 and 124. With
+> `nax = 2.5` the women's figure rounds to 113 instead, so the default earns its
+> keep.
+>
+> Note the package had no life table at all before this, so there was no
+> constant in the package to change --- only ad-hoc arithmetic in the validation
+> write-ups, which should now call these.
+
 ### H4 ⚠ Male rates are standardised by a male age distribution we do not have
 
 `get_age_distributions` in `AM_rates.do:450` uses the **MR file** (or the PR
@@ -145,6 +177,12 @@ This connects directly to the still-open `only_females = FALSE` questions in
 `PACKAGE-HANDOFF.md` (E4) and to `ANALYSIS-REPO-CHANGES.md` A1. Resolving H4 may
 resolve those too, or may show that `only_females = FALSE` is answering a
 question DHS does not ask.
+
+> **DEFERRED** at your request --- revisit after this round. What is settled:
+> the package cannot produce a male age distribution from a DHS `ego.dat`
+> because DHS interviews only women, and `get_ego_age_distn()` now documents
+> that. What is open is whether to read an MR/PR file, and how that interacts
+> with `only_females = FALSE` and E4.
 
 ### H5 The observation window --- resolved by reading, still confirm numerically
 
@@ -165,6 +203,18 @@ DHS ends a decedent's exposure *at* the month of death, inclusive. The MICS
 syntax ends it at `MM18C - 1`, the month before. The package should not be made
 to satisfy both at once; find out which it currently does and document the
 choice.
+
+> **DONE.** `death.exposure = c("dhs", "mics")` on `get_sib_df()` and on all
+> three `prep_*_sib_histories()` functions, defaulting to `"dhs"` (which is what
+> the package already did). The comment above the computation sets out both
+> conventions and why the half-open window makes them `death + 1` and `death`.
+>
+> Worth knowing: on Madagascar 2018, the one validation survey with almost no
+> unknown-survival siblings to confound the comparison, `"mics"` reproduces the
+> published female exposure of **202,959 exactly**, against 203,010 under
+> `"dhs"`. On Iraq and Zimbabwe it does not, because those surveys have 107 and
+> 42 unknown-survival siblings respectively that the package drops and the MICS
+> syntax keeps --- two offsetting effects, now separable.
 
 ### H6 Unknown survival status
 

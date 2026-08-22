@@ -9,6 +9,7 @@ add_maternal_deaths(
   style = c("dhs", "mics6", "mics4"),
   na.action = NULL,
   preg.window = c("2months", "42days"),
+  prmr.accident.recode = FALSE,
   keep_missing = FALSE,
   verbose = TRUE
 )
@@ -30,6 +31,12 @@ does not. \strong{Required for the MICS styles}; see Details}
 default, and what this package has always done) or \code{"42days"}, which
 is what published MICS tables report. Ignored for \code{style = "dhs"},
 which already applies a 42-day cut. See Details}
+
+\item{prmr.accident.recode}{DHS style only: apply the 2016 PRMR
+redefinition, which drops a death during pregnancy (\code{mm9 = 2})
+reported as violence or an accident. Default \code{FALSE}, matching the
+reference implementation, which documents the rule but does not
+execute it. See \link{is_preg_related_dhs}}
 
 \item{keep_missing}{not currently used}
 
@@ -85,9 +92,11 @@ Iraq 2018 and none at all in Zimbabwe 2019 or Madagascar 2018, so the choice
 is usually immaterial -- but not always, and it only ever moves the maternal
 column, never the pregnancy-related one.
 
-For \code{style = "dhs"}, \code{na.action} defaults to \code{"include"}, which is what this
-package has always done: a missing \code{sib.time.delivery.death} was treated as
-falling in the window. That default is kept so existing results do not move.
+\strong{\code{na.action} no longer does anything under \code{style = "dhs"}.} It governed how a
+missing \code{sib.time.delivery.death} (\code{mm12}) was treated, and \code{mm12} is no
+longer consulted by either DHS column --- the reference implementation states
+that "mm12 is not needed" and drops it. The argument is kept so existing DHS
+call sites keep working, and still applies to both MICS columns.
 }
 }
 

@@ -257,3 +257,73 @@ test_that("preg.window='42days' errors clearly when there is no day count", {
   expect_gt(sum(out$sib.preg_related.death.date > 0, na.rm = TRUE), 0)
   expect_true(all(is.na(out$sib.maternal.death.date)))
 })
+
+# =====================================================================
+# The DHS maternal rule, and the 2016 PRMR recode option
+# =====================================================================
+
+dhs_sibs <- function() {
+  tibble::tribble(
+    ~who,               ~sib.sex, ~sib.death.date, ~sib.died.pregnant, ~sib.died.accident,
+    "pregnant_ok",           "f",           1200,                   2,                  0,
+    "pregnant_accident",     "f",           1210,                   2,                  2,
+    "delivery_no_mm16",      "f",           1220,                   3,                 NA,
+    "delivery_accident",     "f",           1230,                   3,                  1,
+    "sixweeks_ok",           "f",           1240,                   5,                  0,
+    "sixweeks_violence",     "f",           1250,                   5,                  1,
+    "twomonths",             "f",           1260,                   6,                  0,
+    "not_related",           "f",           1270,                   1,                  0)
+}
+
+test_that("maternal follows the DHS rule: mm9 2-5, excluding mm16 1 or 2", {
+  d <- add_maternal_deaths(dhs_sibs(), verbose = FALSE)
+  m <- setNames(d$sib.maternal.death.date > 0, dhs_sibs()$who)
+
+  expect_true(m[["pregnant_ok"]])
+  expect_true(m[["sixweeks_ok"]])
+  # mm16 is not asked for a death during delivery, so a missing value must pass
+  expect_true(m[["delivery_no_mm16"]])
+
+  expect_false(m[["pregnant_accident"]])
+  expect_false(m[["sixweeks_violence"]])
+  # code 6 is outside the 42-day window
+  expect_false(m[["twomonths"]])
+  expect_false(m[["not_related"]])
+})
+
+test_that("a delivery death reported as an accident is now excluded", {
+  # the package used to take mm9 = 3 unconditionally. South Africa 2016 has 3
+  # such deaths, the only survey of 43 that breaks the skip pattern.
+  d <- add_maternal_deaths(dhs_sibs(), verbose = FALSE)
+  m <- setNames(d$sib.maternal.death.date > 0, dhs_sibs()$who)
+  expect_false(m[["delivery_accident"]])
+})
+
+test_that("mm12 no longer affects the maternal column either", {
+  a <- add_maternal_deaths(dhs_sibs(), verbose = FALSE)
+  b <- dhs_sibs(); b$sib.time.delivery.death <- 999
+  b <- add_maternal_deaths(b, verbose = FALSE)
+  expect_equal(a$sib.maternal.death.date, b$sib.maternal.death.date)
+})
+
+test_that("prmr.accident.recode defaults off and matches the reference", {
+  d <- add_maternal_deaths(dhs_sibs(), verbose = FALSE)
+  pr <- setNames(d$sib.preg_related.death.date > 0, dhs_sibs()$who)
+  # the shipped reference applies no cause condition to pregnancy-related
+  expect_true(pr[["pregnant_accident"]])
+  expect_true(pr[["delivery_accident"]])
+  expect_true(pr[["twomonths"]])
+})
+
+test_that("prmr.accident.recode drops accident deaths during pregnancy only", {
+  d <- add_maternal_deaths(dhs_sibs(), prmr.accident.recode = TRUE,
+                           verbose = FALSE)
+  pr <- setNames(d$sib.preg_related.death.date > 0, dhs_sibs()$who)
+
+  # mm9 = 2 with mm16 in (1,2) is recoded away
+  expect_false(pr[["pregnant_accident"]])
+  # every other code is untouched -- the DHS rule names mm9 = 2 specifically
+  expect_true(pr[["delivery_accident"]])
+  expect_true(pr[["sixweeks_violence"]])
+  expect_true(pr[["pregnant_ok"]])
+})

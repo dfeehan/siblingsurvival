@@ -240,10 +240,19 @@ band `100`--`141`.
   exposure. This package drops them instead, which is why our exposure totals sit
   within about 0.1% of the published ones rather than exactly on them --- Iraq
   has 107 such siblings, Zimbabwe 2019 has 42, Madagascar only 9.
+* **A decedent's exposure stops the month before death** (`higcm = MM18C - 1`).
+  The DHS reference does the opposite and counts the month of death, so the two
+  cannot both be satisfied at once. `prep_mics_sib_histories()` takes
+  `death.exposure = c("dhs", "mics")` for this, defaulting to `"dhs"` --- which
+  is what the package has always done. Madagascar 2018 is the cleanest test,
+  having almost no unknown-survival siblings to confound it: `"mics"` reproduces
+  its published female exposure of 202,959 **exactly**, where `"dhs"` gives
+  203,010. On Iraq and Zimbabwe the two effects offset and neither setting lands
+  on the published figure.
 * $_{35}q_{15}$ is computed with `1 + 2.4*nmx` in the denominator, i.e. $n_ax =
-  2.6$, although the same file's header documents $n_ax = 2.5$. The difference is
-  at most 0.2 per 1,000 and cannot be resolved against published figures, which
-  are rounded to integers.
+  2.6$, although the same file's header documents $n_ax = 2.5$. The DHS
+  implementation uses the same 2.4 and cites the Guide to DHS Statistics for
+  doing so, so the two sources agree. `q15_to_50()` defaults to it.
 
 ### Zimbabwe 2019
 

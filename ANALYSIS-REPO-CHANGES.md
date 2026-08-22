@@ -140,6 +140,29 @@ stays in the sample.**
 
 **Gabon 2000 needs `encoding = "latin1"`** --- see B4.
 
+### A0d. Four DHS conventions are now explicit options
+
+All default to what The DHS Program does, so **nothing moves unless you ask**
+--- except the first, which is a correction.
+
+* **Maternal deaths.** `is_maternal_dhs()` now follows the reference exactly
+  (`mm9` 2--5, `mm16` not 1 or 2). Only affects the 5 surveys with `mm16`, and
+  only South Africa 2016 actually changes, by 3 deaths. Not relevant if the
+  paper uses pregnancy-related.
+* **`prmr.accident.recode`** on `add_maternal_deaths()`: applies the 2016 PRMR
+  redefinition (a death during pregnancy reported as violence or accident stops
+  counting). Default `FALSE` = what published tables reflect. **Worth an
+  explicit decision if the paper says anything about post-2016 PRMR
+  comparability.**
+* **`death.exposure = c("dhs", "mics")`** on all three prep functions: whether a
+  sibling who died contributes the month of death. Default `"dhs"`, unchanged
+  behaviour. Relevant if you ever want DHS and MICS on a single convention ---
+  they genuinely differ, and this is the knob.
+* **`nmx_to_nqx()` and `q15_to_50()`** are new exported helpers with `nax`
+  defaulting to 2.6, which is what both DHS and MICS use. **If the analysis
+  repo computes 35q15 anywhere with 2.5, it disagrees with both published
+  sources**; switch to these. Validated against Gambia 2019-20.
+
 ### A4. Expect the numbers to move slightly
 
 Several fixes on the package side change DHS results, all small but real:

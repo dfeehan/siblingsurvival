@@ -30,6 +30,9 @@
 ##'        [siblingsurvival::add_maternal_deaths]
 ##' @param keep_missing should we keep reported sibs that are missing sex or survival status?
 ##' @param keep_varmap_only should we only keep ego variables mentioned in the varmap?
+##' @param death.exposure whether a sibling who died contributes the month of
+##'        death as exposure; `"dhs"` (default) counts it, `"mics"` stops the
+##'        month before. See [siblingsurvival::get_sib_df]
 ##' @param verbose report detailed summaries?
 ##' @return a list; see Details
 ##' @examples
@@ -91,6 +94,7 @@ prep_mics_sib_histories <- function(mm.df,
                                     preg.window=c("2months", "42days"),
                                     keep_missing=FALSE,
                                     keep_varmap_only=FALSE,
+                                    death.exposure=c("dhs", "mics"),
                                     verbose=TRUE) {
 
   style <- match.arg(style)
@@ -227,6 +231,7 @@ prep_mics_sib_histories <- function(mm.df,
     left_join(ego.dat, by='caseid')
 
   sib.dat <- get_sib_df(long.dat,
+                        death.exposure=death.exposure,
                         sib.attrib=sib.attrib,
                         verbose=verbose,
                         reshape=FALSE)

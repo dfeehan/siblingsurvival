@@ -11,6 +11,9 @@
 ##' @param keep_varmap_only should we only keep ego variables mentioned in the varmap? (Default: FALSE)
 ##' @param weight.scale divide the weight by this number. Defaults to `1`, since
 ##'        non-DHS weights are typically already normalized; see Details
+##' @param death.exposure whether a sibling who died contributes the month of
+##'        death as exposure; `"dhs"` (default) counts it, `"mics"` stops the
+##'        month before. See [siblingsurvival::get_sib_df]
 ##' @param verbose report detailed summaries?
 ##' @return a list; see Details
 ##' @examples
@@ -61,6 +64,7 @@ prep_nrsim_sib_histories <- function(df,
                                      keep_missing=FALSE,
                                      keep_varmap_only=FALSE,
                                      weight.scale=1,
+                                     death.exposure=c("dhs", "mics"),
                                      verbose=TRUE) {
 
   ## ego (respondent) variables to grab
@@ -98,7 +102,8 @@ prep_nrsim_sib_histories <- function(df,
   # prepare sibling data
   #########################
 
-  sib.dat <- get_sib_df(ego.dat, sib.attrib, verbose)
+  sib.dat <- get_sib_df(ego.dat, sib.attrib, verbose,
+                        death.exposure = death.exposure)
 
   #########################
   # summarize, filter, and assemble the result

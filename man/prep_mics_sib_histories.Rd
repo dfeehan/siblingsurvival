@@ -21,6 +21,7 @@ prep_mics_sib_histories(
   preg.window = c("2months", "42days"),
   keep_missing = FALSE,
   keep_varmap_only = FALSE,
+  death.exposure = c("dhs", "mics"),
   verbose = TRUE
 )
 }
@@ -70,6 +71,10 @@ column; \code{"42days"} reproduces published MICS tables. See
 \item{keep_missing}{should we keep reported sibs that are missing sex or survival status?}
 
 \item{keep_varmap_only}{should we only keep ego variables mentioned in the varmap?}
+
+\item{death.exposure}{whether a sibling who died contributes the month of
+death as exposure; \code{"dhs"} (default) counts it, \code{"mics"} stops the
+month before. See \link{get_sib_df}}
 
 \item{verbose}{report detailed summaries?}
 }

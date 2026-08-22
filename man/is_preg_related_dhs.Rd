@@ -4,7 +4,7 @@
 \alias{is_preg_related_dhs}
 \title{is each sibling's death pregnancy-related, by DHS coding?}
 \usage{
-is_preg_related_dhs(sib_df, na.action = NULL)
+is_preg_related_dhs(sib_df, na.action = NULL, prmr.accident.recode = FALSE)
 }
 \arguments{
 \item{sib_df}{the prepped sibling dataset}
@@ -12,6 +12,11 @@ is_preg_related_dhs(sib_df, na.action = NULL)
 \item{na.action}{retained for symmetry with \link{is_maternal_dhs} and ignored
 here. It used to decide how a missing \code{mm12} was treated; \code{mm12} is
 no longer consulted, so it has no effect on this column}
+
+\item{prmr.accident.recode}{apply the documented-but-unexecuted 2016 PRMR
+rule, which drops a death during pregnancy (\code{mm9 = 2}) that is
+reported as violence or an accident. Default \code{FALSE}, matching the
+reference implementation. See Details}
 }
 \value{
 a logical vector, one entry per row of \code{sib_df}
@@ -60,5 +65,26 @@ the old behaviour lost anywhere from none to about 48\% of pregnancy-related
 deaths depending on the survey. On Rwanda 2010 it gave 51.2 deaths against a
 published 91; it now gives 90.7. See the DHS validation plan in the package
 repository.
+}
+
+\section{The 2016 PRMR redefinition}{
+
+
+\code{AM_rates.do:307-320} carries, \strong{inside a comment block and therefore never
+executed}, a rule introduced as "Important for redefinition of Pregnancy
+Related Mortality Ratio (PRMR) in surveys from 2016 onwards":
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{If mm9=2, and mm16=1 or 2, recode mm9 to 1
+}\if{html}{\out{</div>}}
+
+That is: a death \emph{during pregnancy} that is reported as due to violence or
+an accident stops counting as pregnancy-related. The DHS Program documents
+the rule (see \verb{blog.dhsprogram.com/mmr-prmr/}) but the code it ships does
+not apply it, so published figures produced with that code do not reflect
+it either.
+
+\code{prmr.accident.recode = TRUE} applies it. The default is \code{FALSE}, which is
+what the shipped reference code does and therefore what reproduces published
+tables. It can only bite on the five surveys that carry \code{mm16} at all.
 }
 

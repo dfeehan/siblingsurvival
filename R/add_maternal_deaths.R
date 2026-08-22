@@ -13,6 +13,11 @@
 ##' @param na.action how to treat a death that falls in the right window but
 ##'        whose timing detail is missing -- `"include"` counts it, `"exclude"`
 ##'        does not. **Required for the MICS styles**; see Details
+##' @param prmr.accident.recode DHS style only: apply the 2016 PRMR
+##'        redefinition, which drops a death during pregnancy (`mm9 = 2`)
+##'        reported as violence or an accident. Default `FALSE`, matching the
+##'        reference implementation, which documents the rule but does not
+##'        execute it. See [is_preg_related_dhs]
 ##' @param preg.window width of the postpartum window used for the
 ##'        *pregnancy-related* column under the MICS styles: `"2months"` (the
 ##'        default, and what this package has always done) or `"42days"`, which
@@ -66,9 +71,11 @@
 ##' is usually immaterial -- but not always, and it only ever moves the maternal
 ##' column, never the pregnancy-related one.
 ##'
-##' For `style = "dhs"`, `na.action` defaults to `"include"`, which is what this
-##' package has always done: a missing `sib.time.delivery.death` was treated as
-##' falling in the window. That default is kept so existing results do not move.
+##' **`na.action` no longer does anything under `style = "dhs"`.** It governed how a
+##' missing `sib.time.delivery.death` (`mm12`) was treated, and `mm12` is no
+##' longer consulted by either DHS column --- the reference implementation states
+##' that "mm12 is not needed" and drops it. The argument is kept so existing DHS
+##' call sites keep working, and still applies to both MICS columns.
 ##'
 ##' @export
 ##' @md
@@ -76,6 +83,7 @@ add_maternal_deaths <- function(sib_df,
                                 style = c("dhs", "mics6", "mics4"),
                                 na.action = NULL,
                                 preg.window = c("2months", "42days"),
+                                prmr.accident.recode = FALSE,
                                 keep_missing = FALSE,
                                 verbose = TRUE) {
 
@@ -109,7 +117,8 @@ add_maternal_deaths <- function(sib_df,
   #########################
   ## available for every DHS phase and every MICS round with a sibling roster
   if (style == "dhs") {
-    is.pr <- is_preg_related_dhs(sib_df, na.action)
+    is.pr <- is_preg_related_dhs(sib_df, na.action,
+                                 prmr.accident.recode = prmr.accident.recode)
   } else {
     is.pr <- is_preg_related_mics(sib_df, preg.window = preg.window)
   }

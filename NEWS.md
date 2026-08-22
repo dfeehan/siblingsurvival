@@ -1,5 +1,49 @@
 # siblingsurvival 0.3.0.9000 (development)
 
+## The DHS conventions are now options, defaulting to what DHS does
+
+Four places where this package and The DHS Program's tabulation code differed.
+Each is now explicit rather than baked in, and each defaults to the DHS
+behaviour.
+
+* **`is_maternal_dhs()` now follows the reference rule exactly**:
+  `mm9` 2--5 with `mm16` not 1 or 2. It previously applied the cause exclusion
+  to codes 2 and 5 only, took code 3 unconditionally, and additionally required
+  `mm12` to fall in the band `100`--`141`.
+
+  Given that `mm16` is never asked for a death during delivery, the old and new
+  rules are *equivalent* wherever a survey respects that skip pattern --- The
+  Gambia 2019-20 reproduces its published Table 14.3 either way. They differ
+  only where one does not: **South Africa 2016 has 3 deaths coded `mm9 = 3` with
+  `mm16` reported as violence or an accident.** With this change, all five
+  surveys that carry `mm16` now match the reference exactly.
+
+* **`add_maternal_deaths(prmr.accident.recode = )`** applies the 2016 PRMR
+  redefinition, under which a death *during pregnancy* reported as violence or
+  an accident stops counting as pregnancy-related. The DHS Program documents the
+  rule but the code it ships carries it inside a comment block and never
+  executes it, so published figures do not reflect it. Defaults to `FALSE`,
+  which is what reproduces published tables.
+
+* **`death.exposure = c("dhs", "mics")`** on the three `prep_*_sib_histories()`
+  functions and on `get_sib_df()`. The two references genuinely disagree about
+  whether a sibling who died contributes the month of death as exposure: DHS
+  counts it (`AM_rates.do:711` sets `last = mm8`), MICS stops the month before
+  (`higcm = MM18C - 1`). The default is `"dhs"`, which is what the package has
+  always done.
+
+  On Madagascar 2018 --- the one validation survey with almost no
+  unknown-survival siblings to confound it --- `"mics"` reproduces the published
+  female exposure of 202,959 **exactly**, against 203,010 under `"dhs"`.
+
+* **`nmx_to_nqx()` and `q15_to_50()`** are new, exported, and take `nax` as an
+  argument. The default of 2.6 is what both the DHS and MICS implementations
+  use, i.e. a denominator of `1 + 2.4 * nmx`; `AM_rates.do:1084` cites the Guide
+  to DHS Statistics for preferring it to the textbook 2.5. The package
+  previously had no life table at all, so this constant was retyped wherever it
+  was needed. Validated against The Gambia 2019-20 Table 14.2: 113.51 and
+  124.37 against published 114 and 124, where `nax = 2.5` would give 113.
+
 ## Breaking: an unrecognised sibling sex code is no longer treated as male
 
 * **`get_sib_df()` did `ifelse(sib.sex == 2, 'f', 'm')`, so every code that was

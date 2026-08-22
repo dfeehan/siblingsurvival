@@ -12,6 +12,7 @@ prep_dhs_sib_histories(
   keep_missing = FALSE,
   keep_varmap_only = FALSE,
   weight.scale = 1e+06,
+  death.exposure = c("dhs", "mics"),
   verbose = TRUE
 )
 }
@@ -32,6 +33,10 @@ See \link{add_maternal_deaths}}
 
 \item{weight.scale}{divide the women's weight by this number. Defaults to
 \code{1e6}, which is correct for the DHS; see Details}
+
+\item{death.exposure}{whether a sibling who died contributes the month of
+death as exposure; \code{"dhs"} (default) counts it, \code{"mics"} stops the
+month before. See \link{get_sib_df}}
 
 \item{verbose}{report detailed summaries?}
 }
