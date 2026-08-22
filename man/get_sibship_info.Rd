@@ -7,7 +7,7 @@
 get_sibship_info(sib.dat, ego.id, sib.frame.indicator)
 }
 \arguments{
-\item{sib.dat}{The long-form sibling dataset (likely produced by \link{prep_dhs_sib_histories})}
+\item{sib.dat}{The long-form sibling dataset (likely produced by a prep function such as \link{prep_dhs_sib_histories})}
 
 \item{ego.id}{String with the name of the column in \code{sib.dat} containing the survey respondent ID}
 

@@ -2,7 +2,7 @@
 ##'
 ##' this quantity, y.F, is related to the visibility of each respondent
 ##'
-##' @param sib.dat The long-form sibling dataset (likely produced by [siblingsurvival::prep_dhs_sib_histories])
+##' @param sib.dat The long-form sibling dataset (likely produced by a prep function such as [siblingsurvival::prep_dhs_sib_histories])
 ##' @param ego.id  String with the name of the column in \code{sib.dat} containing the survey respondent ID
 ##' @param sib.frame.indicator String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population
 ##' @return A tibble with a row for each survey respondent (each unique value of \code{ego.id}), and the number of sibs the respondent reported on the frame, including and not including herself
