@@ -188,6 +188,24 @@ get_visibility <- function(ego.dat,
 ##' to 1 *within* each sex. This is what
 ##' [siblingsurvival::aggregate_maternal_estimates] needs in order to weight
 ##' each sex's age-specific rates by its own respondents' age structure.
+##'
+##' ## This cannot give you a male age distribution for DHS data
+##'
+##' `only_females = FALSE` splits whatever respondents are in `ego.dat`; it does
+##' not conjure a sex that was never interviewed. DHS sibling histories come from
+##' the women's file, so a DHS `ego.dat` is entirely female and
+##' `only_females = FALSE` simply returns the female distribution with a `sex`
+##' column attached.
+##'
+##' That matters if you are trying to reproduce a published male `35m15` or
+##' `35q15`. The DHS Program standardises men's rates by
+##' the age distribution of **men**, taken from the men's recode (`MR`) file, or
+##' the household (`PR`) file where there was no men's survey --- see
+##' `get_age_distributions` in `Chap16_AM/AM_rates.do`. Neither file is read by
+##' this package, so a male age-standardised rate has to be assembled outside
+##' it, from the age-specific rates this package does produce. Female
+##' quantities, including everything to do with pregnancy-related and maternal
+##' mortality, need no such thing.
 ##' @export
 ##' @md
 get_ego_age_distn <- function(ego.dat,

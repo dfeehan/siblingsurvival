@@ -13,17 +13,17 @@ using namespace Rcpp;
 //' given two intervals, figure out the intersection between the
 //' first and the second
 //'
-//' NOTE that the intervals are treated as half-open [start,finish)
-//' so that an event that happens exactly at time b is counted in
-//' [b,c) but not in [a,b)
+//' NOTE that the intervals are treated as half-open, closed on the left and
+//' open on the right, so that an event happening exactly at time b is counted
+//' in the window starting at b and not in the one ending at b.
 //'
 //' The left-closed form matters at the edges of the observation period. An
 //' event in the very first month of a window contributes exposure to that
-//' window, so it must also be able to be counted there; the right-open form
-//' [a,b] would take the exposure and drop the event, leaving the numerator and
-//' denominator disagreeing about whether that month is in the window. It also
-//' puts an event exactly on an age-group boundary into the later group, which
-//' is what floor((death - dob)/width) does and what The DHS Program's own
+//' window, so it must also be able to be counted there; closing on the right
+//' instead would take the exposure and drop the event, leaving the numerator
+//' and denominator disagreeing about whether that month is in the window. It
+//' also puts an event exactly on an age-group boundary into the later group,
+//' which is what floor((death - dob)/width) does and what The DHS Program's own
 //' tabulation code assumes.
 //'
 //' @param a the first window; here, we use all three components

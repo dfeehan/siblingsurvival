@@ -112,7 +112,9 @@ test_that("mm9 codes 0, 1 and 98 are not pregnancy-related", {
 })
 
 test_that("a missing mm9 is not a pregnancy-related death", {
-  result <- add_maternal_deaths(make_sib(sib.died.pregnant = NA_real_))
+  # with a single row, an NA mm9 is also an entirely-missing column, so the
+  # all-missing guard fires here too; see the test for it further down
+  expect_warning(result <- add_maternal_deaths(make_sib(sib.died.pregnant = NA_real_)))
   expect_equal(result$sib.preg_related.death.date, -1)
 })
 
@@ -305,4 +307,41 @@ test_that("add_maternal_deaths on ex.sib: sib.maternal.death.date all NA (no acc
   result  <- add_maternal_deaths(ex.sib)
   females <- result %>% filter(sib.sex == 'f')
   expect_true(all(is.na(females$sib.maternal.death.date)))
+})
+
+# =====================================================================
+# an entirely-missing source column must not pass as "zero deaths"
+# =====================================================================
+# Burkina Faso 2003 has an mm9 column in which all 249,540 values are missing.
+# Both this package and the DHS reference implementation then report exactly
+# zero pregnancy-related deaths, which reads as a finding rather than as a
+# survey that never coded the module.
+
+test_that("an all-missing mm9 warns rather than silently giving zero", {
+  df <- make_sib(sib.died.pregnant = NA_real_)
+  expect_warning(res <- add_maternal_deaths(df, verbose = FALSE),
+                 "no pregnancy-related deaths can be identified")
+  expect_equal(res$sib.preg_related.death.date, -1)
+})
+
+test_that("a partially-missing mm9 does not warn", {
+  df <- tibble(
+    sib.sex           = c("f", "f"),
+    sib.death.date    = c(1200L, 1210L),
+    sib.died.pregnant = c(NA_real_, 3))
+  expect_no_warning(add_maternal_deaths(df, verbose = FALSE))
+})
+
+test_that("the same guard applies to the MICS styles", {
+  df <- tibble(
+    sib.sex                   = "f",
+    sib.death.age             = 25L,
+    sib.death.date            = 1200L,
+    sib.preg.at.death         = NA_real_,
+    sib.died.childbirth       = NA_real_,
+    sib.died.postpartum       = NA_real_,
+    sib.days.postpartum.death = NA_real_)
+  expect_warning(add_maternal_deaths(df, style = "mics4", na.action = "include",
+                                     verbose = FALSE),
+                 "no pregnancy-related deaths can be identified")
 })

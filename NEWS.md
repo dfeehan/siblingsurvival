@@ -1,5 +1,27 @@
 # siblingsurvival 0.3.0.9000 (development)
 
+## Breaking: an unrecognised sibling sex code is no longer treated as male
+
+* **`get_sib_df()` did `ifelse(sib.sex == 2, 'f', 'm')`, so every code that was
+  not 2 became male.** The DHS labels 8 as "don't know" and some surveys carry
+  an unlabelled 9 --- Gabon 2000 has 163 of them. Anything other than 1 or 2 is
+  now `NA`, which `finalize_sib_prep()` drops and reports in `summ$miss.sex`.
+
+  This inflated **male** exposure in 13 of 43 DHS surveys, by up to 0.7%, and put
+  siblings of unknown sex into the male rates. **Female results are unaffected**,
+  so nothing to do with pregnancy-related or maternal mortality moves. It went
+  unnoticed because every female quantity matched the reference exactly while
+  the male ones did not.
+
+  The MICS path already handled this in `recode_mics_sib_vars()`; the guard now
+  lives in the shared code so both paths are covered.
+
+* `add_maternal_deaths()` **warns when the source column is entirely missing**,
+  rather than reporting exactly zero pregnancy-related deaths. Burkina Faso 2003
+  has an `mm9` column in which all 249,540 values are missing; the resulting zero
+  looks like a mortality finding rather than a survey that never coded the
+  module.
+
 ## Breaking: events on a window boundary are now counted consistently
 
 * **`window_intersect()` in `src/compute_occ_exp.cpp` now treats windows as

@@ -94,8 +94,18 @@ get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE, reshape=TRUE,
     }
   }
 
+  ## Only 1 (male) and 2 (female) are meaningful. The DHS labels 8 as
+  ## "don't know", and some surveys carry an unlabelled 9 -- Gabon 2000 has 163
+  ## of them. `ifelse(sib.sex == 2, 'f', 'm')` silently made every one of those
+  ## male, which inflated male exposure in 13 of the 43 DHS surveys examined and
+  ## quietly put siblings of unknown sex into the male rates. Anything other
+  ## than 1 or 2 now becomes NA, and finalize_sib_prep() drops it and reports it
+  ## in summ$miss.sex -- which is what the MICS path already relied on
+  ## recode_mics_sib_vars() to arrange.
   sib.dat <- sib.dat %>%
-    mutate(sib.sex = ifelse(sib.sex == 2, 'f', 'm'))
+    mutate(sib.sex = dplyr::case_when(sib.sex == 1 ~ 'm',
+                                      sib.sex == 2 ~ 'f',
+                                      TRUE         ~ NA_character_))
 
 
   ## in some cases, there will be information about how many years ago

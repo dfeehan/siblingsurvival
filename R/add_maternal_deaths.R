@@ -114,6 +114,26 @@ add_maternal_deaths <- function(sib_df,
     is.pr <- is_preg_related_mics(sib_df, preg.window = preg.window)
   }
 
+  ## A source column that is present but entirely missing yields a
+  ## pregnancy-related count of exactly zero, with nothing anywhere to say so.
+  ## Burkina Faso 2003 is such a survey: mm9 exists but all 249,540 values are
+  ## missing, so every pregnancy-related rate computed from it is 0 and looks
+  ## like a finding rather than a data problem.
+  pr.src <- if (style == "dhs") {
+    "sib.died.pregnant"
+  } else {
+    c("sib.preg.at.death", "sib.died.childbirth", "sib.died.postpartum")
+  }
+  pr.src <- intersect(pr.src, names(sib_df))
+  if (length(pr.src) > 0 &&
+      all(vapply(pr.src, function(v) all(is.na(sib_df[[v]])), logical(1)))) {
+    warning(glue::glue(
+      "every value of {paste(pr.src, collapse = ', ')} is missing, so no ",
+      "pregnancy-related deaths can be identified and the count will be ",
+      "exactly zero.\nThis is a property of the survey, not a mortality ",
+      "finding -- check that the maternal mortality module was actually coded."))
+  }
+
   ## siblings who did not die a pregnancy-related death get -1 rather than NA,
   ## so that we keep the exposure they contribute
   sib_df$sib.preg_related.death.date <- ifelse(is.pr, sib_df$sib.death.date, -1)

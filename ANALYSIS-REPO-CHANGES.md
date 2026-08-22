@@ -122,6 +122,24 @@ If any analysis code builds `sib.dat` by hand rather than via the prep
 functions, note that `end.obs` for a sibling who died must be `death + 1`, not
 `death`. The prep functions already do this.
 
+### A0c. Male rates change slightly in 13 surveys; two data caveats
+
+Three further findings from running all 43 surveys against the DHS reference.
+
+**Male exposure was inflated in 13 of 43 surveys.** `get_sib_df()` turned every
+sex code that was not 2 into male, so "don't know" (8) and an unlabelled 9 both
+became men --- Gabon 2000 has 163 such siblings. Up to 0.7% of male exposure.
+**Female results do not move**, so nothing about pregnancy-related or maternal
+mortality changes; but any adult-male mortality figures should be regenerated.
+
+**Burkina Faso 2003 cannot contribute pregnancy-related estimates at all.** Its
+`mm9` column exists but all 249,540 values are missing, so the count is exactly
+zero. It is the only such survey. The package now warns; previously the zero was
+silent, and a zero rate reads as a finding. **Decide explicitly whether BFIR43FL
+stays in the sample.**
+
+**Gabon 2000 needs `encoding = "latin1"`** --- see B4.
+
 ### A4. Expect the numbers to move slightly
 
 Several fixes on the package side change DHS results, all small but real:

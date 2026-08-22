@@ -193,3 +193,35 @@ test_that("get_ego_age_distn is silent and unchanged when weights are complete",
   expect_silent(d <- get_ego_age_distn(ego, only_females = TRUE))
   expect_equal(d$agegrp_prop, rep(1/7, 7))
 })
+
+# =====================================================================
+# an unrecognised sex code must not silently become male
+# =====================================================================
+# get_sib_df() used to do `ifelse(sib.sex == 2, 'f', 'm')`, so every code that
+# was not 2 became male. The DHS labels 8 as "don't know" and some surveys
+# carry an unlabelled 9 -- Gabon 2000 has 163 of them. That inflated male
+# exposure in 13 of the 43 DHS surveys examined, by up to 0.7%, and put
+# siblings of unknown sex into the male rates. Female results were unaffected,
+# which is exactly why it went unnoticed.
+
+test_that("sib.sex: only codes 1 and 2 survive; others are dropped", {
+  ego <- data.frame(
+    caseid = 1:4, wwgt = 1, psu = 1, doi = 1200, sex = "f",
+    sib.sex_01          = c(1, 2, 9, 8),
+    sib.alive_01        = 1,
+    sib.age_01          = 30,
+    sib.death.yrsago_01 = NA_real_,
+    sib.death.age_01    = NA_real_,
+    sib.dob_01          = 840,
+    sib.death.date_01   = NA_real_)
+
+  out <- get_sib_df(ego,
+                    sib.attrib = c("sib.sex", "sib.alive", "sib.age",
+                                   "sib.death.yrsago", "sib.death.age",
+                                   "sib.dob", "sib.death.date"),
+                    verbose = FALSE)
+
+  expect_equal(sort(out$sib.sex[!is.na(out$sib.sex)]), c("f", "m"))
+  # the 9 and the 8 must be NA, not "m"
+  expect_equal(sum(is.na(out$sib.sex)), 2)
+})

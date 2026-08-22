@@ -318,6 +318,79 @@ Surveys use code 5 *or* code 6 for postpartum deaths, and a couple use both.
 Whichever they use is a property of the survey, not of the population, so the
 resulting bias is essentially arbitrary across the 43.
 
+### H2. RESOLVED --- no defect, but one latent divergence
+
+Validated against The Gambia 2019-20 (`FR369` Table 14.3), which is a genuine
+maternal table: *"deaths due to accidents or violence are excluded"*, 42-day
+window. The package, the reference replica and the published table agree in
+**every age group**:
+
+| Age | Package | Reference | Published |
+|---|---|---|---|
+| 15--19 … 45--49 | 1.8 / 9.8 / 14.4 / 20.3 / 8.5 / 10.2 / 0.0 | identical | 2 / 10 / 14 / 20 / 9 / 10 / 0 |
+| Total | 65.0 | 65.0 | 65 |
+| Maternal as % of female deaths | 17.3 | 17.3 | 17.3 |
+
+The two rules *look* different --- the reference applies the cause exclusion
+uniformly across `mm9` 2--5, the package applies it only to codes 2 and 5 and
+takes code 3 unconditionally --- but they are equivalent, because of a skip
+pattern neither states explicitly. Cross-tabulating the 87 in-window
+pregnancy-related deaths in The Gambia:
+
+| | `mm16`=0 | 1 | 2 | missing |
+|---|---|---|---|---|
+| `mm9`=2 (during pregnancy) | 14 | 2 | 1 | 0 |
+| `mm9`=3 (during delivery) | 0 | 0 | 0 | **40** |
+| `mm9`=5 (within six weeks) | 28 | 1 | 1 | 0 |
+
+**`mm16` is never asked for a death during delivery.** So the package's
+"unconditional for code 3" and the reference's "missing `mm16` passes the test"
+describe the same thing. The package's in-code comment was an accurate
+description of the questionnaire, not an arbitrary legacy choice.
+
+**The latent divergence:** where a survey violates that skip pattern the two
+rules part company. **South Africa 2016 has 3 deaths with `mm9 = 3` and `mm16`
+coded as violence or accident.** The package counts them as maternal; the
+reference does not. No other survey has any.
+
+Left as-is rather than changed: 3 deaths in 1 of 43 surveys, affecting only the
+maternal column, and both readings are defensible (a death during delivery is
+arguably maternal whatever else is recorded). **But it should be an explicit
+decision** --- if South Africa 2016's published maternal table is ever a target,
+the package will be 3 deaths high.
+
+### H3. RESOLVED --- nothing to fix, because the package has no life table
+
+Both references use `5*mx/(1 + 2.4*mx)`, i.e. $n_ax = 2.6$; the MICS syntax
+contradicts its own header, while `AM_rates.do:1084` says the Guide to DHS
+Statistics documents it deliberately. So DHS and MICS agree with each other and
+against the 2.5 used in the MICS vignette's own arithmetic.
+
+But the package computes no $_{35}q_{15}$ anywhere --- the only occurrences are
+ad-hoc calculations inside the validation write-up. There is no package defect.
+
+**Open, for the analysis repo rather than the package:** anything downstream that
+converts these rates into $_{35}q_{15}$ should use 2.4 if the goal is
+comparability with published DHS and MICS figures. Worth deciding whether the
+package should offer a small documented helper so the constant stops being
+retyped; that is a new exported function, so it needs a decision rather than a
+default.
+
+### H4. RESOLVED --- structural, documented
+
+`get_age_distributions` in `AM_rates.do:450` takes the men's age distribution
+from the **MR** file, or the **PR** file where there was no men's survey. DHS
+sibling histories come from the women's file, so a DHS `ego.dat` is entirely
+female and `get_ego_age_distn(only_females = FALSE)` returns the female
+distribution with a `sex` column attached --- it cannot invent a sex that was
+never interviewed. Verified on Rwanda 2010: seven female rows, no male rows, no
+error.
+
+So a male age-standardised rate or $_{35}m_{15}$ has to be assembled outside the
+package, from the age-specific rates it does produce. Female quantities --- which
+is everything to do with pregnancy-related and maternal mortality --- need
+nothing external. Now documented on `get_ego_age_distn()`.
+
 ### H1b. The `mm9` 5/6 split is a questionnaire artefact, so the 42-day cut is not always identified
 
 Follows from the H1 work and constrains the *maternal* estimand rather than the
@@ -390,6 +463,58 @@ This one is worth noting as a *method* result: it was invisible to every
 synthetic test, because the hand-built fixtures set `end_obs = death` while the
 package's own prep sets `end_obs = death + 1`. Only real data with a death in
 one specific month exposed it.
+
+### H7. RESOLVED --- the sweep found three, two of them fixed here
+
+The silent-failure class: something that produces a plausible-looking number
+instead of an error. Sweeping the DHS path turned up three.
+
+**(a) An unrecognised sex code became male. FIXED.** `get_sib_df()` did
+`ifelse(sib.sex == 2, 'f', 'm')`, so every code that was not 2 became male. The
+DHS labels 8 as "don't know" and some surveys carry an unlabelled 9 --- Gabon
+2000 has 163. This inflated male exposure in **13 of the 43 surveys**, by up to
+0.7%, and quietly put siblings of unknown sex into the male rates. Female
+results were unaffected, which is precisely why it survived: every female
+quantity matched the reference exactly while the male ones did not. Anything
+other than 1 or 2 is now `NA`, dropped by `finalize_sib_prep()` and counted in
+`summ$miss.sex` --- which is what the MICS path already relied on
+`recode_mics_sib_vars()` to arrange.
+
+**(b) A survey whose `mm9` is entirely missing reported zero. NOW WARNS.**
+Burkina Faso 2003 has an `mm9` column in which all 249,540 values are missing,
+so no pregnancy-related death can be identified and the count is exactly zero.
+Both this package and the DHS reference produce that zero silently; it reads as
+a mortality finding rather than as a survey that never coded the module. It is
+the only such survey of the 43. `add_maternal_deaths()` now warns.
+
+**(c) Gabon 2000 cannot be read at all under default encoding.** Noted under D1;
+`encoding = "latin1"` works. Not a package defect, but it is a silent one in the
+sense that a pipeline may drop the survey without anyone noticing.
+
+### D7. Breadth check --- all 43 surveys, against the reference
+
+`data-raw/dhs-validation/breadth-check.R`, results in `breadth-results.csv`.
+Every survey in the paper's sample is run through both the package and the
+replica and compared.
+
+* **43 of 43 complete**, none error.
+* **Female exposure, female all-cause deaths, male all-cause deaths and
+  pregnancy-related deaths all match the reference exactly --- ratio 1.0000000
+  --- in every one of the 43.**
+* Male *exposure* matches exactly in 42 of 43. The exception is Gabon 2012, high
+  by 6.1 person-years in 105,599 (0.006%), from **one** sibling: his `mm4` is
+  missing and the package recovers a date of birth from his reported current age,
+  where the reference drops him. Arguably the package is the better behaviour
+  here --- `AM_rates.do`'s header assumes "mm4 and mm8 are always coded" and does
+  not handle the exception --- so this is left as a documented divergence rather
+  than matched.
+* **No `NA` estimate cells anywhere**, and no survey has a missing date of birth
+  or a missing weight after the prep.
+* Pregnancy-related rate range 0.00 to 2.79 per 1,000 woman-years, the 0.00
+  being Burkina Faso 2003 (see H7b).
+
+Before the two fixes in H7 and H9, 13 surveys disagreed on the male side and
+three on the female side. The table now reads 1.0000000 down every column.
 
 **D3. Extract published targets** into
 `data-raw/dhs-validation/published-targets.csv`, same schema as the MICS file so

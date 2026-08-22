@@ -35,5 +35,23 @@ each respondent sex: the result gains a \code{sex} column, and \code{agegrp_prop
 to 1 \emph{within} each sex. This is what
 \link{aggregate_maternal_estimates} needs in order to weight
 each sex's age-specific rates by its own respondents' age structure.
+\subsection{This cannot give you a male age distribution for DHS data}{
+
+\code{only_females = FALSE} splits whatever respondents are in \code{ego.dat}; it does
+not conjure a sex that was never interviewed. DHS sibling histories come from
+the women's file, so a DHS \code{ego.dat} is entirely female and
+\code{only_females = FALSE} simply returns the female distribution with a \code{sex}
+column attached.
+
+That matters if you are trying to reproduce a published male \verb{35m15} or
+\verb{35q15}. The DHS Program standardises men's rates by
+the age distribution of \strong{men}, taken from the men's recode (\code{MR}) file, or
+the household (\code{PR}) file where there was no men's survey --- see
+\code{get_age_distributions} in \code{Chap16_AM/AM_rates.do}. Neither file is read by
+this package, so a male age-standardised rate has to be assembled outside
+it, from the age-specific rates this package does produce. Female
+quantities, including everything to do with pregnancy-related and maternal
+mortality, need no such thing.
+}
 }
 
