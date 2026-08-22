@@ -225,3 +225,50 @@ test_that("sib.sex: only codes 1 and 2 survive; others are dropped", {
   # the 9 and the 8 must be NA, not "m"
   expect_equal(sum(is.na(out$sib.sex)), 2)
 })
+
+# =====================================================================
+# a one-sex age distribution must not be usable for the other sex
+# =====================================================================
+# DHS and MICS interview women only, so get_ego_age_distn(only_females = FALSE)
+# on their data returns a female distribution and nothing else. Standardising
+# male rates with it would attribute women's age structure to men. The DHS
+# reference takes the male distribution from the men's MR file, which this
+# package does not read.
+
+test_that("get_ego_age_distn warns when asked to split a single-sex sample", {
+  ego <- data.frame(sex = "f", wwgt = 1,
+                    age.cat = c("[15,20)","[20,25)","[25,30)","[30,35)",
+                                "[35,40)","[40,45)","[45,50)"))
+
+  expect_warning(get_ego_age_distn(ego, only_females = FALSE),
+                 "age distribution per respondent sex")
+  # the message has to say what to do about it
+  w <- tryCatch(get_ego_age_distn(ego, only_females = FALSE),
+                warning = function(w) conditionMessage(w))
+  expect_match(w, "same sex")
+})
+
+test_that("no warning when both sexes are present", {
+  ego <- data.frame(
+    sex     = rep(c("f", "m"), each = 7), wwgt = 1,
+    age.cat = rep(c("[15,20)","[20,25)","[25,30)","[30,35)",
+                    "[35,40)","[40,45)","[45,50)"), 2))
+  expect_silent(d <- get_ego_age_distn(ego, only_females = FALSE))
+  # each sex's proportions sum to 1 on their own
+  expect_equal(as.numeric(tapply(d$agegrp_prop, d$sex, sum)), c(1, 1))
+})
+
+test_that("only_females = TRUE is silent on a women-only sample", {
+  ego <- data.frame(sex = "f", wwgt = 1,
+                    age.cat = c("[15,20)","[20,25)","[25,30)","[30,35)",
+                                "[35,40)","[40,45)","[45,50)"))
+  expect_silent(get_ego_age_distn(ego, only_females = TRUE))
+})
+
+test_that("warn.single.sex = FALSE suppresses it, for callers that report it themselves", {
+  ego <- data.frame(sex = "f", wwgt = 1,
+                    age.cat = c("[15,20)","[20,25)","[25,30)","[30,35)",
+                                "[35,40)","[40,45)","[45,50)"))
+  expect_silent(get_ego_age_distn(ego, only_females = FALSE,
+                                  warn.single.sex = FALSE))
+})

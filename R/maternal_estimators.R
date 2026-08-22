@@ -85,8 +85,11 @@ aggregate_maternal_estimates <- function(estimates,
 
   # get age distribution of respondents
   if (is.null(age_prop)) {
+    ## warn.single.sex is off because warn_uninterviewed_sex() below reports the
+    ## same problem where it actually bites, naming the sibling sexes affected
     age_prop <- get_ego_age_distn(ego.dat,
-                                  only_females)
+                                  only_females,
+                                  warn.single.sex = FALSE)
   }
 
   if (is.null(vis_res)) {

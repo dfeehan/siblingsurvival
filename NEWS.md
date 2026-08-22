@@ -1,5 +1,20 @@
 # siblingsurvival 0.3.0.9000 (development)
 
+## A single-sex age distribution can no longer be used for another sex
+
+* `get_ego_age_distn(only_females = FALSE)` **warns** when `ego.dat` holds only
+  one respondent sex. DHS and MICS interview women only, so the result covers
+  women alone, and using it to age-standardise male rates would attribute
+  women's age structure to men. The message says where a male distribution would
+  have to come from instead: the DHS men's `MR` file or the household `PR` file,
+  neither of which this package reads.
+
+  `aggregate_maternal_estimates()` already warned through
+  `warn_uninterviewed_sex()` and returns `NA` for the uninterviewed sex; it
+  passes `warn.single.sex = FALSE` so the two do not both fire for one cause.
+
+  See `FUTURE-IMPROVEMENTS.md` for what it would take to support this properly.
+
 ## The DHS conventions are now options, defaulting to what DHS does
 
 Four places where this package and The DHS Program's tabulation code differed.

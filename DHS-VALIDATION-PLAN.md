@@ -178,11 +178,23 @@ This connects directly to the still-open `only_females = FALSE` questions in
 resolve those too, or may show that `only_females = FALSE` is answering a
 question DHS does not ask.
 
-> **DEFERRED** at your request --- revisit after this round. What is settled:
-> the package cannot produce a male age distribution from a DHS `ego.dat`
-> because DHS interviews only women, and `get_ego_age_distn()` now documents
-> that. What is open is whether to read an MR/PR file, and how that interacts
-> with `only_females = FALSE` and E4.
+> **DEFERRED**, and now tracked as item 1 in `FUTURE-IMPROVEMENTS.md`.
+>
+> Settled: the package cannot produce a male age distribution from a DHS
+> `ego.dat`, because DHS interviews only women.
+>
+> Guarded, so it cannot happen by accident:
+> `get_ego_age_distn(only_females = FALSE)` now **warns** when `ego.dat` holds a
+> single respondent sex, saying explicitly that the result must not be used to
+> standardise rates for another sex and where a male distribution would have to
+> come from. `aggregate_maternal_estimates()` already warned through
+> `warn_uninterviewed_sex()` and returns `NA` for the uninterviewed sex ---
+> verified on Rwanda 2010, which emits exactly one warning and gives
+> `agg.est = NA` for men. The internal call passes `warn.single.sex = FALSE` so
+> the two do not both fire for the same cause.
+>
+> Open: whether to read an MR/PR file, accept an external distribution, or ship
+> a helper. See `FUTURE-IMPROVEMENTS.md`.
 
 ### H5 The observation window --- resolved by reading, still confirm numerically
 

@@ -169,6 +169,11 @@ get_visibility <- function(ego.dat,
 ##'
 ##' @param ego.dat the ego dataset (probably from [siblingsurvival::prep_dhs_sib_histories])
 ##' @param only_females should only females be used to calculate age distribution? (default: True)
+##' @param warn.single.sex when `only_females = FALSE`, warn if `ego.dat` holds
+##'        only one respondent sex, since the result then cannot standardise
+##'        rates for the other. Set `FALSE` only when the caller reports the
+##'        problem itself, as
+##'        [siblingsurvival::aggregate_maternal_estimates] does
 ##'
 ##' @return dataframe with distribution of respondent ages by 5-year category.
 ##' Columns `age.cat`, `total` and `agegrp_prop`, plus `sex` when
@@ -209,10 +214,34 @@ get_visibility <- function(ego.dat,
 ##' @export
 ##' @md
 get_ego_age_distn <- function(ego.dat,
-                              only_females = TRUE) {
+                              only_females = TRUE,
+                              warn.single.sex = TRUE) {
 
   if(only_females) {
     ego.dat <- ego.dat %>% filter(sex == 'f')
+  }
+
+  ## Asking for a per-sex distribution and getting only one sex back is the
+  ## setup for a silent error: the caller wants to standardise each sex by its
+  ## own respondents, and for the missing sex there is nothing to standardise
+  ## with. Applying the sex that *is* present would attribute one sex's age
+  ## structure to the other. DHS and MICS interview only women, so this is the
+  ## normal case for them, not an exotic one.
+  if (!only_females && warn.single.sex) {
+
+    ego.sexes <- sort(unique(as.character(ego.dat$sex)))
+
+    if (length(ego.sexes) < 2) {
+      warning(glue::glue(
+        "only_females = FALSE asks for one age distribution per respondent sex, ",
+        "but the respondents in ego.dat are all '{paste0(ego.sexes, collapse=\"', '\")}'.\n",
+        "The result therefore covers that sex alone. Do not use it to ",
+        "age-standardise rates for any other sex -- a reference age ",
+        "distribution has to come from respondents of the same sex, and DHS and ",
+        "MICS sibling histories are collected from women only. For a male ",
+        "standardised rate you need a male age distribution from outside this ",
+        "package (the DHS men's MR file, or the household PR file)."))
+    }
   }
 
   respondent_age <- ego.dat %>%

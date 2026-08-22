@@ -4,12 +4,18 @@
 \alias{get_ego_age_distn}
 \title{get_ego_age_distribution}
 \usage{
-get_ego_age_distn(ego.dat, only_females = TRUE)
+get_ego_age_distn(ego.dat, only_females = TRUE, warn.single.sex = TRUE)
 }
 \arguments{
 \item{ego.dat}{the ego dataset (probably from \link{prep_dhs_sib_histories})}
 
 \item{only_females}{should only females be used to calculate age distribution? (default: True)}
+
+\item{warn.single.sex}{when \code{only_females = FALSE}, warn if \code{ego.dat} holds
+only one respondent sex, since the result then cannot standardise
+rates for the other. Set \code{FALSE} only when the caller reports the
+problem itself, as
+\link{aggregate_maternal_estimates} does}
 }
 \value{
 dataframe with distribution of respondent ages by 5-year category.
