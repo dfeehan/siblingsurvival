@@ -140,15 +140,9 @@ approximates them from reported ages and years-since-death otherwise.
 We evaluated code in the package by comparing its estimates to published tables
 from three MICS6 surveys and one MICS5 survey.
 
-It is worth separating two kinds of quantity, because they test different
-things.
-
-### Counts: are we reading the data correctly?
-
-Exposure and death counts are essentially sums over survey responses. Getting
-them right means the varmap, the recodes, the reference window, the weights and
-the age placement are all correct -- and nothing else. Ratios of our figure to
-the published one:
+First, we examing quantities that are essentially sums over survey responses.
+The following table shows ratios of the value produced by the package to the 
+value published in the MICS report:
 
 | | Iraq 2018 | Madagascar 2018 | Zimbabwe 2014 | Zimbabwe 2019 |
 |---|---|---|---|---|
@@ -159,11 +153,20 @@ the published one:
 | Male all-cause deaths | 0.9996 | 1.0003 | 1.0015 | 1.002 |
 | Pregnancy-related deaths | 1.008 | 1.025 | 0.982 | 0.923 |
 
-### Rates: does the estimator agree?
+The values are generally very close, with the exception of the count of
+pregnancy-related deaths in the Zimbabwe 2019 survey. We cannot explain this
+difference, but we carefully investigated how this quantity gets calculated by
+the package and were unable to find an error.
 
-These add the parts the counts do not exercise -- age standardisation by the
-respondents' age distribution, and the life-table conversion behind
-$_{35}q_{15}$. Our figure, with the published one in brackets:
+Next, we examined the extent to which estimated mortality rates agree between
+the package and the MICS reports.
+These quantities are more complex; they are ratios, some involve standarizing by the respondents'
+age distribution, and some involve life table calculations. 
+Note that these rates all come from the aggregate visibility estimator; the
+individual visibility estimator has not been used in any MICS reports.
+
+This table shows the estimates produced by the package, along with estimates
+published in MICS reports in parentheses:
 
 | | Iraq 2018 | Madagascar 2018 | Zimbabwe 2014 | Zimbabwe 2019 |
 |---|---|---|---|---|
@@ -173,15 +176,8 @@ $_{35}q_{15}$. Our figure, with the published one in brackets:
 | $_{35}q_{15}$, women$^b$ | 49.5 (49) | 111.9 (112) | 345 (344) | 222.7 (224) |
 | $_{35}q_{15}$, men$^b$ | 85.8 (86) | 148.8 (149) | 357 (357) | 218.5 (219) |
 
-$^a$ per 1,000 person-years, age-adjusted. $^b$ per 1,000.
-
-Where the counts agree the rates agree too, which is the expected pattern: the
-standardisation and life-table steps add no error of their own.
-
-Most of the estimates reproduce published values very closely, across both roster schemes and
-three countries. The discrepancy in pregnancy related deaths with Zimbabwe 2019 
-are larger than for the other three surveys;
-we have been unable to determine exactly why this is the case.
+Here, estimates produced by the package match estimates in the MICS reports quite
+closely.
 
 <!--
 it misses on quantities that involve no maternal recode at all, so the problem is
@@ -193,13 +189,6 @@ Zimbabwe *2014* reproduces exactly, so this is specific to the 2019 survey's
 published tables rather than to the country.
 -->
 
-**The target is the aggregate-visibility estimator.** `asdr.agg` is
-`sum(w * deaths) / sum(w * exposure)` with no visibility weighting, which is
-exactly the conventional MICS calculation -- MICS applies no sibship-size
-correction. `asdr.ind`, the individual-visibility estimator, is *expected* to
-differ from published values.
-
-
 All 13 MICS surveys with a sibling roster have been run through the prep. Every
 one completes, produces no `NA` estimates, and gives a plausible
 pregnancy-related rate (0.08 to 1.39 per 1,000 woman-years). Two turned up
@@ -209,63 +198,29 @@ country-specific data quirks worth knowing about:
   names its weight column `WMWEIGHT` rather than `wmweight`.
 * **Bhutan 2010** contains two siblings whose reported years-since-death and age
   at death are jointly inconsistent -- one died 58 years ago at age 58, implying
-  a birth 116 years before the interview. The prep warns rather than silently
-  carrying it. Note this is *not* a check on whether a sibling died before the
-  respondent was born, which is perfectly possible and not rare where fertility
-  is high and sibships are long.
+  a birth 116 years before the interview. The prep function warns rather than silently
+  carrying it. 
 
-Also, two conventions that MICS documents do not state were settled by this exercise.
+Also, a few additional conventions appear to be followed by MICS estimates:
 
-**The reference period is the seven years *including* the year of interview.**
-Testing candidate windows against Iraq's and Zimbabwe's published exposure,
-`[doi - 84, doi)` matches while `[doi - 96, doi - 12)` does not. This is what
-`cell_config(time.periods = '7yr_beforeinterview')` already does.
-
-**Age standardisation uses the age distribution of the interviewed women**, which
+* **Age standardisation uses the age distribution of the interviewed women**, which
 is what `get_ego_age_distn()` computes -- not household women, as some secondary
 sources state. Standardising Zimbabwe's all-cause female rate this way gives 6.27
 against a published 6.28.
+* Rows that cannot contribute to a weighted estimate -- no usable date of birth,
+or no sampling weight -- are dropped and counted in `summ$miss.dob` and
+`summ$miss.wgt`. 
+* **Exposure, to the last person-year.** Siblings whose survival status is
+  unknown are dropped by default
 
-### Table TM.9.3 counts pregnancy-related deaths
+### What will not necessarily agree with reports, by design
 
-This one matters for interpretation.
-
-MICS survey reports print a table headed *Maternal mortality*, with a column
-labelled **"Maternal Deaths"** and a footnote defining a maternal death as one
-"from any cause except accidents or violence". **The number printed is not that
-quantity.** It is the *pregnancy-related* count: deaths during pregnancy,
-childbirth, or within two months of the end of a pregnancy, with **no** cause
-exclusion and **no** 42-day cut.
-
-The reports' own methodology text says so -- "age-specific mortality rates are
-calculated by dividing the number of **pregnancy-related deaths** by years of
-exposure" -- and the arithmetic confirms it. In Iraq the pregnancy-related count
-reproduces the published figure at ratio 1.008 while the maternal count gives
-0.848; in Madagascar, 1.025 against 0.792.
-
-So when comparing against published MICS figures, use
-`sib.preg_related.death.date`, not `sib.maternal.death.date`, despite what the
-published column is called.
-
-### What will not reproduce, by design
-
-* **`asdr.ind`.** MICS applies no sibship-size correction, so the
-  individual-visibility estimator differs from published figures by construction.
+* **`asdr.ind`.** this estimator is not used in MICS reports
 * **Confidence intervals.** MICS uses jackknife replication with $\pm 2 \cdot se$;
   this package uses a bootstrap with percentile intervals.
 * **The maternal mortality ratio itself.** MMR is the maternal mortality rate
   divided by a general fertility rate computed from the women's birth history --
   a different module this package does not read.
-Rows that cannot contribute to a weighted estimate -- no usable date of birth,
-or no sampling weight -- are dropped and counted in `summ$miss.dob` and
-`summ$miss.wgt`. This matters more than it sounds: a single such row turns an
-entire estimate cell into `NA`, because the estimator sums over the cell.
-
-* **Exposure, to the last person-year.** Siblings whose survival status is
-  unknown are dropped by default, and MICS appears to censor rather than drop
-  them: published exposure sits between our `keep_missing = FALSE` and
-  `keep_missing = TRUE` values. The spread is under 0.1% and does not move any
-  published rate to two decimal places.
 
 ## Maternal versus pregnancy-related
 
