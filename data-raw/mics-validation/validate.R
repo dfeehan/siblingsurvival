@@ -29,41 +29,13 @@ REPRO_AGES <- c("[15,20)","[20,25)","[25,30)","[30,35)","[35,40)","[40,45)","[45
 
 ##' Build the maternal / pregnancy-related death-date columns for MICS6.
 ##'
-##' Kept here rather than in the package until `na.action` is settled -- see the
-##' deferred open decision in MICS-PLAN.md. `na.action` currently makes no
-##' difference on Zimbabwe 2019: MM25 is never missing when MM24 == 1, and the
-##' "9 = no response" codes on MM22/MM23/MM24 number only 6-7 rows each.
-mics6_death_dates <- function(sib, na.action = c("include", "exclude")) {
-  na.action <- match.arg(na.action)
-
-  female <- sib$sib.sex == "f"
-  ## MM21 routes sisters who died before 12 past MM22-MM25, so those items are
-  ## NA by design and the age guard is not optional
-  aged12 <- !is.na(sib$sib.death.age) & sib$sib.death.age >= 12
-
-  preg_related <- female & aged12 &
-    (sib$sib.preg.at.death %in% 1 |
-     sib$sib.died.childbirth %in% 1 |
-     sib$sib.died.postpartum %in% 1)
-
-  within42 <- if (na.action == "include") {
-    !(sib$sib.died.postpartum %in% 1) |
-      is.na(sib$sib.days.postpartum.death) |
-      sib$sib.days.postpartum.death <= 42
-  } else {
-    !(sib$sib.died.postpartum %in% 1) |
-      (!is.na(sib$sib.days.postpartum.death) &
-         sib$sib.days.postpartum.death <= 42)
-  }
-
-  ## MM23 == 1 skips MM26/MM27 entirely, so %in% (not ==) is required here
-  not_accident <- !(sib$sib.died.violence %in% 1 | sib$sib.died.accident %in% 1)
-
-  maternal <- preg_related & within42 & not_accident
-
-  sib %>%
-    mutate(sib.preg_related.death.date = ifelse(preg_related, sib.death.date, -1),
-           sib.maternal.death.date     = ifelse(maternal,     sib.death.date, -1))
+##' Now just a thin wrapper on the package function. `preg.window = "42days"` is
+##' the definition UNICEF's own tabulation syntax uses, and therefore the one
+##' that published tables report; see spss-syntax-replica.R in this directory.
+mics6_death_dates <- function(sib, na.action = "include",
+                              preg.window = "42days") {
+  add_maternal_deaths(sib, style = "mics6", na.action = na.action,
+                      preg.window = preg.window, verbose = FALSE)
 }
 
 ##' Run the staged validation for one survey.
@@ -108,7 +80,9 @@ validate_mics <- function(survey_id,
                       cell.config = cc, weights = "wwgt")
   }
 
-  mat <- est_for("sib.maternal.death.date")$asdr.agg %>%
+  ## published MICS tables print a 42-day pregnancy-related count, whatever
+  ## their column heading says -- see spss-syntax-replica.R
+  mat <- est_for("sib.preg_related.death.date")$asdr.agg %>%
     filter(sib.sex == "f", sib.age %in% REPRO_AGES) %>%
     arrange(match(sib.age, REPRO_AGES))
 

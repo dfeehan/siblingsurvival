@@ -13,6 +13,11 @@
 ##' @param na.action how to treat a death that falls in the right window but
 ##'        whose timing detail is missing -- `"include"` counts it, `"exclude"`
 ##'        does not. **Required for the MICS styles**; see Details
+##' @param preg.window width of the postpartum window used for the
+##'        *pregnancy-related* column under the MICS styles: `"2months"` (the
+##'        default, and what this package has always done) or `"42days"`, which
+##'        is what published MICS tables report. Ignored for `style = "dhs"`,
+##'        which already applies a 42-day cut. See Details
 ##' @param keep_missing not currently used
 ##' @param verbose report detailed summaries?
 ##' @return `sib_df` with columns `sib.preg_related.death.date` and
@@ -24,7 +29,7 @@
 ##' Two quantities are computed, and they are not the same thing:
 ##'
 ##' * **pregnancy-related** -- died while pregnant, during childbirth, or within
-##'   two months of the end of a pregnancy, *whatever the cause*
+##'   the postpartum window, *whatever the cause*
 ##' * **maternal** -- as above but within 42 days, and excluding deaths due to
 ##'   violence or an accident
 ##'
@@ -39,8 +44,12 @@
 ##'
 ##' **Note for MICS users:** the tables published in MICS survey reports under
 ##' the heading "Maternal mortality", with a column labelled "Maternal Deaths",
-##' actually report the **pregnancy-related** count. Compare against
-##' `sib.preg_related.death.date`, not `sib.maternal.death.date`. See the
+##' do *not* report maternal deaths as defined above. UNICEF's own tabulation
+##' syntax counts `MM22 = 1 | MM23 = 1 | (MM24 = 1 & MM25 < 42)` and never reads
+##' the violence (`MM26`) or accident (`MM27`) items at all, despite the
+##' footnote in the reports saying those causes are excluded. So the published
+##' column is a **pregnancy-related** count on a 42-day window. To reproduce it,
+##' use `sib.preg_related.death.date` with `preg.window = "42days"`. See the
 ##' vignette "Working with MICS sibling history data".
 ##'
 ##' ## Choosing `na.action`
@@ -66,10 +75,12 @@
 add_maternal_deaths <- function(sib_df,
                                 style = c("dhs", "mics6", "mics4"),
                                 na.action = NULL,
+                                preg.window = c("2months", "42days"),
                                 keep_missing = FALSE,
                                 verbose = TRUE) {
 
   style <- match.arg(style)
+  preg.window <- match.arg(preg.window)
 
   if (is.null(na.action)) {
 
@@ -100,7 +111,7 @@ add_maternal_deaths <- function(sib_df,
   if (style == "dhs") {
     is.pr <- is_preg_related_dhs(sib_df, na.action)
   } else {
-    is.pr <- is_preg_related_mics(sib_df)
+    is.pr <- is_preg_related_mics(sib_df, preg.window = preg.window)
   }
 
   ## siblings who did not die a pregnancy-related death get -1 rather than NA,
@@ -146,7 +157,9 @@ add_maternal_deaths <- function(sib_df,
     n.mat <- sum(sib_df$sib.maternal.death.date > 0, na.rm = TRUE)
     cat(paste0("Identified ", n.pr, " pregnancy-related death(s)",
                if (can.do.maternal) paste0(" and ", n.mat, " maternal death(s)") else "",
-               " (style = '", style, "', na.action = '", na.action, "').\n"))
+               " (style = '", style, "', na.action = '", na.action,
+               if (style != "dhs") paste0("', preg.window = '", preg.window) else "",
+               "').\n"))
   }
 
   return(sib_df)

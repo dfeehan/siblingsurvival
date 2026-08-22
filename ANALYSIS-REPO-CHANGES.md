@@ -212,19 +212,43 @@ missing falls inside the 42-day maternal window. It affects only the maternal
 column, never the pregnancy-related one, and across three MICS6 surveys it moved
 5 of 38 such deaths in Iraq and none in Zimbabwe or Madagascar.
 
-### C4. ⚠ Published MICS tables report pregnancy-related deaths, not maternal
+### C4. ⚠ Published MICS tables report a 42-day pregnancy-related count
 
 **This matters for any comparison against published figures.** MICS reports print
 a table headed *Maternal mortality* with a column labelled "Maternal Deaths" and
-a footnote defining maternal as excluding accidents and violence. The number
-printed is the **pregnancy-related** count.
+a footnote defining maternal as excluding accidents and violence. UNICEF's own
+tabulation syntax says otherwise. It flags a death with
 
-The reports' own methodology text says so, and the arithmetic confirms it: in
-Iraq 2018 the pregnancy-related count reproduces the published figure at ratio
-1.008 while the maternal count gives 0.848.
+    if (MM15 = 2 & (MM22 = 1 or MM23 = 1 or (MM24 = 1 and MM25 < 42))) md = 1.
 
-So compare `sib.preg_related.death.date` against published MICS tables, not
-`sib.maternal.death.date`.
+and never reads `MM26` (violence) or `MM27` (accident) anywhere in the file. So
+the published column is a **pregnancy-related** count on a **42-day** window ---
+which is the WHO definition of a pregnancy-related death.
+
+To reproduce it:
+
+    add_maternal_deaths(..., style = "mics6", preg.window = "42days")
+
+and compare `sib.preg_related.death.date`. On Iraq 2018 that gives 64.4 against a
+published 64; the two-month default gives 67.7 and the maternal column 57.0.
+
+Note the default is still `preg.window = "2months"`, so nothing moves unless you
+ask for it. But be aware that the DHS side of this package has *always* applied a
+42-day cut (via the `mm12` band `100`--`141`), so for a DHS↔MICS comparison
+`"42days"` is the consistent choice and `"2months"` is not. **This is a decision
+to make deliberately for the paper.**
+
+### C4b. A don't-know age at death no longer drops a sister
+
+A guard in the MICS classification required a *known* age at death of 12 or over
+before the maternity items were read, to respect the `MM21` skip that routes
+sisters who died under 12 past `MM22`--`MM25`. But `MM19 = 98` ("don't know")
+becomes `NA` in the prep, so the guard also dropped sisters who had answered the
+maternity questions affirmatively --- which is itself proof they were asked. It
+now excludes only sisters *known* to have died under 12.
+
+This affected 7 pregnancy-related deaths in Iraq 2018 and 5 in Zimbabwe 2019.
+MICS only; no DHS result moves.
 
 ### C5. Data access is no longer a blocker
 
@@ -251,10 +275,22 @@ published tables, and both are already implemented in the package.
   and MMEIG describe.
 
 The package reproduces published MICS estimates closely on four surveys across
-both roster schemes and three countries. Zimbabwe 2019 is the exception and
-fails on quantities involving no maternal recode at all, so treat its published
-tables as unreliable; Zimbabwe *2014* reproduces exactly, so it is not a
-country-level problem.
+both roster schemes and three countries.
+
+A literal R transcription of the official syntax now lives at
+`data-raw/mics-validation/spss-syntax-replica.R` in the package repo. It
+reproduces Iraq 2018 and Madagascar 2018 **to the person-year**, including the
+general fertility rate and the maternal mortality ratio.
+
+Zimbabwe 2019 is the exception. Running the official syntax on its own public
+microdata reproduces its **male** columns exactly and misses its **female** ones
+(exposure 0.997, all-cause deaths 0.988, pregnancy-related deaths 0.896). Since
+both sexes go through identical code, that pattern cannot come from the
+calculation. The report also contradicts itself: its sampling-error appendix
+gives a maternal mortality ratio of 413.64 against 462 in TM.9.3, and it is the
+appendix that we reproduce (409.9). **Treat Zimbabwe 2019's published female
+mortality figures as unreliable, and do not use them to validate anything.**
+Zimbabwe *2014* reproduces closely, so it is not a country-level problem.
 
 
 E. Suggested order

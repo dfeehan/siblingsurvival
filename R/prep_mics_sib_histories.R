@@ -25,6 +25,9 @@
 ##'        used when `add_maternal = TRUE`
 ##' @param na.action required when `add_maternal = TRUE`; see
 ##'        [siblingsurvival::add_maternal_deaths]
+##' @param preg.window width of the postpartum window for the pregnancy-related
+##'        column; `"42days"` reproduces published MICS tables. See
+##'        [siblingsurvival::add_maternal_deaths]
 ##' @param keep_missing should we keep reported sibs that are missing sex or survival status?
 ##' @param keep_varmap_only should we only keep ego variables mentioned in the varmap?
 ##' @param verbose report detailed summaries?
@@ -85,6 +88,7 @@ prep_mics_sib_histories <- function(mm.df,
                                     add_maternal=FALSE,
                                     style=c('mics6', 'mics4'),
                                     na.action=NULL,
+                                    preg.window=c("2months", "42days"),
                                     keep_missing=FALSE,
                                     keep_varmap_only=FALSE,
                                     verbose=TRUE) {
@@ -235,6 +239,7 @@ prep_mics_sib_histories <- function(mm.df,
     sib.dat <- add_maternal_deaths(sib.dat,
                                    style=style,
                                    na.action=na.action,
+                                   preg.window=preg.window,
                                    keep_missing=keep_missing,
                                    verbose=verbose)
   }

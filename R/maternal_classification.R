@@ -70,20 +70,49 @@ is_maternal_dhs <- function(sib_df, na.action) {
 ##' MICS asks three separate binaries where the DHS uses one coded item:
 ##' `MM22` pregnant when she died, `MM23` died during childbirth, and `MM24`
 ##' died within two months of the end of a pregnancy (`MM10`, `MM11`, `MM12` in
-##' MICS4/5). Any of the three makes the death pregnancy-related; there is no
-##' day-count condition and no cause exclusion.
+##' MICS4/5). Any of the three makes the death pregnancy-related, with no cause
+##' exclusion.
 ##'
-##' This is the quantity published MICS tables actually report -- see the
-##' "Working with MICS sibling history data" vignette.
+##' `preg.window` chooses how wide the postpartum window is:
+##'
+##' * `"2months"` (the default) takes `MM24 = 1` at face value, so the window is
+##'   however long the respondent understood "two months" to be. This is the
+##'   widest reading and the one this package has always used for MICS.
+##' * `"42days"` additionally requires `MM25 < 42`. This is the WHO definition of
+##'   a pregnancy-related death, it is what UNICEF's own tabulation syntax
+##'   computes, and it is therefore what published MICS tables report. It is also
+##'   consistent with [is_preg_related_dhs], which already applies a 42-day cut
+##'   through the `mm12` band `100`--`141`.
+##'
+##' Only `"42days"` reproduces published MICS figures. On Iraq 2018 it gives 64.4
+##' pregnancy-related deaths against a published 64, and on Madagascar 2018 136.6
+##' against a published 137; `"2months"` gives 67.7 and 140.4.
+##'
+##' See the "Working with MICS sibling history data" vignette.
 ##'
 ##' @param sib_df the prepped sibling dataset
+##' @param preg.window width of the postpartum window: `"2months"` (default) or
+##'        `"42days"`. See Details
 ##' @return a logical vector, one entry per row of `sib_df`
+##' @md
 ##'
-is_preg_related_mics <- function(sib_df) {
+is_preg_related_mics <- function(sib_df, preg.window = c("2months", "42days")) {
+
+  preg.window <- match.arg(preg.window)
+
+  postpartum <- sib_df$sib.died.postpartum %in% 1
+
+  if (preg.window == "42days") {
+    ## the cut UNICEF's own tabulation syntax applies: MM25 < 42, with a missing
+    ## or don't-know day count failing the test
+    postpartum <- postpartum &
+      (!is.na(sib_df$sib.days.postpartum.death)) &
+      (sib_df$sib.days.postpartum.death < 42)
+  }
 
   res <- (sib_df$sib.preg.at.death %in% 1) |
     (sib_df$sib.died.childbirth %in% 1) |
-    (sib_df$sib.died.postpartum %in% 1)
+    postpartum
 
   res & mics_asked_maternity_questions(sib_df)
 }
@@ -133,8 +162,14 @@ is_maternal_mics <- function(sib_df, na.action) {
 ##'
 ##' MICS routes male siblings, and sisters who died before age 12, past the
 ##' maternity items -- so `MM22` through `MM25` are `NA` *by design* for them,
-##' not missing data. Without this guard, and with `na.action = "include"`,
-##' every under-12 female death would be classified as maternal.
+##' not missing data.
+##'
+##' The age test is deliberately "not *known* to have died under 12" rather than
+##' "known to have died at 12 or over". A sister whose age at death was reported
+##' as don't-know (`MM19 = 98`) is set to `NA` by the prep, and the stricter test
+##' silently dropped her even when she had answered `MM22`--`MM24` affirmatively
+##' -- which is itself proof she was asked. That cost 7 pregnancy-related deaths
+##' in Iraq 2018 and 5 in Zimbabwe 2019.
 ##'
 ##' @param sib_df the prepped sibling dataset
 ##' @return a logical vector, one entry per row of `sib_df`
@@ -144,7 +179,7 @@ mics_asked_maternity_questions <- function(sib_df) {
   female <- sib_df$sib.sex %in% 'f'
 
   ## MM21 checks whether the sister died before age 12 and skips ahead if so
-  aged12 <- (!is.na(sib_df$sib.death.age)) & (sib_df$sib.death.age >= 12)
+  not.under.12 <- is.na(sib_df$sib.death.age) | (sib_df$sib.death.age >= 12)
 
-  female & aged12
+  female & not.under.12
 }

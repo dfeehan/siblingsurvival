@@ -154,9 +154,7 @@ value published in the MICS report:
 | Pregnancy-related deaths | 1.008 | 1.025 | 0.982 | 0.923 |
 
 The values are generally very close, with the exception of the count of
-pregnancy-related deaths in the Zimbabwe 2019 survey. We cannot explain this
-difference, but we carefully investigated how this quantity gets calculated by
-the package and were unable to find an error.
+pregnancy-related deaths in the Zimbabwe 2019 survey, which is discussed below.
 
 Next, we examined the extent to which estimated mortality rates agree between
 the package and the MICS reports.
@@ -179,15 +177,104 @@ published in MICS reports in parentheses:
 Here, estimates produced by the package match estimates in the MICS reports quite
 closely.
 
-<!--
-it misses on quantities that involve no maternal recode at all, so the problem is
-in that survey's published tables rather than in the estimator. Zimbabwe's report
-is independently known to be internally inconsistent: its sampling-error appendix
-gives a maternal mortality ratio of 413.6 against its own headline figure of 462,
-whereas Iraq's sampling-error table agrees with its main table. Note that
-Zimbabwe *2014* reproduces exactly, so this is specific to the 2019 survey's
-published tables rather than to the country.
--->
+## What the official tabulation syntax says
+
+UNICEF distributes the SPSS syntax used to produce the MICS6 report tables. One
+file, `MICS6 - 06 - TM.9.1&TM.9.2&TM.9.3&DQ.7.1&DQ7.2.sps`, produces the whole
+mortality group. Transcribing it literally into R -- see
+`data-raw/mics-validation/spss-syntax-replica.R` -- settles several questions
+that the reports themselves leave open, and it reproduces Iraq 2018 and
+Madagascar 2018 **to the person-year**:
+
+| | Iraq 2018 | Madagascar 2018 |
+|---|---|---|
+| Female exposure | 471,294 (471,294) | 202,959 (202,959) |
+| Male exposure | 485,398 (485,398) | 208,274 (208,274) |
+| Female all-cause deaths | 574.4 (574) | 616.6 (617) |
+| Pregnancy-related deaths | 64.4 (64) | 136.6 (137) |
+| General fertility rate | 128.2 (128) | --- |
+| Maternal mortality ratio | 104.0 (104) | --- |
+
+### The published "maternal deaths" column is a 42-day pregnancy-related count
+
+The syntax flags a death with
+
+```
+if (MM15 = 2 & (MM22 = 1 or MM23 = 1 or (MM24 = 1 and MM25 < 42))) md = 1.
+```
+
+`MM26` (violence) and `MM27` (accident) are **never read anywhere in the file**,
+even though the reports carry a footnote saying deaths from those causes are
+excluded. So what is printed under "Maternal Deaths" is a *pregnancy-related*
+count restricted to a 42-day postpartum window -- which is the WHO definition of
+a pregnancy-related death, and is neither of the two things this package used to
+compute. On Iraq 2018 the three candidate definitions give:
+
+| Definition | Deaths | Published: 64 |
+|---|---|---|
+| `MM22 \| MM23 \| MM24` (two months, any cause) | 67.7 | 1.058 |
+| `MM22 \| MM23 \| (MM24 & MM25 < 42)` (42 days, any cause) | **64.4** | **1.006** |
+| ... additionally excluding `MM26`/`MM27` | 57.0 | 0.891 |
+
+`add_maternal_deaths(preg.window = "42days")` selects the middle row, and is what
+you want when comparing against a published MICS table. The default stays
+`"2months"`, which is the wider DHS-comparable reading. Note that the 42-day cut
+is also what the package has always applied on the DHS side, through the `mm12`
+band `100`--`141`.
+
+### Other conventions the syntax fixes
+
+* The seven-year window is `[wdoi - 84, wdoi - 1]`: the interview month is
+  excluded. `cell_config(time.periods = '7yr_beforeinterview')` already does this.
+* Age standardisation uses the **weighted** age distribution of women with a
+  completed interview (`WM17 = 1`), which is what `get_ego_age_distn()` computes.
+* A decedent's exposure ends the month *before* death (`MM18C - 1`), and the
+  death is assigned to the age group holding at that month rather than to the
+  age at death.
+* Siblings whose survival status is unknown are **kept**, contributing full
+  exposure. This package drops them instead, which is why our exposure totals sit
+  within about 0.1% of the published ones rather than exactly on them --- Iraq
+  has 107 such siblings, Zimbabwe 2019 has 42, Madagascar only 9.
+* $_{35}q_{15}$ is computed with `1 + 2.4*nmx` in the denominator, i.e. $n_ax =
+  2.6$, although the same file's header documents $n_ax = 2.5$. The difference is
+  at most 0.2 per 1,000 and cannot be resolved against published figures, which
+  are rounded to integers.
+
+### Zimbabwe 2019
+
+Running the official syntax on Zimbabwe 2019's own public microdata reproduces
+its **male** columns and fails on its **female** ones:
+
+| | Ours | Published | Ratio |
+|---|---|---|---|
+| Male exposure | 110,072 | 110,089 | 0.9998 |
+| Male all-cause deaths | 669.5 | 668 | 1.002 |
+| Male all-cause rate | 6.087 | 6.09 | 0.9995 |
+| Female exposure | 108,644 | 108,985 | 0.9969 |
+| Female all-cause deaths | 665.7 | 674 | 0.988 |
+| Pregnancy-related deaths | 60.9 | 68 | 0.896 |
+
+Both sexes go through identical code, differing only in which value of `MM15`
+they select on, so a data-handling difference that hits one and not the other is
+not something the calculation can produce. No variation on the window, the age
+restriction, the weighting, or the treatment of the 17 sex-missing rows brings
+the female figures up to the published ones.
+
+The report also contradicts itself. Its sampling-error appendix gives a maternal
+mortality ratio (indicator TM.21) of **413.64**, against **462** in TM.9.3.
+Those two figures come from different implementations -- the appendix notes that
+maternal mortality ratio errors "can be calculated only through the separate CS
+Pro application" -- and it is the appendix that we reproduce: the official syntax
+on the public microdata gives 409.9, within 1% of 413.64 and 11% below the
+headline. The fertility side of the same table reproduces exactly (our GFR 128.4
+against a published 128), so the discrepancy is confined to the female sibling
+records.
+
+Zimbabwe *2014* reproduces closely, so this is specific to the 2019 survey's
+published tables rather than to the country. Treat Zimbabwe 2019's published
+female mortality figures as unreliable.
+
+## Running every survey through the prep
 
 All 13 MICS surveys with a sibling roster have been run through the prep. Every
 one completes, produces no `NA` estimates, and gives a plausible
@@ -201,26 +288,22 @@ country-specific data quirks worth knowing about:
   a birth 116 years before the interview. The prep function warns rather than silently
   carrying it. 
 
-Also, a few additional conventions appear to be followed by MICS estimates:
-
-* **Age standardisation uses the age distribution of the interviewed women**, which
-is what `get_ego_age_distn()` computes -- not household women, as some secondary
-sources state. Standardising Zimbabwe's all-cause female rate this way gives 6.27
-against a published 6.28.
-* Rows that cannot contribute to a weighted estimate -- no usable date of birth,
-or no sampling weight -- are dropped and counted in `summ$miss.dob` and
-`summ$miss.wgt`. 
-* **Exposure, to the last person-year.** Siblings whose survival status is
-  unknown are dropped by default
+Rows that cannot contribute to a weighted estimate -- no usable date of birth, or
+no sampling weight -- are dropped, and counted in `summ$miss.dob` and
+`summ$miss.wgt`.
 
 ### What will not necessarily agree with reports, by design
 
-* **`asdr.ind`.** this estimator is not used in MICS reports
+* **`asdr.ind`.** This estimator is not used in MICS reports.
+* **Siblings of unknown survival status.** The package drops them; the official
+  syntax keeps them at full exposure. This is the main reason exposure totals
+  land within about 0.1% of published ones rather than exactly on them.
 * **Confidence intervals.** MICS uses jackknife replication with $\pm 2 \cdot se$;
   this package uses a bootstrap with percentile intervals.
 * **The maternal mortality ratio itself.** MMR is the maternal mortality rate
   divided by a general fertility rate computed from the women's birth history --
-  a different module this package does not read.
+  a different module this package does not read. (The replica script does compute
+  it, for validation purposes only.)
 
 ## Maternal versus pregnancy-related
 
@@ -233,6 +316,17 @@ Because MICS6 also records the number of days after the end of pregnancy
 (`MM25`), the older two-month pregnancy-related series can be reconstructed from
 MICS6 microdata. That is what makes MICS6 comparable with DHS surveys and with
 earlier MICS rounds.
+
+There are really three quantities in play, and it is worth being explicit about
+which one is wanted:
+
+| | Postpartum window | Excludes violence/accident? | How to get it |
+|---|---|---|---|
+| Pregnancy-related, DHS-comparable | two months | no | `preg.window = "2months"` (default) |
+| Pregnancy-related, WHO / published MICS | 42 days | no | `preg.window = "42days"` |
+| Maternal | 42 days | yes | `sib.maternal.death.date` |
+
+The middle row is what MICS reports print, however they are labelled.
 
 Three questionnaire skip patterns must be respected when classifying deaths:
 

@@ -4,10 +4,13 @@
 \alias{is_preg_related_mics}
 \title{is each sibling's death pregnancy-related, by MICS coding?}
 \usage{
-is_preg_related_mics(sib_df)
+is_preg_related_mics(sib_df, preg.window = c("2months", "42days"))
 }
 \arguments{
 \item{sib_df}{the prepped sibling dataset}
+
+\item{preg.window}{width of the postpartum window: \code{"2months"} (default) or
+\code{"42days"}. See Details}
 }
 \value{
 a logical vector, one entry per row of \code{sib_df}
@@ -16,10 +19,25 @@ a logical vector, one entry per row of \code{sib_df}
 MICS asks three separate binaries where the DHS uses one coded item:
 \code{MM22} pregnant when she died, \code{MM23} died during childbirth, and \code{MM24}
 died within two months of the end of a pregnancy (\code{MM10}, \code{MM11}, \code{MM12} in
-MICS4/5). Any of the three makes the death pregnancy-related; there is no
-day-count condition and no cause exclusion.
+MICS4/5). Any of the three makes the death pregnancy-related, with no cause
+exclusion.
 }
 \details{
-This is the quantity published MICS tables actually report -- see the
-"Working with MICS sibling history data" vignette.
+\code{preg.window} chooses how wide the postpartum window is:
+\itemize{
+\item \code{"2months"} (the default) takes \code{MM24 = 1} at face value, so the window is
+however long the respondent understood "two months" to be. This is the
+widest reading and the one this package has always used for MICS.
+\item \code{"42days"} additionally requires \code{MM25 < 42}. This is the WHO definition of
+a pregnancy-related death, it is what UNICEF's own tabulation syntax
+computes, and it is therefore what published MICS tables report. It is also
+consistent with \link{is_preg_related_dhs}, which already applies a 42-day cut
+through the \code{mm12} band \code{100}--\code{141}.
+}
+
+Only \code{"42days"} reproduces published MICS figures. On Iraq 2018 it gives 64.4
+pregnancy-related deaths against a published 64, and on Madagascar 2018 136.6
+against a published 137; \code{"2months"} gives 67.7 and 140.4.
+
+See the "Working with MICS sibling history data" vignette.
 }

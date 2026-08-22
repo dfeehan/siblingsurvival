@@ -18,6 +18,7 @@ prep_mics_sib_histories(
   add_maternal = FALSE,
   style = c("mics6", "mics4"),
   na.action = NULL,
+  preg.window = c("2months", "42days"),
   keep_missing = FALSE,
   keep_varmap_only = FALSE,
   verbose = TRUE
@@ -60,6 +61,10 @@ also correct for MICS7) or \code{"mics4"} (also correct for MICS5). Only
 used when \code{add_maternal = TRUE}}
 
 \item{na.action}{required when \code{add_maternal = TRUE}; see
+\link{add_maternal_deaths}}
+
+\item{preg.window}{width of the postpartum window for the pregnancy-related
+column; \code{"42days"} reproduces published MICS tables. See
 \link{add_maternal_deaths}}
 
 \item{keep_missing}{should we keep reported sibs that are missing sex or survival status?}

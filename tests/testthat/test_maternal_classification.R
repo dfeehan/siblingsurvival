@@ -165,3 +165,75 @@ test_that("non-qualifying female deaths get -1, not NA, so exposure is kept", {
   expect_false(any(is.na(females$sib.preg_related.death.date)))
   expect_true(any(females$sib.preg_related.death.date == -1))
 })
+
+# =====================================================================
+# preg.window: reproducing what published MICS tables actually count
+# =====================================================================
+# UNICEF's own tabulation syntax (MICS6 - 06 - TM.9.1&TM.9.2&TM.9.3...) counts
+#   MM22 = 1 | MM23 = 1 | (MM24 = 1 & MM25 < 42)
+# and never reads MM26/MM27. That is a pregnancy-related count on a 42-day
+# window, and it is what the "Maternal Deaths" column of TM.9.3 reports.
+
+test_that("preg.window defaults to 2months, so existing results do not move", {
+  d1 <- add_maternal_deaths(mics_sibs(), style = "mics6", na.action = "include",
+                            verbose = FALSE)
+  d2 <- add_maternal_deaths(mics_sibs(), style = "mics6", na.action = "include",
+                            preg.window = "2months", verbose = FALSE)
+  expect_equal(d1$sib.preg_related.death.date, d2$sib.preg_related.death.date)
+})
+
+test_that("preg.window='42days' drops postpartum deaths past 42 days", {
+  x <- mics_sibs()
+  d <- add_maternal_deaths(x, style = "mics6", na.action = "include",
+                           preg.window = "42days", verbose = FALSE)
+  pr <- setNames(d$sib.preg_related.death.date > 0, x$who)
+
+  expect_true(pr[["pregnant"]])
+  expect_true(pr[["childbirth"]])
+  expect_true(pr[["postpartum_20d"]])
+  expect_false(pr[["postpartum_55d"]])
+  # a missing day count fails the test, matching `MM25 < 42` in SPSS
+  expect_false(pr[["postpartum_NAdays"]])
+  # no cause exclusion: the accident row died while pregnant and still counts
+  expect_true(pr[["accident"]])
+})
+
+test_that("preg.window never moves the maternal column", {
+  x <- mics_sibs()
+  a <- add_maternal_deaths(x, style = "mics6", na.action = "include",
+                           preg.window = "2months", verbose = FALSE)
+  b <- add_maternal_deaths(x, style = "mics6", na.action = "include",
+                           preg.window = "42days", verbose = FALSE)
+  expect_equal(a$sib.maternal.death.date, b$sib.maternal.death.date)
+})
+
+# =====================================================================
+# the age-at-death guard must not drop don't-know ages
+# =====================================================================
+# MM19 = 98 ("don't know") is set to NA by the prep. The guard used to require
+# a *known* age of 12 or over, which silently dropped sisters who had answered
+# the maternity questions affirmatively -- proof in itself that they were asked.
+# Cost 7 pregnancy-related deaths in Iraq 2018 and 5 in Zimbabwe 2019.
+
+test_that("a sister with a don't-know age at death is still classified", {
+  x <- tibble::tibble(
+    who                       = c("dk_age_pregnant", "known_age_pregnant", "under12"),
+    sib.sex                   = c("f", "f", "f"),
+    sib.death.age             = c(NA_integer_, 25L, 8L),
+    sib.death.date            = c(1300, 1310, 1320),
+    sib.preg.at.death         = c(1, 1, NA),
+    sib.died.childbirth       = c(2, 2, NA),
+    sib.died.postpartum       = c(2, 2, NA),
+    sib.days.postpartum.death = c(NA, NA, NA),
+    sib.died.violence         = c(2, 2, NA),
+    sib.died.accident         = c(2, 2, NA))
+
+  d <- add_maternal_deaths(x, style = "mics6", na.action = "include",
+                           verbose = FALSE)
+  pr <- setNames(d$sib.preg_related.death.date > 0, x$who)
+
+  expect_true(pr[["dk_age_pregnant"]])
+  expect_true(pr[["known_age_pregnant"]])
+  # the guard still does its job: under-12 sisters were never asked
+  expect_false(pr[["under12"]])
+})

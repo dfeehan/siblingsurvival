@@ -15,6 +15,13 @@ a logical vector, one entry per row of \code{sib_df}
 \description{
 MICS routes male siblings, and sisters who died before age 12, past the
 maternity items -- so \code{MM22} through \code{MM25} are \code{NA} \emph{by design} for them,
-not missing data. Without this guard, and with \code{na.action = "include"},
-every under-12 female death would be classified as maternal.
+not missing data.
+}
+\details{
+The age test is deliberately "not \emph{known} to have died under 12" rather than
+"known to have died at 12 or over". A sister whose age at death was reported
+as don't-know (\code{MM19 = 98}) is set to \code{NA} by the prep, and the stricter test
+silently dropped her even when she had answered \code{MM22}--\code{MM24} affirmatively
+-- which is itself proof she was asked. That cost 7 pregnancy-related deaths
+in Iraq 2018 and 5 in Zimbabwe 2019.
 }

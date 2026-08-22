@@ -8,6 +8,7 @@ add_maternal_deaths(
   sib_df,
   style = c("dhs", "mics6", "mics4"),
   na.action = NULL,
+  preg.window = c("2months", "42days"),
   keep_missing = FALSE,
   verbose = TRUE
 )
@@ -23,6 +24,12 @@ add_maternal_deaths(
 \item{na.action}{how to treat a death that falls in the right window but
 whose timing detail is missing -- \code{"include"} counts it, \code{"exclude"}
 does not. \strong{Required for the MICS styles}; see Details}
+
+\item{preg.window}{width of the postpartum window used for the
+\emph{pregnancy-related} column under the MICS styles: \code{"2months"} (the
+default, and what this package has always done) or \code{"42days"}, which
+is what published MICS tables report. Ignored for \code{style = "dhs"},
+which already applies a 42-day cut. See Details}
 
 \item{keep_missing}{not currently used}
 
@@ -41,7 +48,7 @@ add pregnancy-related and maternal death info to a sibling dataset
 Two quantities are computed, and they are not the same thing:
 \itemize{
 \item \strong{pregnancy-related} -- died while pregnant, during childbirth, or within
-two months of the end of a pregnancy, \emph{whatever the cause}
+the postpartum window, \emph{whatever the cause}
 \item \strong{maternal} -- as above but within 42 days, and excluding deaths due to
 violence or an accident
 }
@@ -57,8 +64,12 @@ set to \code{NA} for male siblings.
 
 \strong{Note for MICS users:} the tables published in MICS survey reports under
 the heading "Maternal mortality", with a column labelled "Maternal Deaths",
-actually report the \strong{pregnancy-related} count. Compare against
-\code{sib.preg_related.death.date}, not \code{sib.maternal.death.date}. See the
+do \emph{not} report maternal deaths as defined above. UNICEF's own tabulation
+syntax counts \code{MM22 = 1 | MM23 = 1 | (MM24 = 1 & MM25 < 42)} and never reads
+the violence (\code{MM26}) or accident (\code{MM27}) items at all, despite the
+footnote in the reports saying those causes are excluded. So the published
+column is a \strong{pregnancy-related} count on a 42-day window. To reproduce it,
+use \code{sib.preg_related.death.date} with \code{preg.window = "42days"}. See the
 vignette "Working with MICS sibling history data".
 \subsection{Choosing \code{na.action}}{
 
