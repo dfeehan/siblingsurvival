@@ -1,33 +1,57 @@
 ##' is each sibling's death pregnancy-related, by DHS coding?
 ##'
-##' The DHS records one coded item, `sib.died.pregnant` (`mm9`), plus a
-##' time-since-delivery band, `sib.time.delivery.death` (`mm12`).
+##' The DHS records this in one coded item, `sib.died.pregnant` (`mm9`):
+##'
+##' | `mm9` | meaning | pregnancy-related | maternal |
+##' |---|---|---|---|
+##' | 2 | died while pregnant | yes | yes |
+##' | 3 | died during delivery | yes | yes |
+##' | 4 | since delivery -- never assigned in practice | yes | yes |
+##' | 5 | within six weeks of a delivery | yes | yes |
+##' | 6 | between six weeks and two months of a delivery | **yes** | no |
+##'
+##' Code 6 is what makes this the **two-month** quantity rather than a 42-day
+##' one, and it is exactly the line The DHS Program draws between this and
+##' [is_maternal_dhs], which stops at code 5.
+##'
+##' No other condition is applied. In particular the time-since-delivery band
+##' `mm12` is *not* used: the reference implementation
+##' (`DHS-Indicators-Stata`, `Chap16_AM/AM_rates.do:725`) counts
+##' `mm9 >= 2 & mm9 <= 6` and nothing else, and its header states plainly that
+##' "mm12 is not needed" -- it is dropped before the roster is reshaped.
+##'
+##' @section Changed in this version:
+##'
+##' This function previously required `mm9` to be 2, 3, 4 or 5 **and**
+##' `mm12` to fall in the band `100`--`141` (0--41 days) or be `997`/`998`.
+##' Both conditions were wrong:
+##'
+##' * excluding code 6 dropped postpartum deaths that the function's own
+##'   documentation described as in scope, and
+##' * the `mm12` band imposed a 42-day cut on a quantity defined over two
+##'   months, and applied a *postpartum* timing test even to deaths that
+##'   occurred during pregnancy or delivery.
+##'
+##' **This changes DHS results, in some surveys substantially.** Which code a
+##' survey uses for postpartum deaths is a property of its questionnaire, so
+##' the old behaviour lost anywhere from none to about 48% of pregnancy-related
+##' deaths depending on the survey. On Rwanda 2010 it gave 51.2 deaths against a
+##' published 91; it now gives 90.7. See the DHS validation plan in the package
+##' repository.
 ##'
 ##' @param sib_df the prepped sibling dataset
-##' @param na.action how to treat a missing `sib.time.delivery.death` when the
-##'        sibling died after a delivery: `"include"` counts her, `"exclude"`
-##'        does not. See [siblingsurvival::add_maternal_deaths]
+##' @param na.action retained for symmetry with [is_maternal_dhs] and ignored
+##'        here. It used to decide how a missing `mm12` was treated; `mm12` is
+##'        no longer consulted, so it has no effect on this column
 ##' @return a logical vector, one entry per row of `sib_df`
+##' @md
 ##'
-is_preg_related_dhs <- function(sib_df, na.action) {
+is_preg_related_dhs <- function(sib_df, na.action = NULL) {
 
-  ## the time-since-delivery band is only informative for deaths *after* a
-  ## delivery; 997 and 998 are the DHS's own "don't know"/"inconsistent" codes,
-  ## which the published DHS calculation counts
-  within.window <- (sib_df$sib.time.delivery.death >= 100 &
-                      sib_df$sib.time.delivery.death <= 141) |
-    sib_df$sib.time.delivery.death %in% c(997, 998)
-
-  if (na.action == "include") {
-    within.window <- within.window | is.na(sib_df$sib.time.delivery.death)
-  }
-
-  ## 2 = died while pregnant, 3 = died during childbirth,
-  ## 4 = died since a delivery, 5 = died within six weeks of a delivery
-  died.pregnant <- sib_df$sib.died.pregnant %in% c(2, 3, 4, 5)
-
-  res <- died.pregnant & within.window
-  ifelse(is.na(res), FALSE, res)
+  ## AM_rates.do:725 -- `prdeaths_in = 1 if deaths_in == 1 & mm9>=2 & mm9<=6`
+  ## `%in%` gives FALSE for NA, which is what is wanted: an unknown mm9 is not
+  ## a pregnancy-related death
+  sib_df$sib.died.pregnant %in% c(2, 3, 4, 5, 6)
 }
 
 

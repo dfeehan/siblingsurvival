@@ -1,5 +1,42 @@
 # siblingsurvival 0.3.0.9000 (development)
 
+## Breaking: the DHS pregnancy-related definition is fixed
+
+* **`is_preg_related_dhs()` now counts `mm9` 2 through 6, and no longer consults
+  `mm12`. This changes DHS results, in some surveys substantially.**
+
+  The DHS Program publishes the code behind its own report tables
+  (`DHS-Indicators-Stata`, `Chap16_AM/AM_rates.do`, whose header states it
+  "agrees exactly with DHS procedures, except for confidence intervals"). It
+  counts a pregnancy-related death as `mm9 >= 2 & mm9 <= 6`, and its header says
+  plainly that "mm12 is not needed". This package was requiring `mm9` in 2--5
+  **and** `mm12` in the band `100`--`141`. Both conditions were wrong:
+
+  - `mm9 = 6` is "between six weeks and two months of a delivery", which is
+    inside the two-month window this column is documented to measure. Excluding
+    it dropped genuine pregnancy-related deaths.
+  - the `mm12` band imposed a 42-day cut on a two-month quantity, and applied a
+    *postpartum* timing test even to deaths during pregnancy or delivery.
+
+  Verified against Rwanda 2010 (`FR259` Table 16.4): the package previously
+  reported 51.2 pregnancy-related deaths against a published 91, and now
+  reports 90.7, matching a literal replica of the DHS reference in every age
+  group. Exposure and all-cause deaths already matched to the person-year and
+  are unchanged.
+
+  **The size of the change varies by survey**, because whether postpartum deaths
+  are coded 5 or 6 is a property of the questionnaire. Across seven surveys
+  spanning DHS phases 2--8 the old behaviour lost between 0% and 48% of
+  pregnancy-related deaths. Any cached DHS results should be regenerated.
+
+  `sib.maternal.death.date` is **not** affected: maternal is `mm9` 2--5 by
+  design, which is exactly the 42-day cut, and the package already had that
+  right.
+
+* `na.action` no longer has any effect on the DHS pregnancy-related column,
+  since the `mm12` value it governed is no longer consulted. It still applies to
+  `sib.maternal.death.date` and to both MICS columns.
+
 ## MICS support
 
 * `add_maternal_deaths()` gained `style` and `na.action`. `style` selects the

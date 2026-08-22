@@ -300,15 +300,19 @@ error, not a difference of estimand.
 distorts exactly the cross-survey comparisons the paper makes. Weighted counts
 of `mm9` 2--6 among sisters:
 
-| Survey | 2 | 3 | 5 | 6 | Share of postpartum deaths lost |
-|---|---|---|---|---|---|
-| MWIR22FL 1992 | 69 | 35 | 48 | 0 | none |
-| BJIR31FL 1996 | 55 | 45 | 0 | 64 | ~39% |
-| MWIR41FL 2000 | 151 | 268 | 0 | 163 | ~28% |
-| RWIR53FL 2005 | 205 | 187 | 0 | 192 | ~33% |
-| RWIR61FL 2010 | 196 | 170 | 0 | 218 | ~37% |
-| RWIR70FL 2014 | 140 | 117 | 0 | 148 | ~37% |
-| GMIR81FL 2019 | 59 | 91 | 68 | 8 | ~4% |
+| Survey | `mm9`=2 | 3 | 5 | 6 | old count | corrected | lost |
+|---|---|---|---|---|---|---|---|
+| MWIR22FL 1992 | 69 | 35 | 48 | 0 | 67.7 | 67.7 | none |
+| BJIR31FL 1996 | 55 | 45 | 0 | 64 | 31.7 | 59.3 | 47% |
+| MWIR41FL 2000 | 151 | 268 | 0 | 163 | 237.7 | 344.3 | 31% |
+| RWIR53FL 2005 | 205 | 187 | 0 | 192 | 109.9 | 180.3 | 39% |
+| RWIR61FL 2010 | 196 | 170 | 0 | 218 | 67.3 | 129.3 | 48% |
+| RWIR70FL 2014 | 140 | 117 | 0 | 148 | 31.9 | 56.4 | 43% |
+| GMIR81FL 2019 | 59 | 91 | 68 | 8 | 68.5 | 71.7 | 4% |
+
+(counts weighted; the last three columns use a seven-year window over all ages
+15--49. The `mm12` filter accounts for none of the loss except in Gambia, where
+it is the whole 4%.)
 
 Surveys use code 5 *or* code 6 for postpartum deaths, and a couple use both.
 Whichever they use is a property of the survey, not of the population, so the
@@ -378,7 +382,28 @@ quantify it. Toggle one hypothesis at a time --- the MICS decomposition table
 (each candidate definition against the published count) was the single most
 useful artefact produced, because it made the answer unarguable.
 
-**D6. Fix, with regression tests.** Each confirmed defect gets a test that fails
+**D6. Fix, with regression tests. --- DONE for H1, 2026-08-21.**
+
+`is_preg_related_dhs()` now counts `mm9` 2--6 and does not consult `mm12`,
+matching the reference exactly. The package reproduces Rwanda 2010's Table 16.4
+in every age group. Not treated as an opt-in argument the way MICS `preg.window`
+was, because unlike that case there is no defensible estimand that excludes code
+6 --- the column's own documentation describes a two-month window.
+
+`na.action` becomes inert for the DHS pregnancy-related column, since the `mm12`
+value it governed is no longer read. It still applies to
+`sib.maternal.death.date` and to both MICS columns.
+
+Four tests that pinned the old `mm12` behaviour were replaced by tests pinning
+the new one, including that every value of `mm12` leaves the answer unchanged.
+270 tests pass.
+
+Still open under D6: **H2** (the maternal cause exclusion), which needs a
+published table from one of the five `mm16` surveys, and **H3** (`nax` 2.4 vs
+2.5), **H4** (male standardisation needs an MR file), **H7** (the silent-NA
+sweep).
+
+**D6 (remaining).** Each confirmed defect gets a test that fails
 against the current code. For anything that changes existing DHS results ---
 which H1 and H2 both would --- follow the `preg.window` pattern: add an argument,
 default to current behaviour so nothing moves silently, document loudly which

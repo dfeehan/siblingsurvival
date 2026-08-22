@@ -4,19 +4,61 @@
 \alias{is_preg_related_dhs}
 \title{is each sibling's death pregnancy-related, by DHS coding?}
 \usage{
-is_preg_related_dhs(sib_df, na.action)
+is_preg_related_dhs(sib_df, na.action = NULL)
 }
 \arguments{
 \item{sib_df}{the prepped sibling dataset}
 
-\item{na.action}{how to treat a missing \code{sib.time.delivery.death} when the
-sibling died after a delivery: \code{"include"} counts her, \code{"exclude"}
-does not. See \link{add_maternal_deaths}}
+\item{na.action}{retained for symmetry with \link{is_maternal_dhs} and ignored
+here. It used to decide how a missing \code{mm12} was treated; \code{mm12} is
+no longer consulted, so it has no effect on this column}
 }
 \value{
 a logical vector, one entry per row of \code{sib_df}
 }
 \description{
-The DHS records one coded item, \code{sib.died.pregnant} (\code{mm9}), plus a
-time-since-delivery band, \code{sib.time.delivery.death} (\code{mm12}).
+The DHS records this in one coded item, \code{sib.died.pregnant} (\code{mm9}):
 }
+\details{
+\tabular{llll}{
+   \code{mm9} \tab meaning \tab pregnancy-related \tab maternal \cr
+   2 \tab died while pregnant \tab yes \tab yes \cr
+   3 \tab died during delivery \tab yes \tab yes \cr
+   4 \tab since delivery -- never assigned in practice \tab yes \tab yes \cr
+   5 \tab within six weeks of a delivery \tab yes \tab yes \cr
+   6 \tab between six weeks and two months of a delivery \tab \strong{yes} \tab no \cr
+}
+
+
+Code 6 is what makes this the \strong{two-month} quantity rather than a 42-day
+one, and it is exactly the line The DHS Program draws between this and
+\link{is_maternal_dhs}, which stops at code 5.
+
+No other condition is applied. In particular the time-since-delivery band
+\code{mm12} is \emph{not} used: the reference implementation
+(\code{DHS-Indicators-Stata}, \code{Chap16_AM/AM_rates.do:725}) counts
+\code{mm9 >= 2 & mm9 <= 6} and nothing else, and its header states plainly that
+"mm12 is not needed" -- it is dropped before the roster is reshaped.
+}
+\section{Changed in this version}{
+
+
+This function previously required \code{mm9} to be 2, 3, 4 or 5 \strong{and}
+\code{mm12} to fall in the band \code{100}--\code{141} (0--41 days) or be \code{997}/\code{998}.
+Both conditions were wrong:
+\itemize{
+\item excluding code 6 dropped postpartum deaths that the function's own
+documentation described as in scope, and
+\item the \code{mm12} band imposed a 42-day cut on a quantity defined over two
+months, and applied a \emph{postpartum} timing test even to deaths that
+occurred during pregnancy or delivery.
+}
+
+\strong{This changes DHS results, in some surveys substantially.} Which code a
+survey uses for postpartum deaths is a property of its questionnaire, so
+the old behaviour lost anywhere from none to about 48\% of pregnancy-related
+deaths depending on the survey. On Rwanda 2010 it gave 51.2 deaths against a
+published 91; it now gives 90.7. See the DHS validation plan in the package
+repository.
+}
+

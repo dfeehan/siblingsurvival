@@ -74,35 +74,63 @@ test_that("add_maternal_deaths: non-accidental preg death qualifies as both preg
   expect_equal(result$sib.maternal.death.date,     1200L)
 })
 
-test_that("add_maternal_deaths: sib.time.delivery.death = 100 qualifies (lower boundary)", {
-  result <- add_maternal_deaths(make_sib(sib.time.delivery.death = 100))
-  expect_equal(result$sib.preg_related.death.date, 1200L)
+# ---------------------------------------------------------------------
+# mm9 governs the DHS pregnancy-related column, and mm12 is not consulted
+# ---------------------------------------------------------------------
+# The DHS reference implementation (DHS-Indicators-Stata,
+# Chap16_AM/AM_rates.do:725) counts `mm9 >= 2 & mm9 <= 6` and nothing else; its
+# header states that "mm12 is not needed" and drops it before the reshape.
+#
+# This block used to pin the opposite: mm9 in 2..5 AND mm12 in 100..141. Both
+# halves were wrong, and together they cost 39.5 of 90.7 pregnancy-related
+# deaths in Rwanda 2010 against a published 91.
+
+test_that("all of mm9 2 through 6 are pregnancy-related", {
+  for (code in 2:6) {
+    result <- add_maternal_deaths(make_sib(sib.died.pregnant = code))
+    expect_equal(result$sib.preg_related.death.date, 1200L,
+                 info = paste("mm9 =", code))
+  }
 })
 
-test_that("add_maternal_deaths: sib.time.delivery.death = 141 qualifies (upper boundary)", {
-  result <- add_maternal_deaths(make_sib(sib.time.delivery.death = 141))
+test_that("mm9 = 6 is pregnancy-related but NOT maternal", {
+  # code 6 is "between six weeks and two months of a delivery", so it is inside
+  # the two-month window and outside the 42-day one. This is exactly the line
+  # the DHS reference draws between prdied (mm9 2..6) and mdied (mm9 2..5).
+  result <- add_maternal_deaths(make_sib(sib.died.pregnant = 6,
+                                         sib.died.accident = 0))
   expect_equal(result$sib.preg_related.death.date, 1200L)
+  expect_equal(result$sib.maternal.death.date,     -1)
 })
 
-test_that("add_maternal_deaths: sib.time.delivery.death = 99 does NOT qualify", {
-  result <- add_maternal_deaths(make_sib(sib.time.delivery.death = 99))
+test_that("mm9 codes 0, 1 and 98 are not pregnancy-related", {
+  for (code in c(0, 1, 98)) {
+    result <- add_maternal_deaths(make_sib(sib.died.pregnant = code))
+    expect_equal(result$sib.preg_related.death.date, -1,
+                 info = paste("mm9 =", code))
+  }
+})
+
+test_that("a missing mm9 is not a pregnancy-related death", {
+  result <- add_maternal_deaths(make_sib(sib.died.pregnant = NA_real_))
   expect_equal(result$sib.preg_related.death.date, -1)
 })
 
-test_that("add_maternal_deaths: sib.time.delivery.death = 142 does NOT qualify", {
-  result <- add_maternal_deaths(make_sib(sib.time.delivery.death = 142))
-  expect_equal(result$sib.preg_related.death.date, -1)
+test_that("mm12 does not affect the pregnancy-related column at all", {
+  # every one of these used to change the answer; none of them should now
+  for (t in c(99, 100, 141, 142, 202, 301, 997, 998, NA_real_)) {
+    result <- add_maternal_deaths(make_sib(sib.time.delivery.death = t))
+    expect_equal(result$sib.preg_related.death.date, 1200L,
+                 info = paste("mm12 =", t))
+  }
 })
 
-test_that("add_maternal_deaths: sib.time.delivery.death 997 and 998 both qualify", {
-  df <- tibble(
-    sib.sex                 = c('f', 'f'),
-    sib.death.date          = c(1200L, 1200L),
-    sib.died.pregnant       = c(3, 3),
-    sib.time.delivery.death = c(997, 998)
-  )
-  result <- add_maternal_deaths(df)
-  expect_equal(result$sib.preg_related.death.date, c(1200L, 1200L))
+test_that("na.action no longer moves the DHS pregnancy-related column", {
+  inc <- add_maternal_deaths(make_sib(sib.time.delivery.death = NA_real_),
+                             na.action = "include")
+  exc <- add_maternal_deaths(make_sib(sib.time.delivery.death = NA_real_),
+                             na.action = "exclude")
+  expect_equal(inc$sib.preg_related.death.date, exc$sib.preg_related.death.date)
 })
 
 

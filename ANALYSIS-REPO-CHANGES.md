@@ -65,6 +65,44 @@ needed for the existing DHS pipeline.
 
 For MICS data `na.action` is **required** and has no default; see C3.
 
+### A0. ⚠⚠ The DHS pregnancy-related count changes, by a lot
+
+**Regenerate every cached DHS result.** This is not a small correction.
+
+`is_preg_related_dhs()` was requiring `mm9` in 2--5 **and** `mm12` in the band
+`100`--`141`. The DHS Program's own tabulation code
+(`DHS-Indicators-Stata`, `Chap16_AM/AM_rates.do:725`) counts `mm9 >= 2 & mm9 <= 6`
+and states that "mm12 is not needed". Code 6 is "between six weeks and two
+months of a delivery" --- inside the two-month window, and the reason this is the
+*pregnancy-related* rather than the *maternal* quantity.
+
+Validated against Rwanda 2010 (`FR259` Table 16.4): the package gave 51.2
+pregnancy-related deaths against a published 91, and now gives 90.7, matching a
+literal replica of the DHS reference in every age group. Exposure and all-cause
+deaths were already exact and do not move.
+
+**The correction is not uniform across surveys**, which matters because the paper
+compares across them. Whether a survey codes postpartum deaths as 5 or 6 is a
+property of its questionnaire, so the old loss ranged from nothing to about 44%:
+
+| Survey | old | corrected | lost before |
+|---|---|---|---|
+| MWIR22FL 1992 | 67.7 | 67.7 | none |
+| BJIR31FL 1996 | 31.7 | 59.3 | 47% |
+| MWIR41FL 2000 | 237.7 | 344.3 | 31% |
+| RWIR53FL 2005 | 109.9 | 180.3 | 39% |
+| RWIR61FL 2010 | 67.3 | 129.3 | 48% |
+| RWIR70FL 2014 | 31.9 | 56.4 | 43% |
+| GMIR81FL 2019 | 68.5 | 71.7 | 4% |
+
+(seven-year window, weighted, all ages 15--49)
+
+`sib.maternal.death.date` does **not** change. Note also that maternal is only
+computable for 5 of the 43 surveys and is itself distorted where a questionnaire
+used only code 6 --- see H1b in `DHS-VALIDATION-PLAN.md`. Pregnancy-related is
+computable for all 43 and is insensitive to that, which is a further reason to
+make it the paper's estimand.
+
 ### A4. Expect the numbers to move slightly
 
 Several fixes on the package side change DHS results, all small but real:
