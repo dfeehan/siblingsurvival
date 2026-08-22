@@ -1,0 +1,290 @@
+---
+title: "Working with DHS sibling history data"
+author: "Dennis M. Feehan with collaboration of Claude (Opus 5)"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Working with DHS sibling history data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+The Demographic and Health Surveys (DHS) collect sibling survival histories in an
+optional maternal mortality module in the women's questionnaire.
+`prep_dhs_sib_histories()` prepares those data for the estimators in this
+package.
+
+This vignette covers what DHS sibling data looks like, and what we learned
+validating the package against published DHS estimates. Two companions:
+"Preparing DHS data" walks through what the prep does step by step, and
+"Working with MICS sibling history data" is the MICS equivalent of this one.
+
+## Which DHS surveys can be used
+
+The module is optional, so most DHS surveys do not have it. The practical test is
+whether the individual recode (`IR`) file contains `mm`-prefixed columns:
+`mm1_01`, `mm2_01` and so on. Surveys without the module simply have none.
+
+The roster numbering has been stable since DHS phase 2, which makes life much
+easier than it is with MICS. There are really only two variants:
+
+| | DHS 2--5 | DHS 6--8 |
+|---|---|---|
+| Varmap | `sibhist_varmap_dhs2` … `_dhs5` | `sibhist_varmap_dhs6` … `_dhs8` |
+| Roster items | `mm1`--`mm15` | `mm1`--`mm16` |
+| Violence/accident item? | No | `mm16`, **from 2016 onwards** |
+| Estimand | Pregnancy-related only | Maternal *and* pregnancy-related |
+
+The catch is in that bolded qualifier. `mm16` was introduced in surveys fielded
+from 2016, which does **not** line up with the phase boundary --- Rwanda 2014-15
+is phase 7 and has no `mm16`. In a sample of 43 surveys with a sibling roster
+spanning phases 2 through 8, only **5** carried `mm16` at all, so maternal
+mortality proper is computable for a small minority and pregnancy-related
+mortality for all of them.
+
+Passing a varmap that names a column the data does not have is fine. The prep
+records it and carries on:
+
+```{r, eval=FALSE, purl=FALSE}
+prep$summ$sib.cols.notfound
+#> "mm16"
+```
+
+and `sib.maternal.death.date` comes back all `NA`, which is the honest answer.
+
+## A minimal example
+
+DHS publishes the roster **wide** --- one row per respondent, with a numbered
+column per sibling per item --- so the prep reshapes it.
+
+```{r, eval=FALSE, purl=FALSE}
+library(siblingsurvival)
+library(haven)
+
+ir <- read_dta("RWIR61FL.DTA")
+
+prepped <- prep_dhs_sib_histories(ir, varmap = sibhist_varmap_dhs6)
+
+prepped$ego.dat   # one row per respondent
+prepped$sib.dat   # one row per reported sibling
+prepped$summ      # a one-row summary
+```
+
+Unlike MICS, the survey code is carried in the data (`v000`), so there is no
+`survey` argument to supply.
+
+To add the pregnancy-related and maternal death columns:
+
+```{r, eval=FALSE, purl=FALSE}
+prep_dhs_sib_histories(ir, varmap = sibhist_varmap_dhs6, add_maternal = TRUE)
+```
+
+## Special features of DHS files
+
+**Weights are multiplied by 1,000,000.** `v005` is the women's weight scaled by
+a million, so the prep defaults to `weight.scale = 1e6`. (MICS weights already
+average 1, which is why `prep_mics_sib_histories()` defaults to `1` instead ---
+passing the DHS default there would divide every weight by a million and nothing
+downstream would complain.)
+
+**One coded item carries the whole estimand.** Where MICS asks three separate
+binaries, the DHS records everything in `mm9`:
+
+| `mm9` | meaning | pregnancy-related | maternal |
+|---|---|---|---|
+| 2 | died while pregnant | yes | yes |
+| 3 | died during delivery | yes | yes |
+| 4 | since delivery --- never assigned in practice | yes | yes |
+| 5 | within six weeks of a delivery | yes | yes |
+| 6 | between six weeks and two months of a delivery | **yes** | no |
+
+Code 6 is what makes pregnancy-related the **two-month** quantity and maternal
+the **42-day** one.
+
+**`mm16` is not asked when the death was during delivery.** For `mm9 = 3` it is
+missing by design, not by non-response, so a missing `mm16` has to count as "not
+an accident". Requiring `mm16 == 0` would silently drop every delivery death ---
+in The Gambia 2019-20, all 40 in-window delivery deaths have `mm16` missing and
+none of the `mm9 = 2` or `mm9 = 5` deaths do.
+
+**Some files need a non-default encoding.** Gabon 2000 (`GAIR41FL`) fails
+`haven::read_dta()` outright with *"Unable to convert string to the requested
+encoding (invalid byte sequence)"*. `encoding = "latin1"` reads it. It is worth
+checking whether a pipeline is silently skipping such a file rather than
+erroring.
+
+**A column can be present and entirely empty.** Burkina Faso 2003 has an `mm9`
+column in which all 249,540 values are missing, so no pregnancy-related death can
+be identified and the count is exactly zero --- which reads as a mortality
+finding rather than as a survey that never coded the module.
+`add_maternal_deaths()` warns about this.
+
+**Sex codes other than 1 and 2 occur.** The DHS labels `mm1 = 8` as "don't know",
+and some surveys carry an unlabelled 9 --- Gabon 2000 has 163 of them. These are
+set to `NA` and dropped, and counted in `summ$miss.sex`.
+
+## Validation against published estimates
+
+The DHS Program publishes the code that produces its report tables:
+[`DHS-Indicators-Stata`](https://github.com/DHSProgram/DHS-Indicators-Stata),
+directory `Chap16_AM`. `AM_rates.do` is 1,376 lines by Thomas Pullum, and its
+header states that it *"agrees exactly with DHS procedures, except for
+confidence intervals"*. Transcribing it literally into R --- see
+`data-raw/dhs-validation/stata-reference-replica.R` --- gives an independent
+implementation to check against, and settles several conventions the reports
+themselves leave undocumented.
+
+### All-cause adult mortality
+
+The cleanest test of the estimator, because it involves no cause recode at all.
+Five surveys spanning DHS phases 4 to 8, each against its own published table:
+
+| Survey | Table | deaths | exposure | age-adj. rate |
+|---|---|---|---|---|
+| Malawi 2000 | 12.2 | 1.0002 / 0.9999 | **1.000000** | 1.0012 / 0.9967 |
+| Rwanda 2005 | 12.3 | 1.0007 / 0.9994 | **1.000000** | 1.0006 / 1.0004 |
+| Rwanda 2014-15 | 16.3 | 0.9997 / 0.9994 | **1.000000** | 0.9999 / 1.0005 |
+| Gambia 2019-20 | 14.1 | 0.9995 / 0.9997 | **1.000000** | 0.9989 / 1.0010 |
+| Rwanda 2010 | 16.3 | 0.9991 / 0.9998 | **1.000000** | 0.975 / 1.070 |
+
+Ratios of the package's value to the published one, women / men. **Exposure
+matches to the person-year in every cell of every survey** --- 70 cells. Deaths
+match to rounding. Rwanda 2010's rates are discussed below.
+
+**Each report chooses its own window, and they differ.** Malawi 2000 and Gambia
+publish 0--6 years before the survey; the three Rwanda surveys publish 0--4. The
+window is part of the target, not a constant, and using one window for all of
+them is the easiest way to "fail" a validation that would otherwise pass exactly.
+
+`q15_to_50()` end-to-end on Gambia 2019-20 gives 113.5 and 124.4 against a
+published 114 and 124.
+
+### Age standardisation uses the respondents, for both sexes
+
+This one is worth stating plainly because the reference code suggests otherwise.
+`get_age_distributions` in `AM_rates.do:450` takes the men's age distribution
+from the men's recode (`MR`) file. Published reports do not appear to have been
+produced that way --- they standardise **both** sexes by the age distribution of
+the survey respondents, which is what `get_ego_age_distn(only_females = TRUE)`
+returns:
+
+| Survey | respondents' distribution | `MR` distribution | published |
+|---|---|---|---|
+| Malawi 2000 | 11.064 | 11.162 | **11.1** |
+| Rwanda 2005 | **7.393** | 7.285 | **7.39** |
+| Rwanda 2014-15 | **2.961** | 2.881 | **2.96** |
+| Gambia 2019-20 | **3.133** | --- | **3.13** |
+
+So a published male adult mortality rate is reproducible from the women's file
+alone. `get_ego_age_distn(only_females = FALSE)` warns if you ask it to split a
+single-sex sample, and points at this.
+
+### Pregnancy-related and maternal deaths
+
+Rwanda 2010's Table 16.4 is a *pregnancy-related* table despite its heading ---
+the report says so explicitly, defining the deaths as occurring in the window
+"even if the death is due to causes that are not pregnancy related". Every cell
+reproduces:
+
+| Age | 15-19 | 20-24 | 25-29 | 30-34 | 35-39 | 40-44 | 45-49 | Total |
+|---|---|---|---|---|---|---|---|---|
+| Ours | 4.1 | 16.1 | 19.5 | 23.4 | 16.8 | 7.7 | 3.1 | 90.7 |
+| Published | 4 | 16 | 20 | 23 | 17 | 8 | 3 | 91 |
+
+The Gambia 2019-20's Table 14.3 *is* a maternal table --- 42-day window, "deaths
+due to accidents or violence are excluded" --- and it reproduces exactly too: 65.0
+against a published 65, with maternal deaths at 17.3% of female deaths against a
+published 17.3%.
+
+### The whole sample
+
+All 43 surveys with a sibling roster have been run through the prep and compared
+against the reference implementation
+(`data-raw/dhs-validation/breadth-check.R`). Every one completes; female
+exposure, female and male all-cause deaths and pregnancy-related deaths match the
+reference **exactly** in all 43; no estimate cell is `NA`; and no survey has a
+missing date of birth or weight after the prep.
+
+Male exposure matches exactly in 42 of 43. Gabon 2012 is high by 6.1
+person-years in 105,599 --- 0.006% --- from a single sibling whose `mm4` is
+missing and whose date of birth the package recovers from his reported age,
+where the reference drops him. Arguably the package is the better behaviour
+there; `AM_rates.do` assumes `mm4` is always coded.
+
+## Rwanda 2010's published summary rows are unreliable
+
+Its age-specific cells reproduce exactly --- deaths, exposure, pregnancy-related
+deaths, every age group, both sexes. Its **totals** do not, in three independent
+ways:
+
+* the age-adjusted rates match the *crude* rates (3.083 and 3.636, printed as 3.1
+  and 3.6) rather than the standardised ones, despite an "age-adjusted" footnote;
+* Table 16.4's total exposure prints 165,352 against age rows that sum to
+  120,900 --- and 165,352 is exactly the *seven-year* exposure, so that one cell
+  was filled from a different run than the rest of the table;
+* the report's own maternal mortality ratio of 476 is consistent with the
+  standardised rate, not with the rate printed beside it.
+
+Use its age-specific cells; do not use its totals as a validation target.
+
+## What will not agree with reports, by design
+
+* **`asdr.ind`.** The individual-visibility estimator is this package's
+  contribution and appears in no published table.
+* **Confidence intervals.** `AM_rates.do` says its agreement with DHS holds
+  "except for confidence intervals". DHS fits Poisson models and reports
+  log-scale intervals; this package bootstraps and reports percentile intervals.
+  Note also that DHS's own sampling-error appendix for maternal mortality comes
+  from a *separate* CSPro application rather than from `AM_rates.do`.
+* **Subpopulation rates.** The DHS Program explicitly declines to compute
+  maternal mortality within subpopulations, so there is nothing to compare
+  against.
+* **The maternal mortality ratio.** MMR is the age-standardised rate divided by a
+  general fertility rate from the women's birth history --- a module this package
+  does not read. The replica computes it, for validation only.
+
+## Pregnancy-related versus maternal
+
+Two quantities, and they are not the same thing:
+
+| | Window | Excludes violence/accident? | `mm9` codes | Available |
+|---|---|---|---|---|
+| Pregnancy-related | two months | no | 2--6 | every survey with a roster |
+| Maternal | 42 days | yes (`mm16`) | 2--5 | only where `mm16` exists |
+
+`add_maternal_deaths()` computes both, following `AM_rates.do:725` and `:728`.
+Neither uses `mm12`, the time-since-delivery band: the reference states plainly
+that "mm12 is not needed" and drops it before the roster is reshaped.
+
+One further wrinkle, which limits maternal mortality more than the `mm16`
+availability alone suggests. **The `mm9` 5/6 split is a questionnaire artefact,
+not a clean partition.** Of the five surveys carrying `mm16`, four use both
+codes, but South Africa 2016 uses only code 6 --- which cannot literally mean
+that no woman died within six weeks of delivery, and much more likely means its
+questionnaire asked only about the two-month window. Where that happens,
+`mm9 <= 5` drops *every* postpartum death and the maternal count degenerates to
+"died pregnant or during delivery".
+
+Pregnancy-related mortality spans both codes and so is insensitive to this. It is
+computable for every survey with a roster, which is a good reason to prefer it
+when comparing across surveys.
+
+## A note on the 2016 PRMR redefinition
+
+`AM_rates.do:307-320` carries, *inside a comment block and therefore never
+executed*, a rule introduced as "Important for redefinition of Pregnancy Related
+Mortality Ratio (PRMR) in surveys from 2016 onwards":
+
+```
+If mm9=2, and mm16=1 or 2, recode mm9 to 1
+```
+
+That is: a death during pregnancy reported as violence or an accident stops
+counting as pregnancy-related. The DHS Program documents the rule but the code it
+ships does not apply it, so published figures do not reflect it either.
+`add_maternal_deaths(prmr.accident.recode = TRUE)` applies it; the default is
+`FALSE`, which is what reproduces published tables.
