@@ -237,3 +237,23 @@ test_that("a sister with a don't-know age at death is still classified", {
   # the guard still does its job: under-12 sisters were never asked
   expect_false(pr[["under12"]])
 })
+
+test_that("preg.window='42days' errors clearly when there is no day count", {
+  # MICS4/MICS5 ask the three binaries but never MM25, so there is nothing to
+  # cut on. Unguarded this collapses to a zero-length vector rather than erroring.
+  x <- mics_sibs()
+  x$sib.days.postpartum.death <- NULL
+
+  expect_error(
+    add_maternal_deaths(x, style = "mics4", na.action = "include",
+                        preg.window = "42days", verbose = FALSE),
+    "no sib.days.postpartum.death column")
+
+  # a realistic MICS4/5 frame has no cause items either; the two-month default
+  # works there, and is what MICS4/5 reports use
+  x4 <- x %>% select(-sib.died.accident, -sib.died.violence)
+  out <- add_maternal_deaths(x4, style = "mics4", na.action = "include",
+                             verbose = FALSE)
+  expect_gt(sum(out$sib.preg_related.death.date > 0, na.rm = TRUE), 0)
+  expect_true(all(is.na(out$sib.maternal.death.date)))
+})

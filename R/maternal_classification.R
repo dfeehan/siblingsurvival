@@ -103,6 +103,19 @@ is_preg_related_mics <- function(sib_df, preg.window = c("2months", "42days")) {
   postpartum <- sib_df$sib.died.postpartum %in% 1
 
   if (preg.window == "42days") {
+
+    ## MICS4/MICS5 ask the three binaries but no day count, so there is nothing
+    ## to cut on. Left unguarded this silently collapses to a zero-length vector
+    ## rather than erroring.
+    if (! 'sib.days.postpartum.death' %in% names(sib_df)) {
+      stop(paste0(
+        "preg.window = '42days' needs the number of days after the end of a ",
+        "pregnancy (MM25), and there is no sib.days.postpartum.death column.\n",
+        "MICS4 and MICS5 do not ask it, so only preg.window = '2months' is ",
+        "available for them. Published MICS4/5 tables use the two-month window ",
+        "too, so this is the right choice there, not a compromise."))
+    }
+
     ## the cut UNICEF's own tabulation syntax applies: MM25 < 42, with a missing
     ## or don't-know day count failing the test
     postpartum <- postpartum &
@@ -132,6 +145,19 @@ is_preg_related_mics <- function(sib_df, preg.window = c("2months", "42days")) {
 ##' @return a logical vector, one entry per row of `sib_df`
 ##'
 is_maternal_mics <- function(sib_df, na.action) {
+
+  ## Same hazard as in is_preg_related_mics: without the day count this
+  ## collapses to a zero-length vector rather than erroring. Real MICS4/5 data
+  ## has neither MM25 nor the cause items, so add_maternal_deaths() skips this
+  ## path entirely -- but say so plainly rather than relying on that.
+  if (! 'sib.days.postpartum.death' %in% names(sib_df)) {
+    stop(paste0(
+      "a maternal death needs the number of days after the end of a pregnancy ",
+      "(MM25) to apply the 42-day window, and there is no ",
+      "sib.days.postpartum.death column.\n",
+      "MICS4 and MICS5 ask neither MM25 nor the cause-of-death items, so they ",
+      "support pregnancy-related mortality only."))
+  }
 
   ## MM25 is asked only when MM24 == 1, so the 42-day cut bites only on that
   ## branch. Deaths while pregnant (MM22) or during childbirth (MM23) are

@@ -147,11 +147,16 @@ value published in the MICS report:
 | | Iraq 2018 | Madagascar 2018 | Zimbabwe 2014 | Zimbabwe 2019 |
 |---|---|---|---|---|
 | Round | MICS6 | MICS6 | **MICS5** | MICS6 |
-| Female exposure | 1.0000 | 1.0003 | 0.9995 | 0.997 |
-| Male exposure | 0.9993 | 1.0003 | 0.9994 | 0.999 |
-| Female all-cause deaths | 1.0007 | 0.9994 | 1.0037 | 0.987 |
-| Male all-cause deaths | 0.9996 | 1.0003 | 1.0015 | 1.002 |
-| Pregnancy-related deaths | 1.008 | 1.025 | 0.982 | 0.923 |
+| Female exposure | 0.9999 | 1.0003 | 0.9995 | 0.9966 |
+| Male exposure | 0.9993 | 1.0003 | 0.9994 | 0.9990 |
+| Female all-cause deaths | 1.0007 | 0.9994 | 1.0037 | 0.9867 |
+| Male all-cause deaths | 0.9996 | 1.0003 | 1.0015 | 1.0023 |
+| Pregnancy-related deaths | 1.0068 | 0.9967 | 1.0002 | 0.8962 |
+
+The pregnancy-related row uses the postpartum window each round's own published
+tables use: `preg.window = "42days"` for the three MICS6 surveys and the
+two-month default for Zimbabwe 2014, since MICS5 asks no day count and its
+reports use the wider definition. The next section explains why.
 
 The values are generally very close, with the exception of the count of
 pregnancy-related deaths in the Zimbabwe 2019 survey, which is discussed below.
@@ -168,11 +173,11 @@ published in MICS reports in parentheses:
 
 | | Iraq 2018 | Madagascar 2018 | Zimbabwe 2014 | Zimbabwe 2019 |
 |---|---|---|---|---|
-| All-cause rate, women$^a$ | 1.25 (1.25) | 3.08 (3.1) | 9.98 (9.84) | 6.27 (6.28) |
-| All-cause rate, men$^a$ | 2.39 (2.39) | 4.03 (4.0) | 9.90 (9.79) | 6.16 (6.09) |
-| Pregnancy-related rate$^a$ | 0.135 (0.13) | 0.67 (0.65) | 0.84 (0.86) | 0.54 (0.59) |
-| $_{35}q_{15}$, women$^b$ | 49.5 (49) | 111.9 (112) | 345 (344) | 222.7 (224) |
-| $_{35}q_{15}$, men$^b$ | 85.8 (86) | 148.8 (149) | 357 (357) | 218.5 (219) |
+| All-cause rate, women$^a$ | 1.249 (1.25) | 3.08 (3.1) | 9.98 (9.84) | 6.27 (6.28) |
+| All-cause rate, men$^a$ | 2.389 (2.39) | 4.03 (4.0) | 9.90 (9.79) | 6.17 (6.09) |
+| Pregnancy-related rate$^a$ | 0.133 (0.13) | 0.650 (0.65) | 0.862 (0.86) | 0.530 (0.59) |
+| $_{35}q_{15}$, women$^b$ | 49.5 (49) | 111.9 (112) | 345.0 (344) | 222.7 (224) |
+| $_{35}q_{15}$, men$^b$ | 85.8 (86) | 148.8 (149) | 356.7 (357) | 218.5 (219) |
 
 Here, estimates produced by the package match estimates in the MICS reports quite
 closely.
@@ -210,11 +215,11 @@ count restricted to a 42-day postpartum window -- which is the WHO definition of
 a pregnancy-related death, and is neither of the two things this package used to
 compute. On Iraq 2018 the three candidate definitions give:
 
-| Definition | Deaths | Published: 64 |
+| Definition | Deaths | Ratio to published 64 |
 |---|---|---|
-| `MM22 \| MM23 \| MM24` (two months, any cause) | 67.7 | 1.058 |
-| `MM22 \| MM23 \| (MM24 & MM25 < 42)` (42 days, any cause) | **64.4** | **1.006** |
-| ... additionally excluding `MM26`/`MM27` | 57.0 | 0.891 |
+| `MM22 \| MM23 \| MM24` -- two months, any cause | 67.7 | 1.057 |
+| `MM22 \| MM23 \| (MM24 & MM25 < 42)` -- 42 days, any cause | **64.4** | **1.007** |
+| ... additionally excluding `MM26`/`MM27` -- our maternal column | 59.0 | 0.922 |
 
 `add_maternal_deaths(preg.window = "42days")` selects the middle row, and is what
 you want when comparing against a published MICS table. The default stays
@@ -270,19 +275,24 @@ headline. The fertility side of the same table reproduces exactly (our GFR 128.4
 against a published 128), so the discrepancy is confined to the female sibling
 records.
 
-Zimbabwe *2014* reproduces closely, so this is specific to the 2019 survey's
-published tables rather than to the country. Treat Zimbabwe 2019's published
+Zimbabwe *2014* reproduces essentially exactly -- its pregnancy-related death
+count comes out at 1.0002 of the published figure -- so this is specific to the
+2019 survey's published tables rather than to the country. Treat Zimbabwe 2019's published
 female mortality figures as unreliable.
 
 ## Running every survey through the prep
 
 All 13 MICS surveys with a sibling roster have been run through the prep. Every
 one completes, produces no `NA` estimates, and gives a plausible
-pregnancy-related rate (0.08 to 1.39 per 1,000 woman-years). Two turned up
+pregnancy-related rate (0.07 to 1.46 per 1,000 woman-years). Two turned up
 country-specific data quirks worth knowing about:
 
 * **São Tomé and Príncipe 2014** has one respondent with no sampling weight, and
-  names its weight column `WMWEIGHT` rather than `wmweight`.
+  names its weight column `WMWEIGHT` rather than `wmweight`. That single
+  weightless respondent used to make `sum(wwgt)` `NA` inside
+  `get_ego_age_distn()`, which propagated through the denominator and turned
+  *every* group proportion `NA` -- silently NA-ing out every age-standardised
+  rate for the survey. Such respondents are now dropped, with a warning.
 * **Bhutan 2010** contains two siblings whose reported years-since-death and age
   at death are jointly inconsistent -- one died 58 years ago at age 58, implying
   a birth 116 years before the interview. The prep function warns rather than silently
@@ -326,7 +336,14 @@ which one is wanted:
 | Pregnancy-related, WHO / published MICS | 42 days | no | `preg.window = "42days"` |
 | Maternal | 42 days | yes | `sib.maternal.death.date` |
 
-The middle row is what MICS reports print, however they are labelled.
+The middle row is what MICS6 and MICS7 reports print, however they are labelled.
+
+MICS4 and MICS5 never ask `MM25`, so only the first row is available for them ---
+and it is also the right one, since the syntax's own header notes that in earlier
+rounds "maternal deaths were defined as deaths of women during pregnancy or
+childbirth or within two months after the termination of a pregnancy or
+childbirth, inclusive of all causes". Asking for `preg.window = "42days"` on
+MICS4/5 data is an error rather than a silent no-op.
 
 Three questionnaire skip patterns must be respected when classifying deaths:
 

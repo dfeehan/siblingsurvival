@@ -159,3 +159,37 @@ test_that("sibling_estimator: a wrong column name errors with the columns that d
   # ... and lists what is actually there, so 'sibid' is discoverable
   expect_match(conditionMessage(err), "sibid")
 })
+
+# =====================================================================
+# a weightless respondent must not NA out the whole age distribution
+# =====================================================================
+# Sao Tome and Principe 2014 has exactly one respondent with no sampling
+# weight. Left in, sum(wwgt) is NA, which propagates through the denominator
+# and makes *every* agegrp_prop NA -- silently NA-ing out every age-adjusted
+# rate computed from it, with no error anywhere.
+
+test_that("get_ego_age_distn drops respondents with no weight", {
+  ego <- data.frame(
+    sex     = "f",
+    age.cat = c("[15,20)", "[20,25)", "[25,30)", "[30,35)",
+                "[35,40)", "[40,45)", "[45,50)", "[40,45)"),
+    wwgt    = c(1, 1, 1, 1, 1, 1, 1, NA))
+
+  expect_warning(d <- get_ego_age_distn(ego, only_females = TRUE),
+                 "no sampling weight")
+
+  expect_false(any(is.na(d$agegrp_prop)))
+  expect_equal(sum(d$agegrp_prop), 1)
+  expect_equal(nrow(d), 7)
+})
+
+test_that("get_ego_age_distn is silent and unchanged when weights are complete", {
+  ego <- data.frame(
+    sex     = "f",
+    age.cat = c("[15,20)", "[20,25)", "[25,30)", "[30,35)",
+                "[35,40)", "[40,45)", "[45,50)"),
+    wwgt    = rep(1, 7))
+
+  expect_silent(d <- get_ego_age_distn(ego, only_females = TRUE))
+  expect_equal(d$agegrp_prop, rep(1/7, 7))
+})

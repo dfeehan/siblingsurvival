@@ -202,6 +202,20 @@ get_ego_age_distn <- function(ego.dat,
     ## ego age in 5-year groups and the women's weight
     filter(age.cat %in% reproductive_age_groups())
 
+  ## A respondent with no sampling weight cannot contribute to a weighted
+  ## distribution, and leaving her in makes `sum(wwgt)` NA -- which propagates
+  ## through the denominator and turns *every* agegrp_prop into NA, silently
+  ## NA-ing out any age-standardised rate computed from it. Sao Tome and
+  ## Principe 2014 has exactly one such respondent. The prep functions already
+  ## drop these rows from sib.dat; do the same here.
+  n.badwgt <- sum(is.na(respondent_age$wwgt))
+  if (n.badwgt > 0) {
+    warning(glue::glue(
+      "{n.badwgt} respondent(s) have no sampling weight and are dropped from ",
+      "the age distribution. Left in, they would make every group proportion NA."))
+    respondent_age <- respondent_age %>% filter(!is.na(wwgt))
+  }
+
   if(only_females) {
 
     respondent_age <- respondent_age %>%
