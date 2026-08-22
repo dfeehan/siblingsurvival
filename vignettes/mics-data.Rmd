@@ -138,13 +138,7 @@ approximates them from reported ages and years-since-death otherwise.
 ## Validation against published estimates
 
 We evaluated code in the package by comparing its estimates to published tables
-from three MICS6 surveys.
-
-**The target is the aggregate-visibility estimator.** `asdr.agg` is
-`sum(w * deaths) / sum(w * exposure)` with no visibility weighting, which is
-exactly the conventional MICS calculation -- MICS applies no sibship-size
-correction. `asdr.ind`, the individual-visibility estimator, is *expected* to
-differ from published values.
+from three MICS6 surveys and one MICS5 survey.
 
 It is worth separating two kinds of quantity, because they test different
 things.
@@ -184,9 +178,6 @@ $^a$ per 1,000 person-years, age-adjusted. $^b$ per 1,000.
 Where the counts agree the rates agree too, which is the expected pattern: the
 standardisation and life-table steps add no error of their own.
 
-Zimbabwe 2014 also validates the MICS4/MICS5 varmap, which uses the other roster
-numbering.
-
 Most of the estimates reproduce published values very closely, across both roster schemes and
 three countries. The discrepancy in pregnancy related deaths with Zimbabwe 2019 
 are larger than for the other three surveys;
@@ -201,6 +192,13 @@ whereas Iraq's sampling-error table agrees with its main table. Note that
 Zimbabwe *2014* reproduces exactly, so this is specific to the 2019 survey's
 published tables rather than to the country.
 -->
+
+**The target is the aggregate-visibility estimator.** `asdr.agg` is
+`sum(w * deaths) / sum(w * exposure)` with no visibility weighting, which is
+exactly the conventional MICS calculation -- MICS applies no sibship-size
+correction. `asdr.ind`, the individual-visibility estimator, is *expected* to
+differ from published values.
+
 
 All 13 MICS surveys with a sibling roster have been run through the prep. Every
 one completes, produces no `NA` estimates, and gives a plausible
