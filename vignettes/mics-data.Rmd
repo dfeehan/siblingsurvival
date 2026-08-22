@@ -1,6 +1,6 @@
 ---
 title: "Working with MICS sibling history data"
-author: "Dennis M. Feehan"
+author: "Dennis M. Feehan with collaboration of Claude (Opus 5)"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -39,7 +39,7 @@ MICS2 and MICS3 collect summary sisterhood counts in the *household*
 questionnaire -- no per-sibling roster, no ages at death -- so they cannot be
 used with this package at all.
 
-The module is **optional**, and most surveys did not field it. The practical
+The direct sibling module is optional, and most surveys did not field it. The practical
 test is whether the survey ships an `mm.sav` file. Of 229 MICS surveys we
 examined, only 13 have a usable sibling history: 2 in MICS4, 7 in MICS5 and 4 in
 MICS6.
@@ -73,8 +73,9 @@ prepped$sib.dat   # one row per reported sibling
 prepped$summ      # a one-row summary
 ```
 
-`survey` is required and has no default: MICS has no equivalent of the DHS
-`v000`, so the package cannot derive a survey id and should not invent one.
+`survey` should have a code that identifies the survey -- e.g., `ZW2014`. 
+DHS surveys include this code in the datafiles, but MICS surveys do not,
+so you have to supply it here.
 
 For MICS4 or MICS5 data, pass the matching varmap:
 
@@ -89,32 +90,32 @@ happens, supply the women's file so respondent age can be recovered:
 prep_mics_sib_histories(mm, survey = "MDG2018", wm.df = read_sav("wm.sav"))
 ```
 
-## What the prep does that the DHS path does not
+## Special features of MICS files 
 
-MICS files differ from DHS files in several ways that are easy to get wrong and
-mostly fail *silently*. `prep_mics_sib_histories()` handles each of them.
+MICS files differ from DHS files in several ways; `prep_mics_sib_histories()` handles 
+all of the following.
 
 **Weights are already normalized.** The DHS publishes women's weights multiplied
-by 1,000,000; MICS `wmweight` already averages 1. The MICS prep therefore
-defaults to `weight.scale = 1`. Passing DHS-style scaling here would divide every
-weight by a million, and nothing downstream would complain.
+by 1,000,000; MICS `wmweight` column, on the other hand, averages 1. The MICS
+prep therefore defaults to `weight.scale = 1`. Passing DHS-style scaling here
+would divide every weight by a million, and nothing downstream would complain.
 
 **Survival status is coded differently.** MICS codes `MM16` as 1 yes / 2 no /
 8 don't know, while this package follows the DHS convention of 1 alive / 0 dead.
-Passed through unchanged, every dead sibling looks like missing survival status
--- which drives every mortality estimate to zero without raising an error. The
-prep recodes it.
+The prep file recodes this.
 
 **Don't-know values are codes, not blanks.** MICS uses **98** and **99** on the
 numeric items (`MM17` age, `MM18` years since death, `MM19` age at death). Left
 as-is, a sibling with `sib.death.age = 98` gets a date of birth 98 years before
 her death. This is masked whenever MICS supplies its own imputed CMC dates, so it
-only bites on surveys that ship none. The prep sets them to `NA`.
+only affects surveys that ship no imputed CMC dates. The prep function will set 
+these to `NA`.
 
-**`MM16` collides with the DHS.** In MICS6 it means "Is (name) still alive?"; in
-DHS phase 7 and later `mm16` means "died of violence or an accident". Mapping one
-onto the other would silently turn survival status into cause of death, so the
-prep refuses to run a varmap that maps `mm16` to `sib.died.accident`.
+**`MM16` collides with the DHS.** In MICS6, the `mm16` variable is the survey question
+that asks "Is (name) still alive?"; in DHS phase 7 and later `mm16` is the survey
+question that asks "died of violence or an accident". To avoid errors resulting from
+confusing these two, the prep function refuses to run a varmap that maps `mm16` to 
+`sib.died.accident`.
 
 **Several columns must be constructed.** MICS has no single respondent id, so
 `caseid` is built from cluster, household and line number. `doi` comes from
@@ -126,27 +127,34 @@ and `sex` is set to `'f'`, since MICS interviews only women.
 
 **Names are mixed case.** Questionnaire items and link keys are uppercase
 (`MM15`, `HH1`, `WDOI`) while derived and design variables are lowercase
-(`wmweight`, `psu`, `welevel`). The shipped varmaps are lowercase and
-`lowercase = TRUE` normalizes the input; without it the varmap matches nothing
-and you get an empty roster rather than an error.
+(`wmweight`, `psu`, `welevel`). The varmaps are lowercase, so
+`lowercase = TRUE` is used to normalize the input.
 
-**Sibling dates may or may not be supplied.** MICS6 usually ships `MM17C` and
-`MM18C` (imputed CMC birth and death dates), and MICS4/5 ship `MM7C` and `MM8C`,
-but some countries ship neither. The package uses them when present and
-approximates them from reported ages and years-since-death otherwise. On a file
-that has them, the derived values correlate 0.9999 with the supplied ones.
+**Sibling dates may or may not be supplied.** MICS6 usually includes `MM17C` and
+`MM18C` (imputed CMC birth and death dates), and MICS4/5 includes `MM7C` and `MM8C`,
+but some countries include neither. The package uses them when present and
+approximates them from reported ages and years-since-death otherwise. 
 
 ## Validation against published estimates
 
-We validated the package against the published tables of three MICS6 surveys.
+We evaluated code in the package by comparing its estimates to published tables
+from three MICS6 surveys.
 
 **The target is the aggregate-visibility estimator.** `asdr.agg` is
 `sum(w * deaths) / sum(w * exposure)` with no visibility weighting, which is
 exactly the conventional MICS calculation -- MICS applies no sibship-size
 correction. `asdr.ind`, the individual-visibility estimator, is *expected* to
-differ; that difference is the point of the method, not an error.
+differ from published values.
 
-Ratios of our estimate to the published figure:
+It is worth separating two kinds of quantity, because they test different
+things.
+
+### Counts: are we reading the data correctly?
+
+Exposure and death counts are essentially sums over survey responses. Getting
+them right means the varmap, the recodes, the reference window, the weights and
+the age placement are all correct -- and nothing else. Ratios of our figure to
+the published one:
 
 | | Iraq 2018 | Madagascar 2018 | Zimbabwe 2014 | Zimbabwe 2019 |
 |---|---|---|---|---|
@@ -156,14 +164,35 @@ Ratios of our estimate to the published figure:
 | Female all-cause deaths | 1.0007 | 0.9994 | 1.0037 | 0.987 |
 | Male all-cause deaths | 0.9996 | 1.0003 | 1.0015 | 1.002 |
 | Pregnancy-related deaths | 1.008 | 1.025 | 0.982 | 0.923 |
-| $_{35}q_{15}$ women / men, ours | 49.5 / 85.8 | --- | 345 / 357 | 222.7 / 218.5 |
-| $_{35}q_{15}$ women / men, published | 49 / 86 | --- | 344 / 357 | 224 / 219 |
+
+### Rates: does the estimator agree?
+
+These add the parts the counts do not exercise -- age standardisation by the
+respondents' age distribution, and the life-table conversion behind
+$_{35}q_{15}$. Our figure, with the published one in brackets:
+
+| | Iraq 2018 | Madagascar 2018 | Zimbabwe 2014 | Zimbabwe 2019 |
+|---|---|---|---|---|
+| All-cause rate, women$^a$ | 1.25 (1.25) | 3.08 (3.1) | 9.98 (9.84) | 6.27 (6.28) |
+| All-cause rate, men$^a$ | 2.39 (2.39) | 4.03 (4.0) | 9.90 (9.79) | 6.16 (6.09) |
+| Pregnancy-related rate$^a$ | 0.135 (0.13) | 0.67 (0.65) | 0.84 (0.86) | 0.54 (0.59) |
+| $_{35}q_{15}$, women$^b$ | 49.5 (49) | 111.9 (112) | 345 (344) | 222.7 (224) |
+| $_{35}q_{15}$, men$^b$ | 85.8 (86) | 148.8 (149) | 357 (357) | 218.5 (219) |
+
+$^a$ per 1,000 person-years, age-adjusted. $^b$ per 1,000.
+
+Where the counts agree the rates agree too, which is the expected pattern: the
+standardisation and life-table steps add no error of their own.
 
 Zimbabwe 2014 also validates the MICS4/MICS5 varmap, which uses the other roster
 numbering.
 
-Three of the four reproduce essentially exactly, across both roster schemes and
-three countries. Zimbabwe 2019 does not, and
+Most of the estimates reproduce published values very closely, across both roster schemes and
+three countries. The discrepancy in pregnancy related deaths with Zimbabwe 2019 
+are larger than for the other three surveys;
+we have been unable to determine exactly why this is the case.
+
+<!--
 it misses on quantities that involve no maternal recode at all, so the problem is
 in that survey's published tables rather than in the estimator. Zimbabwe's report
 is independently known to be internally inconsistent: its sampling-error appendix
@@ -171,6 +200,7 @@ gives a maternal mortality ratio of 413.6 against its own headline figure of 462
 whereas Iraq's sampling-error table agrees with its main table. Note that
 Zimbabwe *2014* reproduces exactly, so this is specific to the 2019 survey's
 published tables rather than to the country.
+-->
 
 All 13 MICS surveys with a sibling roster have been run through the prep. Every
 one completes, produces no `NA` estimates, and gives a plausible
@@ -186,7 +216,7 @@ country-specific data quirks worth knowing about:
   respondent was born, which is perfectly possible and not rare where fertility
   is high and sibships are long.
 
-Two conventions that MICS documents do not state were settled by this exercise.
+Also, two conventions that MICS documents do not state were settled by this exercise.
 
 **The reference period is the seven years *including* the year of interview.**
 Testing candidate windows against Iraq's and Zimbabwe's published exposure,
