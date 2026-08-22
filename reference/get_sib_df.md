@@ -1,11 +1,21 @@
 # helper to prep the sib dataset
 
-helper to prep the sib dataset
+Shared by
+[prep_dhs_sib_histories](http://dennisfeehan.org/siblingsurvival/reference/prep_dhs_sib_histories.md),
+[prep_nrsim_sib_histories](http://dennisfeehan.org/siblingsurvival/reference/prep_nrsim_sib_histories.md)
+and
+[prep_mics_sib_histories](http://dennisfeehan.org/siblingsurvival/reference/prep_mics_sib_histories.md).
 
 ## Usage
 
 ``` r
-get_sib_df(ego.dat, sib.attrib, verbose = FALSE)
+get_sib_df(
+  ego.dat,
+  sib.attrib,
+  verbose = FALSE,
+  reshape = TRUE,
+  max.plausible.age = 110
+)
 ```
 
 ## Arguments
@@ -24,7 +34,21 @@ get_sib_df(ego.dat, sib.attrib, verbose = FALSE)
   see
   [prep_dhs_sib_histories](http://dennisfeehan.org/siblingsurvival/reference/prep_dhs_sib_histories.md)
 
+- reshape:
+
+  is `ego.dat` wide, with one column per sibling attribute per sibling
+  (TRUE, the DHS layout), or already one row per reported sibling
+  (FALSE, the MICS `mm.sav` layout)?
+
+- max.plausible.age:
+
+  warn about siblings whose derived date of birth implies they would be
+  older than this at the date of interview. Such rows mean the reported
+  years-since-death and age at death are jointly inconsistent. Note this
+  is *not* a check on whether a sibling died before the respondent was
+  born, which is perfectly possible
+
 ## Value
 
-a prepped sibling dataset, used in
-[prep_dhs_sib_histories](http://dennisfeehan.org/siblingsurvival/reference/prep_dhs_sib_histories.md)
+a prepped sibling dataset, used by the `prep_*_sib_histories()`
+functions

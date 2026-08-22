@@ -1,14 +1,15 @@
 # Preparing DHS data
 
 ``` r
+
 library(siblingsurvival)
 library(tidyverse)
 #> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-#> ✔ dplyr     1.2.0     ✔ readr     2.2.0
+#> ✔ dplyr     1.2.1     ✔ readr     2.2.0
 #> ✔ forcats   1.0.1     ✔ stringr   1.6.0
-#> ✔ ggplot2   4.0.2     ✔ tibble    3.3.1
+#> ✔ ggplot2   4.0.3     ✔ tibble    3.3.1
 #> ✔ lubridate 1.9.5     ✔ tidyr     1.3.2
-#> ✔ purrr     1.2.1     
+#> ✔ purrr     1.2.2     
 #> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
 #> ✖ dplyr::filter() masks stats::filter()
 #> ✖ dplyr::lag()    masks stats::lag()
@@ -37,6 +38,7 @@ dataset into R using
 and that we’re calling it `model_dhs_dat`.
 
 ``` r
+
 data(model_dhs_dat)
 ```
 
@@ -47,6 +49,7 @@ An up-to-date list of DHS versions and recodes is available
 [here](https://www.dhsprogram.com/publications/publication-dhsg4-dhs-questionnaires-and-manuals.cfm).
 
 ``` r
+
 data(sibhist_varmap_dhs6)
 ```
 
@@ -54,6 +57,7 @@ Using the `varmap`, get a vector with the names of the respondent (ego)
 variables
 
 ``` r
+
 ## ego (respondent) variables to grab
 tmp <- subset(sibhist_varmap_dhs6, sibvar==0)
 resp.attrib <- tmp$orig.varname
@@ -76,6 +80,7 @@ resp.attrib
 Using the `varmap`, get a vector with the names of the sibling variables
 
 ``` r
+
 ## alter (sibling) variables to grab
 tmp <- subset(sibhist_varmap_dhs6, sibvar==1)
 sib.attrib <- tmp$orig.varname
@@ -103,6 +108,7 @@ the reported siblings; we’ll call this the sibling dataset.
 ### Prepare the respondent (ego) dataset
 
 ``` r
+
 ex.ego <- model_dhs_dat %>% 
   # use information from the varmap to rename ego variables
   rename(!!!resp.attrib) %>%
@@ -147,6 +153,7 @@ We’ll start by using `attributes.to.long` to convert the wide-form
 sibling data into long format for analysis:
 
 ``` r
+
 sibdata <- siblingsurvival::attributes.to.long(ex.ego,
                                                attribute.prefix=sib.attrib,
                                                ego.vars=c('caseid', 'wwgt', 
@@ -184,6 +191,7 @@ Now we’ll do some recoding.
 Turn the `sib.sex` variable into more readable values:
 
 ``` r
+
 sibdata.coded <- sibdata %>%
   mutate(sib.sex = ifelse(sib.sex == 2, 'f', 'm'))
 ```
@@ -194,6 +202,7 @@ Generally, this date is either the time that the sibling died, or the
 date of the interview.
 
 ``` r
+
 ## make the assumption that
 ##  (1) sibs who died lived all the way through
 ##      the month in which they are reported to have died
@@ -210,6 +219,7 @@ to -1; this ensures that we count their exposure, but not their deaths
 (since they are alive).
 
 ``` r
+
 ## siblings who haven't died get their death dates
 ## recoded to -1 so we don't lose the exposures they
 ## contribute...
@@ -219,6 +229,7 @@ sibdata.coded$sib.death.date[ is.na(sibdata.coded$sib.death.date) ] <- -1
 We’ll also create a unique id for each reported sibling.
 
 ``` r
+
 sibdata.coded$sibid <- 1:nrow(sibdata)
 ```
 
@@ -229,6 +240,7 @@ First, we’ll figure out how many siblings have unknown survival status,
 and we’ll drop these.
 
 ``` r
+
 
 ## CALCULATE % of siblings with unknown survival status;
 ## we are taking them out of the analysis here
@@ -258,6 +270,7 @@ drop them, too.
 
 ``` r
 
+
 ## CALCULATE % of siblings with unknown sex
 sibdata.coded %>% 
   group_by(sib.sex) %>% 
@@ -286,6 +299,7 @@ We’ll only keep a small subset of the ego variables, to keep things
 manageable
 
 ``` r
+
 ex.ego <- ex.ego %>% select(!!!c(names(resp.attrib), 'sex', 'age.cat'))
 ```
 
@@ -300,6 +314,7 @@ used to load the sibling data, following the steps we just described. It
 works like this:
 
 ``` r
+
 data(model_dhs_dat)
 data(sibhist_varmap_dhs6)
 
@@ -307,9 +322,13 @@ prepped <- prep_dhs_sib_histories(model_dhs_dat,
                                   varmap = sibhist_varmap_dhs6,
                                   keep_missing = FALSE)
 #> 
+#> Warning: Sibling column(s) found in the varmap are missing in the dataset:
+#> mm16
+#> These will be ignored...
+#> 
 #> No information on respondent sex given; assuming all respondents are female.
 #> 
-#> Found wwgt column; assuming we have a DHS survey and scaling weights.
+#> Scaling wwgt by 1/1000000 (pass weight.scale=1 if these weights are already normalized).
 #> 638 out of 35082 (1.82%) reports about sibs have unknown survival status.
 #> 602 out of 35082 (1.72%) reports about sibs have unknown sex.
 #> Removing reported sibs missing survival status or sex.
@@ -320,5 +339,5 @@ str(prepped, 1)
 #>  $ survey : chr "ZZ6"
 #>  $ ego.dat: tibble [8,348 × 4,278] (S3: tbl_df/tbl/data.frame)
 #>  $ sib.dat:'data.frame': 34440 obs. of  25 variables:
-#>  $ summ   : tibble [1 × 11] (S3: tbl_df/tbl/data.frame)
+#>  $ summ   : tibble [1 × 16] (S3: tbl_df/tbl/data.frame)
 ```

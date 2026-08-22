@@ -5,7 +5,14 @@ calculate total rate based on point estimates
 ## Usage
 
 ``` r
-aggregate_maternal_estimates(estimates, ego.dat, sib.dat, only_females = TRUE)
+aggregate_maternal_estimates(
+  estimates,
+  ego.dat,
+  sib.dat,
+  only_females = TRUE,
+  age_prop = NULL,
+  vis_res = NULL
+)
 ```
 
 ## Arguments
@@ -26,6 +33,20 @@ aggregate_maternal_estimates(estimates, ego.dat, sib.dat, only_females = TRUE)
 - only_females:
 
   only keep female estimates? Defaults to TRUE; see Details, below
+
+- age_prop:
+
+  optional, the respondent age distribution from
+  [get_ego_age_distn](http://dennisfeehan.org/siblingsurvival/reference/get_ego_age_distn.md).
+  Computed internally when `NULL` (the default); pass it in to avoid
+  recomputing it; see Details
+
+- vis_res:
+
+  optional, the visibility results from
+  [get_visibility](http://dennisfeehan.org/siblingsurvival/reference/get_visibility.md).
+  Computed internally when `NULL` (the default); pass it in to avoid
+  recomputing it; see Details
 
 ## Value
 
@@ -52,3 +73,11 @@ estimates. It might occasionally be useful to run this function for
 all-cause mortality; in that case, setting the parameter
 `only_female=FALSE` will include male estimates, too (but will still
 restrict to ages 15-49)
+
+`age_prop` and `vis_res` are computed from `ego.dat` and `sib.dat` when
+they are not supplied, which is the usual case. They are exposed because
+callers frequently need them for their own age-specific output, and
+frequently call this function more than once per survey (for example,
+once for all-cause and once for pregnancy-related mortality). Computing
+them once and passing them in avoids repeating identical work; it does
+not change any result.

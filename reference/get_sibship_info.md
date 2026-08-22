@@ -12,7 +12,8 @@ get_sibship_info(sib.dat, ego.id, sib.frame.indicator)
 
 - sib.dat:
 
-  The long-form sibling dataset (likely produced by
+  The long-form sibling dataset (likely produced by a prep function such
+  as
   [prep_dhs_sib_histories](http://dennisfeehan.org/siblingsurvival/reference/prep_dhs_sib_histories.md))
 
 - ego.id:

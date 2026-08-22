@@ -1,14 +1,15 @@
 # Estimating maternal mortality rates from sibling history data
 
 ``` r
+
 library(siblingsurvival)
 library(tidyverse)
 #> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-#> ✔ dplyr     1.2.0     ✔ readr     2.2.0
+#> ✔ dplyr     1.2.1     ✔ readr     2.2.0
 #> ✔ forcats   1.0.1     ✔ stringr   1.6.0
-#> ✔ ggplot2   4.0.2     ✔ tibble    3.3.1
+#> ✔ ggplot2   4.0.3     ✔ tibble    3.3.1
 #> ✔ lubridate 1.9.5     ✔ tidyr     1.3.2
-#> ✔ purrr     1.2.1     
+#> ✔ purrr     1.2.2     
 #> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
 #> ✖ dplyr::filter() masks stats::filter()
 #> ✖ dplyr::lag()    masks stats::lag()
@@ -65,6 +66,7 @@ steps:
 We’ll start by opening up the demonstration DHS dataset.
 
 ``` r
+
 data(model_dhs_dat)
 ```
 
@@ -80,16 +82,23 @@ row for each reported sibling. Note that we include the parameter
 maternal/pregnancy-related mortality to be added.
 
 ``` r
+
 prepped <- prep_dhs_sib_histories(model_dhs_dat,
                                   varmap = sibhist_varmap_dhs6,
                                   add_maternal = TRUE,
                                   keep_missing = FALSE)
 #> 
+#> Warning: Sibling column(s) found in the varmap are missing in the dataset:
+#> mm16
+#> These will be ignored...
+#> 
 #> No information on respondent sex given; assuming all respondents are female.
 #> 
-#> Found wwgt column; assuming we have a DHS survey and scaling weights.
+#> Scaling wwgt by 1/1000000 (pass weight.scale=1 if these weights are already normalized).
 #> Adding pregnancy-related/maternal death info
+#> 
 #> ...sib.died.accident column not found; only pregnancy-related deaths can be identified here
+#> Identified 251 pregnancy-related death(s) (style = 'dhs', na.action = 'include').
 #> 638 out of 35082 (1.82%) reports about sibs have unknown survival status.
 #> 602 out of 35082 (1.72%) reports about sibs have unknown sex.
 #> Removing reported sibs missing survival status or sex.
@@ -113,6 +122,7 @@ dataset that has information about survey respondents. (We’ll refer to
 these survey respondents as ‘ego’):
 
 ``` r
+
 glimpse(ex.ego)
 #> Rows: 8,348
 #> Columns: 8
@@ -130,6 +140,7 @@ And here’s a long-form version of the sibling history data – there’s one
 row for each reported sibling.
 
 ``` r
+
 glimpse(ex.sib)
 #> Rows: 34,440
 #> Columns: 27
@@ -181,6 +192,7 @@ what the criteria for inclusion in the frame population were in order to
 produce estimates from sibling histories.
 
 ``` r
+
 ex.sib <- ex.sib %>% 
   mutate(in.F = as.numeric((sib.alive==1) & (sib.age >= 15) & (sib.age <= 49) & (sib.sex == 'f')))
 ```
@@ -188,6 +200,7 @@ ex.sib <- ex.sib %>%
 Let’s look at the distribution of frame population membership
 
 ``` r
+
 with(ex.sib, table(in.F, useNA='ifany'))
 #> in.F
 #>     0     1  <NA> 
@@ -200,6 +213,7 @@ to determine whether or not each sibling is on in the frame population,
 we would drop siblings missing `in.F` values from the analysis.
 
 ``` r
+
 ex.sib <- ex.sib %>% filter(! is.na(in.F)) 
 ```
 
@@ -208,6 +222,7 @@ vignette, we will drop all of the male sibs. We’ll also only keep female
 sibs up to age 49.
 
 ``` r
+
 ex.sib <- ex.sib %>% 
   filter(sib.sex == 'f') 
 ```
@@ -224,6 +239,7 @@ the time period and age groups that we’ll be using. We’ll use the helper
 function `cell_config` to do this:
 
 ``` r
+
 cc_pr <- cell_config(age.groups='5yr', 
                      time.periods='7yr_beforeinterview',
                      start.obs='sib.dob',    # date of birth
@@ -260,6 +276,7 @@ take care of estimating pregnancy-related death rates from the sibling
 histories for us.
 
 ``` r
+
 ex_ests <- sibling_estimator(sib.dat = ex.sib,
                              ego.id = 'caseid',            # column with the respondent id
                              sib.id = 'sibid',             # column with sibling id 
@@ -280,6 +297,7 @@ names(ex_ests)
 Here are the individual visibility estimates:
 
 ``` r
+
 ex_ests$asdr.ind
 #> # A tibble: 10 × 11
 #>    time.period  sib.sex sib.age num.hat denom.hat ind.y.F     n wgt.sum asdr.hat
@@ -300,6 +318,7 @@ ex_ests$asdr.ind
 And here are the aggregate visibility estimates
 
 ``` r
+
 ex_ests$asdr.agg
 #> # A tibble: 10 × 10
 #>    time.period   sib.sex sib.age num.hat denom.hat     n wgt.sum asdr.hat
@@ -323,6 +342,7 @@ We’ll make some plots showing the results. We’ll only show results up to
 age 50, which is typically how pregnancy-related mortality is analyzed.
 
 ``` r
+
 ggplot(ex_ests$asdr.ind %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
   geom_line(aes(x=sib.age, y=1000*asdr.hat, group=sib.sex)) +
   theme_minimal() +
@@ -336,6 +356,7 @@ ggplot(ex_ests$asdr.ind %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,6
 ![](maternal-estimates_files/figure-html/unnamed-chunk-14-1.png)
 
 ``` r
+
 ggplot(ex_ests$asdr.agg %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
   geom_line(aes(x=sib.age, y=1000*asdr.hat, group=sib.sex)) +
   theme_minimal() +
@@ -349,6 +370,7 @@ ggplot(ex_ests$asdr.agg %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,6
 ![](maternal-estimates_files/figure-html/unnamed-chunk-15-1.png)
 
 ``` r
+
 compare <- bind_rows(ex_ests$asdr.ind, ex_ests$asdr.agg)
 
 ggplot(compare %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
@@ -370,6 +392,7 @@ ggplot(compare %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
 Problem: ex.sib doesn’t have column age.cat
 
 ``` r
+
 mmrate <- aggregate_maternal_estimates(ex_ests, ex.ego, ex.sib)
 #> Joining with `by = join_by(.ego.id, .weight, sex)`
 #> Joining with `by = join_by(time.period, sib.sex, sib.age, event.name)`
@@ -399,6 +422,7 @@ columns of the dataset.
 resamples.)
 
 ``` r
+
 set.seed(101010)
 
 tic('running bootstrap')
@@ -428,7 +452,7 @@ bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu
 #> dplyr::select(data, !!!enquos(x)) # Splice list of quosures
 #> This warning is displayed once every 8 hours.
 toc()
-#> running bootstrap: 0.784 sec elapsed
+#> running bootstrap: 0.735 sec elapsed
 ```
 
 The result, `bootweights`, is a dataframe that has a row for each survey
@@ -447,6 +471,7 @@ the estimates for you.
 `bootweights` has 1000 resamples.)
 
 ``` r
+
 # to save time, we'll only use a subset of the bootstrap replicates
 
 short.bootweights <- bootweights %>% select(1:11)
@@ -465,13 +490,14 @@ ex_boot_ests <- sibling_estimator(sib.dat = ex.sib,
                                   return.boot=TRUE,                # when TRUE, return all of the resampled estimates (not just summaries)
                                   weights='wwgt')
 toc()
-#> calculating estimates with bootstrap: 3.91 sec elapsed
+#> calculating estimates with bootstrap: 4.34 sec elapsed
 ```
 
 Finally, let’s plot the estimated death rates along with their sampling
 uncertainty:
 
 ``` r
+
 ggplot(ex_boot_ests$asdr.ind %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
   geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, group=sib.sex), alpha=.2) +
   geom_line(aes(x=sib.age, y=1000*asdr.hat, group=sib.sex)) +
@@ -487,6 +513,7 @@ ggplot(ex_boot_ests$asdr.ind %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "
 ![](maternal-estimates_files/figure-html/unnamed-chunk-20-1.png)
 
 ``` r
+
 ggplot(ex_boot_ests$asdr.agg %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
   geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, group=sib.sex), alpha=.2) +
   geom_line(aes(x=sib.age, y=1000*asdr.hat, group=sib.sex)) +
@@ -502,6 +529,7 @@ ggplot(ex_boot_ests$asdr.agg %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "
 ![](maternal-estimates_files/figure-html/unnamed-chunk-21-1.png)
 
 ``` r
+
 compare_boot <- bind_rows(ex_boot_ests$asdr.ind, ex_boot_ests$asdr.agg)
 
 ggplot(compare_boot %>% filter(! sib.age %in% c("[50,55)", "[55,60)", "[60,65)"))) +
@@ -522,6 +550,7 @@ Finally, we can calculate the aggregated MMRate for pregnancy-related
 mortality using the same bootstrap resamples.
 
 ``` r
+
 mmrate_boot <- aggregate_maternal_estimates(ex_boot_ests, ex.ego, ex.sib)
 #> Joining with `by = join_by(.ego.id, .weight, sex)`
 #> Joining with `by = join_by(time.period, sib.sex, sib.age, event.name)`

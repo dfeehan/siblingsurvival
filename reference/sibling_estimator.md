@@ -8,7 +8,7 @@ Estimate death rates from sibling history data
 sibling_estimator(
   sib.dat,
   ego.id,
-  sib.id,
+  sib.id = "sibid",
   sib.frame.indicator,
   sib.sex = "sex",
   cell.config,
@@ -34,7 +34,10 @@ sibling_estimator(
 - sib.id:
 
   String with the name of the column of `sib.dat` that has the sibling
-  ID
+  ID. Defaults to `'sibid'`, which is the column created by
+  [`prep_dhs_sib_histories`](http://dennisfeehan.org/siblingsurvival/reference/prep_dhs_sib_histories.md)
+  and
+  [`prep_nrsim_sib_histories`](http://dennisfeehan.org/siblingsurvival/reference/prep_nrsim_sib_histories.md).
 
 - sib.frame.indicator:
 

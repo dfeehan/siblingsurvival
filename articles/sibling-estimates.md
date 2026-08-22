@@ -1,14 +1,15 @@
 # Estimating death rates from sibling history data
 
 ``` r
+
 library(siblingsurvival)
 library(tidyverse)
 #> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-#> ✔ dplyr     1.2.0     ✔ readr     2.2.0
+#> ✔ dplyr     1.2.1     ✔ readr     2.2.0
 #> ✔ forcats   1.0.1     ✔ stringr   1.6.0
-#> ✔ ggplot2   4.0.2     ✔ tibble    3.3.1
+#> ✔ ggplot2   4.0.3     ✔ tibble    3.3.1
 #> ✔ lubridate 1.9.5     ✔ tidyr     1.3.2
-#> ✔ purrr     1.2.1     
+#> ✔ purrr     1.2.2     
 #> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
 #> ✖ dplyr::filter() masks stats::filter()
 #> ✖ dplyr::lag()    masks stats::lag()
@@ -55,6 +56,7 @@ steps:
 We’ll start by opening up the demonstration DHS dataset.
 
 ``` r
+
 data(model_dhs_dat)
 ```
 
@@ -64,13 +66,18 @@ Data](http://dennisfeehan.org/siblingsurvival/articles/preparing-data.md)
 vignette for more details.)
 
 ``` r
+
 prepped <- prep_dhs_sib_histories(model_dhs_dat,
                                   varmap = sibhist_varmap_dhs6,
                                   keep_missing = FALSE)
 #> 
+#> Warning: Sibling column(s) found in the varmap are missing in the dataset:
+#> mm16
+#> These will be ignored...
+#> 
 #> No information on respondent sex given; assuming all respondents are female.
 #> 
-#> Found wwgt column; assuming we have a DHS survey and scaling weights.
+#> Scaling wwgt by 1/1000000 (pass weight.scale=1 if these weights are already normalized).
 #> 638 out of 35082 (1.82%) reports about sibs have unknown survival status.
 #> 602 out of 35082 (1.72%) reports about sibs have unknown sex.
 #> Removing reported sibs missing survival status or sex.
@@ -94,6 +101,7 @@ dataset that has information about survey respondents. (We’ll refer to
 these survey respondents as ‘ego’):
 
 ``` r
+
 glimpse(ex.ego)
 #> Rows: 8,348
 #> Columns: 8
@@ -111,6 +119,7 @@ And here’s a long-form version of the sibling history data – there’s one
 row for each reported sibling.
 
 ``` r
+
 glimpse(ex.sib)
 #> Rows: 34,440
 #> Columns: 25
@@ -160,6 +169,7 @@ what the criteria for inclusion in the frame population were in order to
 produce estimates from sibling histories.
 
 ``` r
+
 ex.sib <- ex.sib %>% 
   mutate(in.F = as.numeric((sib.alive==1) & (sib.age >= 15) & (sib.age <= 49) & (sib.sex == 'f')))
 ```
@@ -167,6 +177,7 @@ ex.sib <- ex.sib %>%
 Let’s look at the distribution of frame population membership
 
 ``` r
+
 with(ex.sib, table(in.F, useNA='ifany'))
 #> in.F
 #>     0     1  <NA> 
@@ -179,6 +190,7 @@ to determine whether or not each sibling is on in the frame population,
 we would drop siblings missing `in.F` values from the analysis.
 
 ``` r
+
 ex.sib <- ex.sib %>% filter(! is.na(in.F)) 
 ```
 
@@ -194,6 +206,7 @@ the time period and age groups that we’ll be using. We’ll use the helper
 function `cell_config` to do this:
 
 ``` r
+
 cc <- cell_config(age.groups='5yr', 
                   time.periods='7yr_beforeinterview',
                   start.obs='sib.dob',    # date of birth
@@ -226,6 +239,7 @@ Given these preparatory steps, the `sibling_estimator` function will
 take care of estimating death rates from the sibling histories for us.
 
 ``` r
+
 ex_ests <- sibling_estimator(sib.dat = ex.sib,
                              ego.id = 'caseid',            # column with the respondent id
                              sib.id = 'sibid',             # column with sibling id 
@@ -246,6 +260,7 @@ names(ex_ests)
 Here are the individual visibility estimates:
 
 ``` r
+
 glimpse(ex_ests$asdr.ind)
 #> Rows: 20
 #> Columns: 10
@@ -264,6 +279,7 @@ glimpse(ex_ests$asdr.ind)
 And here are the aggregate visibility estimates
 
 ``` r
+
 glimpse(ex_ests$asdr.agg)
 #> Rows: 20
 #> Columns: 9
@@ -283,6 +299,7 @@ glimpse(ex_ests$asdr.agg)
 We’ll make some plots showing the results
 
 ``` r
+
 ggplot(ex_ests$asdr.ind) +
   geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
   theme_minimal() +
@@ -293,6 +310,7 @@ ggplot(ex_ests$asdr.ind) +
 ![](sibling-estimates_files/figure-html/unnamed-chunk-13-1.png)
 
 ``` r
+
 ggplot(ex_ests$asdr.agg) +
   geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
   theme_minimal() +
@@ -303,6 +321,7 @@ ggplot(ex_ests$asdr.agg) +
 ![](sibling-estimates_files/figure-html/unnamed-chunk-14-1.png)
 
 ``` r
+
 compare <- bind_rows(ex_ests$asdr.ind, ex_ests$asdr.agg)
 
 ggplot(compare) +
@@ -334,6 +353,7 @@ columns of the dataset.
 resamples.)
 
 ``` r
+
 set.seed(101010)
 
 tic('running bootstrap')
@@ -363,7 +383,7 @@ bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu
 #> dplyr::select(data, !!!enquos(x)) # Splice list of quosures
 #> This warning is displayed once every 8 hours.
 toc()
-#> running bootstrap: 0.732 sec elapsed
+#> running bootstrap: 0.721 sec elapsed
 ```
 
 The result, `bootweights`, is a dataframe that has a row for each survey
@@ -382,6 +402,7 @@ the estimates for you.
 `bootweights` has 1000 resamples.)
 
 ``` r
+
 # to save time, we'll only use a subset of the bootstrap replicates
 
 short.bootweights <- bootweights %>% select(1:11)
@@ -400,13 +421,14 @@ ex_boot_ests <- sibling_estimator(sib.dat = ex.sib,
                                   return.boot=TRUE,                # when TRUE, return all of the resampled estimates (not just summaries)
                                   weights='wwgt')
 toc()
-#> calculating estimates with bootstrap: 7.532 sec elapsed
+#> calculating estimates with bootstrap: 7.899 sec elapsed
 ```
 
 Finally, let’s plot the estimated death rates along with their sampling
 uncertainty:
 
 ``` r
+
 ggplot(ex_boot_ests$asdr.ind) +
   geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sib.sex, group=sib.sex), alpha=.2) +
   geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
@@ -420,6 +442,7 @@ ggplot(ex_boot_ests$asdr.ind) +
 ![](sibling-estimates_files/figure-html/unnamed-chunk-18-1.png)
 
 ``` r
+
 ggplot(ex_boot_ests$asdr.agg) +
   geom_ribbon(aes(x=sib.age, ymin=1000*asdr.hat.ci.low, ymax=1000*asdr.hat.ci.high, fill=sib.sex, group=sib.sex), alpha=.2) +
   geom_line(aes(x=sib.age, y=1000*asdr.hat, color=sib.sex, group=sib.sex)) +
@@ -441,6 +464,7 @@ NOTE: The IC checks can take a while – about 36 minutes for 1000
 bootstrap reps on a 2018 MBP
 
 ``` r
+
 # toggle between short bootweights (faster, for coding) and long bootweights (for realism)
 ic.bootweights <- short.bootweights
 #ic.bootweights <- bootweights
@@ -455,7 +479,7 @@ ic.checks <- sib_ic_checks(ex_boot_ests$esc.dat,
                            ego.cell.vars=c('age.cat', 'sex'),
                            boot.weights=ic.bootweights)
 toc()
-#> Internal consistency checks: 0.591 sec elapsed
+#> Internal consistency checks: 0.711 sec elapsed
 
 names(ic.checks)
 #> [1] "ic.summ"      "ic.boot.ests"
@@ -464,6 +488,7 @@ names(ic.checks)
 We can look at `ic.checks$ic.summ`, which has summarized output:
 
 ``` r
+
 glimpse(ic.checks$ic.summ)
 #> Rows: 7
 #> Columns: 27
@@ -500,6 +525,7 @@ It’s often helpful to plot the results of the internal consistency
 checks:
 
 ``` r
+
 ggplot(ic.checks$ic.summ) +
   geom_hline(yintercept=0) +
   geom_pointrange(aes(x=age.cat,
@@ -515,6 +541,7 @@ ggplot(ic.checks$ic.summ) +
 ![](sibling-estimates_files/figure-html/unnamed-chunk-22-1.png)
 
 ``` r
+
 
 #ggplot(ic.checks$ic.summ) +
 #  geom_hline(yintercept=0) +
@@ -542,6 +569,7 @@ ggplot(ic.checks$ic.summ) +
 ## Visibilities
 
 ``` r
+
 sib.F.dat <- ex.sib %>%
   group_by(caseid) %>%
   summarize(y.F = sum(in.F))
@@ -569,6 +597,7 @@ ego.vis.agg <- ego.vis %>%
 Make adjusted individual estimates
 
 ``` r
+
 adj.agg.ests <- ex_ests$asdr.agg %>%
   left_join(ego.vis.agg,
             by=c('sib.sex'='sex', 'sib.age'='age.cat')) %>%
@@ -580,6 +609,7 @@ adj.agg.ests <- ex_ests$asdr.agg %>%
 And plot a comparison
 
 ``` r
+
 compare <- bind_rows(ex_ests$asdr.ind, ex_ests$asdr.agg, adj.agg.ests)
 
 ggplot(compare) +

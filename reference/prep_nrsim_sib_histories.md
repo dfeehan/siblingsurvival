@@ -10,6 +10,7 @@ prep_nrsim_sib_histories(
   varmap,
   keep_missing = FALSE,
   keep_varmap_only = FALSE,
+  weight.scale = 1,
   verbose = TRUE
 )
 ```
@@ -33,6 +34,11 @@ prep_nrsim_sib_histories(
   should we only keep ego variables mentioned in the varmap? (Default:
   FALSE)
 
+- weight.scale:
+
+  divide the weight by this number. Defaults to `1`, since non-DHS
+  weights are typically already normalized; see Details
+
 - verbose:
 
   report detailed summaries?
@@ -46,6 +52,11 @@ a list; see Details
 This function is similar to
 [prep_dhs_sib_histories](http://dennisfeehan.org/siblingsurvival/reference/prep_dhs_sib_histories.md),
 but it is not customized to work with DHS survey data.
+
+In particular, `weight.scale` defaults to `1` here, because weights
+outside the DHS are typically already normalized to average 1. Pass
+`weight.scale = 1e6` if you are preparing data that follows the DHS
+convention of publishing weights multiplied by 1,000,000.
 
 Note that if the dataframe does not have a column called 'sex', then one
 will be added, and we will assume respondents are all female (sex='f').
