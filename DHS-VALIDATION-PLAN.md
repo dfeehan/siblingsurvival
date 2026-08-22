@@ -231,16 +231,88 @@ the remaining four.
 
 Published targets still have to come from final-report PDFs on dhsprogram.com.
 
-**D2. Build the replica.** Transcribe `AM_rates.do` literally into
-`data-raw/dhs-validation/stata-reference-replica.R`, the same way
-`spss-syntax-replica.R` was done: not the package's approach, a deliberate
-line-by-line translation, with a header listing every convention it encodes.
+**D2. Build the replica. --- DONE, 2026-08-21.**
+`data-raw/dhs-validation/stata-reference-replica.R`. A literal transcription,
+including Stata's missing-value comparison semantics (`.` sorts above every
+number, which matters because `replace first = . if first > mm8` must not fire
+for a living sibling). The Poisson shortcut is legitimate and the source says so
+itself at `:844`: the models exist "largely for constructing confidence
+intervals", and the numerators and denominators are produced "to match with the
+reports".
 
-Two shortcuts are legitimate. DHS fits Poisson regressions to get the rates, but
-with a saturated age term and `log(exposure)` offset the point estimates are
-exactly `deaths/exposure`, so a plain ratio suffices --- **verify this once on
-one survey rather than assuming it**. And `AM_gfr.do` is only needed for MMR and
-lifetime risk; do it second.
+**D4. Replica vs published. --- DONE for Rwanda 2010. It reproduces the report
+cell by cell.**
+
+Against `FR259` Table 16.3 and Table 16.4. Note the published window is **0 to 4
+years** before the survey, not the seven years the default assumes:
+
+| | Replica | Published |
+|---|---|---|
+| Female exposure, all 7 age groups | exact | 21,511 / 26,065 / 24,195 / 18,732 / 13,943 / 9,888 / 6,566 |
+| Male exposure, all 7 age groups | exact | 20,509 / 25,361 / 22,817 / 16,423 / 12,160 / 8,745 / 5,631 |
+| Female all-cause deaths | 372.7 | 373 |
+| Male all-cause deaths | 405.9 | 406 |
+| Pregnancy-related deaths, all 7 age groups | 4.1 / 16.1 / 19.5 / 23.4 / 16.8 / 7.7 / 3.1 | 4 / 16 / 20 / 23 / 17 / 8 / 3 |
+| Pregnancy-related deaths, total | 90.7 | 91 |
+
+Every exposure cell matches **to the person-year**, both sexes.
+
+Two things about the report itself, both demonstrable precisely because the
+replica is exact:
+
+* **Table 16.4's total exposure row is wrong.** It prints 165,352 against age
+  rows that sum to 120,900. 165,352 is exactly the *seven-year* female exposure
+  the replica computes --- so that one cell was filled from a 7-year run while
+  the rest of the table is 0--4 years. The printed rate (0.8) is consistent with
+  120,900, not with 165,352, so it is the total cell that is wrong.
+* **The age-standardisation is confirmed by the MMR, not by the printed rate.**
+  Respondent-standardised gives 0.708 per 1,000; crude gives 0.750. The report
+  prints 0.8, which matches crude --- but its MMR of 476 implies
+  0.708 (0.708/149 x 100,000 = 475). So the standardisation in the replica is
+  right and the printed rate cell is the odd one out. The same pattern shows in
+  Table 16.3, whose "age-adjusted" totals (3.1, 3.6) match the crude rates
+  (3.083, 3.636) rather than the standardised ones (3.02, 3.66).
+
+**D5. Package vs replica. --- DONE for Rwanda 2010. H1 confirmed, and it is
+large.**
+
+| Rwanda 2010, women, 0--4 yr | Package | Reference | Published |
+|---|---|---|---|
+| Exposure, every age group | exact | exact | exact |
+| All-cause deaths | 372.7 | 372.7 | 373 |
+| **Pregnancy-related deaths** | **51.2** | **90.7** | **91** |
+
+The package finds **56%** of the published pregnancy-related deaths.
+
+The attribution is completely clean. Weighted `mm9` among the 372.7 female
+deaths in the window: code 2 = 22.7, code 3 = 28.5, **code 6 = 39.5**, code 5 =
+0, code 4 = 0. Dropping `mm9 = 6` alone accounts for the entire 39.5-death gap;
+the `mm12` filter turns out to be inert here, because with the DHS default
+`na.action = "include"` a missing `mm12` passes.
+
+**`mm9 = 6` is "died two months after delivery", which is inside the package's
+own documented definition of a pregnancy-related death.** And `mm9 = 4` --- which
+the package does include --- never occurs in any survey examined, consistent
+with the reference's own note that code 4 is "NOT USED". So this is a coding
+error, not a difference of estimand.
+
+**The impact varies by survey, which is worse than a uniform bias**, because it
+distorts exactly the cross-survey comparisons the paper makes. Weighted counts
+of `mm9` 2--6 among sisters:
+
+| Survey | 2 | 3 | 5 | 6 | Share of postpartum deaths lost |
+|---|---|---|---|---|---|
+| MWIR22FL 1992 | 69 | 35 | 48 | 0 | none |
+| BJIR31FL 1996 | 55 | 45 | 0 | 64 | ~39% |
+| MWIR41FL 2000 | 151 | 268 | 0 | 163 | ~28% |
+| RWIR53FL 2005 | 205 | 187 | 0 | 192 | ~33% |
+| RWIR61FL 2010 | 196 | 170 | 0 | 218 | ~37% |
+| RWIR70FL 2014 | 140 | 117 | 0 | 148 | ~37% |
+| GMIR81FL 2019 | 59 | 91 | 68 | 8 | ~4% |
+
+Surveys use code 5 *or* code 6 for postpartum deaths, and a couple use both.
+Whichever they use is a property of the survey, not of the population, so the
+resulting bias is essentially arbitrary across the 43.
 
 **D3. Extract published targets** into
 `data-raw/dhs-validation/published-targets.csv`, same schema as the MICS file so
