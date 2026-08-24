@@ -34,11 +34,16 @@ get_sibship_info <- function(sib.dat,
 ##' calculate visibility for each sibship and ego
 ##'
 ##' @param ego.dat The ego dataset (likely produced by [siblingsurvival::prep_dhs_sib_histories])
-##' @param ego.id  String with the name of the column in \code{sib.dat} containing the survey respondent ID
-##' @param sib.dat The long-form sibling dataset (likely produced by [siblingsurvival::prep_dhs_sib_histories])
-##' @param sib.frame.indicator String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population
-##' @param weight string with the name of the column in \code{ego.dat} and \code{sib.dat} containing the sampling weight. Defaults to `wwgt`
-##' @param age string with the name of the column in \code{ego.dat} containing the age group. Defaults to `age.cat`
+##' @param ego.id  String with the name of the column in \code{sib.dat} containing the survey 
+#'                 respondent ID
+##' @param sib.dat The long-form sibling dataset (likely produced by 
+#'                 [siblingsurvival::prep_dhs_sib_histories])
+##' @param sib.frame.indicator String with the name of the column in \code{sib.dat} containing 
+#'                  a 0/1 coded variable indicating whether or not each sib is in the frame population
+##' @param weight string with the name of the column in \code{ego.dat} and \code{sib.dat} containing 
+#'                  the sampling weight. Defaults to `wwgt`
+##' @param age string with the name of the column in \code{ego.dat} containing the age group. Defaults 
+#'                  to `age.cat`
 ##' @return A list with three entries:
 ##'   * `ego_vis` - a tibble with one row per ego and the ego-specific visibilities
 ##'   * `ego_vis_agg` - a tibble with summarized adjustment factors
