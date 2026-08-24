@@ -18,19 +18,19 @@ optional maternal mortality module in the women's questionnaire.
 `prep_dhs_sib_histories()` prepares those data for the estimators in this
 package.
 
-This vignette covers what DHS sibling data looks like, and what we learned
-validating the package against published DHS estimates. Two companions:
-"Preparing DHS data" walks through what the prep does step by step, and
-"Working with MICS sibling history data" is the MICS equivalent of this one.
+This vignette gives a brief description of what DHS sibling data looks like and what we learned validating the package against published DHS estimates. 
+Two other vignettes are related to this one:
+"Working with MICS sibling history data" is parallel to this vignette, but focused on MICS data; and
+"Preparing DHS data" walks through what the package prep function does step by step.
 
 ## Which DHS surveys can be used
 
-The module is optional, so most DHS surveys do not have it. The practical test is
+The sibling module is optional, so not all DHS surveys have it. The practical test is
 whether the individual recode (`IR`) file contains `mm`-prefixed columns:
-`mm1_01`, `mm2_01` and so on. Surveys without the module simply have none.
+`mm1_01`, `mm2_01` and so on. 
 
-The roster numbering has been stable since DHS phase 2, which makes life much
-easier than it is with MICS. There are really only two variants:
+There are two basic variants of the direct sibling module that have been implemented
+by the DHS program:
 
 | | DHS 2--5 | DHS 6--8 |
 |---|---|---|
@@ -39,12 +39,11 @@ easier than it is with MICS. There are really only two variants:
 | Violence/accident item? | No | `mm16`, **from 2016 onwards** |
 | Estimand | Pregnancy-related only | Maternal *and* pregnancy-related |
 
-The catch is in that bolded qualifier. `mm16` was introduced in surveys fielded
-from 2016, which does **not** line up with the phase boundary --- Rwanda 2014-15
-is phase 7 and has no `mm16`. In a sample of 43 surveys with a sibling roster
-spanning phases 2 through 8, only **5** carried `mm16` at all, so maternal
-mortality proper is computable for a small minority and pregnancy-related
-mortality for all of them.
+`mm16` was introduced in surveys fielded
+from 2016, which does not line up with the phase boundary; for example, Rwanda 2014-15
+is phase 7 and has no `mm16`. 
+In general, pregnancy-related mortality can be estimated from all surveys that included a sibling module after phase 2, while maternal mortality proper can only be estimated from
+a small minority of surveys.
 
 Passing a varmap that names a column the data does not have is fine. The prep
 records it and carries on:
@@ -54,12 +53,11 @@ prep$summ$sib.cols.notfound
 #> "mm16"
 ```
 
-and `sib.maternal.death.date` comes back all `NA`, which is the honest answer.
+In this case, `sib.maternal.death.date` comes back all `NA`.
 
 ## A minimal example
 
-DHS publishes the roster **wide** --- one row per respondent, with a numbered
-column per sibling per item --- so the prep reshapes it.
+The DHS datafiles have the sibling roster in wide format: there is one row per respondent, with a numbered column per sibling per item. So the prep function reshapes it.
 
 ```{r, eval=FALSE, purl=FALSE}
 library(siblingsurvival)
@@ -83,16 +81,16 @@ To add the pregnancy-related and maternal death columns:
 prep_dhs_sib_histories(ir, varmap = sibhist_varmap_dhs6, add_maternal = TRUE)
 ```
 
+<!--
+
+TODO - DENNIS TO REVIEW THIS; IT LOOKS USEFUL
+
 ## Special features of DHS files
 
 **Weights are multiplied by 1,000,000.** `v005` is the women's weight scaled by
-a million, so the prep defaults to `weight.scale = 1e6`. (MICS weights already
-average 1, which is why `prep_mics_sib_histories()` defaults to `1` instead ---
-passing the DHS default there would divide every weight by a million and nothing
-downstream would complain.)
+a million, so the prep defaults to `weight.scale = 1e6`. 
 
-**One coded item carries the whole estimand.** Where MICS asks three separate
-binaries, the DHS records everything in `mm9`:
+For pregnancy-related mortality, column `mm9` is very useful:
 
 | `mm9` | meaning | pregnancy-related | maternal |
 |---|---|---|---|
@@ -127,20 +125,25 @@ finding rather than as a survey that never coded the module.
 and some surveys carry an unlabelled 9 --- Gabon 2000 has 163 of them. These are
 set to `NA` and dropped, and counted in `summ$miss.sex`.
 
+-->
+
 ## Validation against published estimates
 
 The DHS Program publishes the code that produces its report tables:
 [`DHS-Indicators-Stata`](https://github.com/DHSProgram/DHS-Indicators-Stata),
-directory `Chap16_AM`. `AM_rates.do` is 1,376 lines by Thomas Pullum, and its
+directory `Chap16_AM`; the file is `AM_rates.do`. 
+
+<!--
+is 1,376 lines by Thomas Pullum, and its
 header states that it *"agrees exactly with DHS procedures, except for
 confidence intervals"*. Transcribing it literally into R --- see
 `data-raw/dhs-validation/stata-reference-replica.R` --- gives an independent
 implementation to check against, and settles several conventions the reports
 themselves leave undocumented.
+-->
 
 ### All-cause adult mortality
 
-The cleanest test of the estimator, because it involves no cause recode at all.
 Five surveys spanning DHS phases 4 to 8, each against its own published table:
 
 | Survey | Table | deaths | exposure | age-adj. rate |
