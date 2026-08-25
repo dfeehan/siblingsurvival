@@ -305,7 +305,7 @@ get_ego_age_distn <- function(ego.dat,
 }
 
 
-##' add individual visibility based on sib reprots to ego X sib X cell reports
+##' add individual visibility based on sib reports to ego X sib X cell reports
 ##'
 ##' Takes a dataframe that has a row for each respondent X sib X cell
 ##' and adds individual visibility to it
