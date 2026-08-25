@@ -46,7 +46,7 @@ get_sibship_info <- function(sib.dat,
 #'                  to `age.cat`
 ##' @return A list with three entries:
 ##'   * `ego_vis` - a tibble with one row per ego and the ego-specific visibilities
-##'   * `ego_vis_agg` - a tibble with summarized adjustment factors
+##'   * `ego_vis_agg` - a tibble with per-(sex, age) visibility summaries
 ##'   * `sib_res` - a tibble with one row per reported sibling, along with
 ##'   tibble with a row for each survey respondent (each unique value of \code{ego.id}),
 ##'   and the number of sibs the respondent reported on the frame, including and not including herself
@@ -117,24 +117,7 @@ get_visibility <- function(ego.dat,
 
 
   ###################################
-  ## calculate summaries + adjustment factors based on the
-  ## ego-specific visibilities
-
-  # weighted harmonic mean
-  wh.mean <- function(x, w) {
-    return(sum(w) / sum(w/x))
-  }
-
-  # TODO comment
-  S.hat <- wh.mean((ego_vis$y.F + 1),
-                   ego_vis$.weight)
-  S.adj.factor <- 1 - (1/S.hat)
-
-  # TODO comment
-  y.F.bar <- weighted.mean(ego_vis$y.F,
-                           ego_vis$.weight)
-  approx.S.hat <- y.F.bar + 1
-  approx.S.adj.factor <- 1 - (1/approx.S.hat)
+  ## calculate summaries based on the ego-specific visibilities
 
   # TODO comment
   ego_vis_agg <- ego_vis %>%
@@ -144,13 +127,7 @@ get_visibility <- function(ego.dat,
               y.F.bar = weighted.mean(y.F, .weight),
               # this is the average sibship size (which will be
               # size-biased)
-              avg.sib.size = weighted.mean(sib.size, .weight)) %>%
-
-    mutate(adj.factor = S.adj.factor,
-           # this is the all-ages approximation
-           adj.factor.allage = approx.S.adj.factor,
-           # this is the age-specific approximation
-           adj.factor.agespec = y.F.bar / (y.F.bar + 1))
+              avg.sib.size = weighted.mean(sib.size, .weight))
 
   #asdr.agg.dat <- asdr.agg.dat %>%
   #  rename(!!sib.sex := .sib.sex,

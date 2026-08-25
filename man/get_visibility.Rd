@@ -16,21 +16,26 @@ get_visibility(
 \arguments{
 \item{ego.dat}{The ego dataset (likely produced by \link{prep_dhs_sib_histories})}
 
-\item{ego.id}{String with the name of the column in \code{sib.dat} containing the survey respondent ID}
+\item{ego.id}{String with the name of the column in \code{sib.dat} containing the survey
+respondent ID}
 
-\item{sib.dat}{The long-form sibling dataset (likely produced by \link{prep_dhs_sib_histories})}
+\item{sib.dat}{The long-form sibling dataset (likely produced by
+\link{prep_dhs_sib_histories})}
 
-\item{sib.frame.indicator}{String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population}
+\item{sib.frame.indicator}{String with the name of the column in \code{sib.dat} containing
+a 0/1 coded variable indicating whether or not each sib is in the frame population}
 
-\item{weight}{string with the name of the column in \code{ego.dat} and \code{sib.dat} containing the sampling weight. Defaults to \code{wwgt}}
+\item{weight}{string with the name of the column in \code{ego.dat} and \code{sib.dat} containing
+the sampling weight. Defaults to \code{wwgt}}
 
-\item{age}{string with the name of the column in \code{ego.dat} containing the age group. Defaults to \code{age.cat}}
+\item{age}{string with the name of the column in \code{ego.dat} containing the age group. Defaults
+to \code{age.cat}}
 }
 \value{
 A list with three entries:
 \itemize{
 \item \code{ego_vis} - a tibble with one row per ego and the ego-specific visibilities
-\item \code{ego_vis_agg} - a tibble with summarized adjustment factors
+\item \code{ego_vis_agg} - a tibble with per-(sex, age) visibility summaries
 \item \code{sib_res} - a tibble with one row per reported sibling, along with
 tibble with a row for each survey respondent (each unique value of \code{ego.id}),
 and the number of sibs the respondent reported on the frame, including and not including herself

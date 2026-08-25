@@ -62,18 +62,22 @@ not settle whether the two-sex path should exist --- it may be right for the
 nothing in the DHS pipeline depends on it.
 
 
-2. `adj.factor` and `adj.factor.allage` are global scalars
+2. ~~`adj.factor` and `adj.factor.allage` are global scalars~~
 ----
 
-**Status: open, needs a decision.** Carried over from `PACKAGE-HANDOFF.md` E4,
-which has the detail.
+**Status: resolved 2026-08-25 — the adjustment factors were removed.** See
+`PACKAGE-HANDOFF.md` E4 for the full record.
 
-`get_visibility()` computes three adjustment factors, two of which are scalars
+`get_visibility()` computed three adjustment factors, two of which were scalars
 over the *entire* respondent sample rather than being computed within group.
-Pre-existing behaviour, deliberately left alone, but it became visible once the
-two-sex path actually ran. Three sub-questions there: whether the empty corner
-(harmonic, age-specific) is a deliberate omission, whether `S.hat` should respect
-`only_females`, and whether `adj.factor[1]` should assert constancy.
+All three are now gone, from both `get_visibility()` and
+`aggregate_maternal_estimates()`, which settles the three sub-questions —
+the empty (harmonic, age-specific) corner, whether `S.hat` should respect
+`only_females`, and whether `adj.factor[1]` should assert constancy — by
+removing the thing they were about. `ego_vis_agg` still carries `y.F.bar` and
+`avg.sib.size`, so a caller who wants an adjustment can build one. No estimate
+changes: the factors were reported next to `ind.est`/`agg.est`, never applied
+to them.
 
 
 3. Confidence intervals do not match either reference

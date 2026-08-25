@@ -259,7 +259,6 @@ test_that("aggregate_maternal_estimates: without bootstrap, returns a tibble", {
 test_that("aggregate_maternal_estimates: output has all expected columns", {
   result <- aggregate_maternal_estimates(ex_ests, ex.ego_mat, ex.sib_mat)
   expect_true(all(c("ind.est", "agg.est",
-                    "adj.factor", "adj.factor.allage", "adj.factor.meanagespec",
                     "ratio.agg.ind", "ratio.ind.agg") %in% names(result)))
 })
 

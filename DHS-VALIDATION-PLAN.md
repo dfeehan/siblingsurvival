@@ -173,8 +173,10 @@ The package's `ego.dat` for DHS holds women only, so `get_ego_age_distn()` canno
 supply this. Male 35q15 and male age-adjusted rates therefore *cannot* reproduce
 DHS without reading an MR or PR file.
 
-This connects directly to the still-open `only_females = FALSE` questions in
-`PACKAGE-HANDOFF.md` (E4) and to `ANALYSIS-REPO-CHANGES.md` A1. Resolving H4 may
+This connects directly to the `only_females = FALSE` questions in
+`PACKAGE-HANDOFF.md` (E4 — since resolved 2026-08-25 by removing the adjustment
+factors, though the reference-population question it raised is still open) and to
+`ANALYSIS-REPO-CHANGES.md` A1. Resolving H4 may
 resolve those too, or may show that `only_females = FALSE` is answering a
 question DHS does not ask.
 

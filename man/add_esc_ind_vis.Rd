@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_sibship_visibility.R
 \name{add_esc_ind_vis}
 \alias{add_esc_ind_vis}
-\title{add individual visibility based on sib reprots to ego X sib X cell reports}
+\title{add individual visibility based on sib reports to ego X sib X cell reports}
 \usage{
 add_esc_ind_vis(
   esc.dat,
