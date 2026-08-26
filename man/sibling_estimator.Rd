@@ -77,3 +77,6 @@ If you want estimated sampling variances, you can pass in a data frame \code{boo
 and then a series of columns named \code{boot_weight_1}, ..., \code{boot_weight_M}.
 }
 
+\seealso{
+\code{\link[networkreporting:network_survival_estimator]{networkreporting::network_survival_estimator()}}, which this wraps
+}

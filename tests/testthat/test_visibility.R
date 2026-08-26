@@ -301,3 +301,59 @@ test_that("declaring ego.in.group in two places that disagree is an error", {
                                                  ego.in.group = FALSE)),
     "conflicting values for 'ego.in.group'")
 })
+
+# ---------------------------------------------------------------------------
+# sibling_estimator() is the generic with the sibling names filled in
+# ---------------------------------------------------------------------------
+test_that("sibling_estimator agrees exactly with the generic it wraps", {
+  # This is the test that makes it one implementation rather than two. If the
+  # wrapper ever stops delegating, or the generic drifts, this fails.
+  sib <- est_with()
+
+  gen <- networkreporting::network_survival_estimator(
+    rel.dat         = make_four_ego_sib_dat(),
+    ego.id          = "ego_id",
+    alter.id        = "sib_id",
+    frame.indicator = "sib_in_frame",
+    alter.sex       = "sex",
+    cell.config     = vis_cell_config(),
+    weights         = "weight",
+    tie             = networkreporting::tie_config("clique", name = "siblings"))
+
+  expect_equal(sib$asdr.ind$asdr.hat,  gen$asdr.ind$asdr.hat)
+  expect_equal(sib$asdr.agg$asdr.hat,  gen$asdr.agg$asdr.hat)
+  expect_equal(sib$asdr.ind$num.hat,   gen$asdr.ind$num.hat)
+  expect_equal(sib$asdr.ind$denom.hat, gen$asdr.ind$denom.hat)
+})
+
+test_that("the wrapper renames the age column back to sib.age", {
+  # callers of this function have always got sib.age; the generic returns
+  # alter.age, and the rename is the wrapper's job
+  res <- est_with()
+  for (nm in c("asdr.ind", "asdr.agg", "ec.dat", "esc.dat")) {
+    expect_true("sib.age"   %in% names(res[[nm]]), info = nm)
+    expect_false("alter.age" %in% names(res[[nm]]), info = nm)
+  }
+})
+
+test_that("a wrong column name still names the sibling arguments", {
+  # the generic would say alter.id and rel.dat; someone who wrote sib.id should
+  # not be sent looking for an argument they never used
+  msg <- tryCatch(
+    sibling_estimator(sib.dat = make_four_ego_sib_dat(), ego.id = "ego_id",
+                      sib.id = "no_such_col", sib.frame.indicator = "sib_in_frame",
+                      sib.sex = "sex", cell.config = vis_cell_config(),
+                      weights = "weight"),
+    error = function(e) conditionMessage(e))
+
+  expect_match(msg, "sib.id='no_such_col'")
+  expect_match(msg, "not found in sib.dat")
+  expect_false(grepl("alter.id=", msg))
+})
+
+test_that("the sibling default supplies the clique tie", {
+  # the generic deliberately has no default; siblings ARE a clique, so the
+  # wrapper is the right place for one
+  expect_equal(est_with()$vis_provenance$tie, "clique")
+  expect_equal(est_with()$vis_provenance$tie_name, "siblings")
+})
