@@ -11,7 +11,7 @@
 ##   source("data-raw/mics-validation/validate.R")
 ##   v <- validate_mics("ZW2019")
 ##
-## See ../../MICS-PLAN.md for the staged design (V1-V7) and the findings so far.
+## See ../../dev/MICS-PLAN.md for the staged design (V1-V7) and the findings so far.
 
 suppressMessages({
   library(dplyr); library(haven); library(tibble)

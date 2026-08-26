@@ -193,3 +193,86 @@ test_that("get_ego_age_distn is silent and unchanged when weights are complete",
   expect_silent(d <- get_ego_age_distn(ego, only_females = TRUE))
   expect_equal(d$agegrp_prop, rep(1/7, 7))
 })
+
+# =====================================================================
+# an unrecognised sex code must not silently become male
+# =====================================================================
+# get_sib_df() used to do `ifelse(sib.sex == 2, 'f', 'm')`, so every code that
+# was not 2 became male. The DHS labels 8 as "don't know" and some surveys
+# carry an unlabelled 9 -- Gabon 2000 has 163 of them. That inflated male
+# exposure in 13 of the 43 DHS surveys examined, by up to 0.7%, and put
+# siblings of unknown sex into the male rates. Female results were unaffected,
+# which is exactly why it went unnoticed.
+
+test_that("sib.sex: only codes 1 and 2 survive; others are dropped", {
+  ego <- data.frame(
+    caseid = 1:4, wwgt = 1, psu = 1, doi = 1200, sex = "f",
+    sib.sex_01          = c(1, 2, 9, 8),
+    sib.alive_01        = 1,
+    sib.age_01          = 30,
+    sib.death.yrsago_01 = NA_real_,
+    sib.death.age_01    = NA_real_,
+    sib.dob_01          = 840,
+    sib.death.date_01   = NA_real_)
+
+  out <- get_sib_df(ego,
+                    sib.attrib = c("sib.sex", "sib.alive", "sib.age",
+                                   "sib.death.yrsago", "sib.death.age",
+                                   "sib.dob", "sib.death.date"),
+                    verbose = FALSE)
+
+  expect_equal(sort(out$sib.sex[!is.na(out$sib.sex)]), c("f", "m"))
+  # the 9 and the 8 must be NA, not "m"
+  expect_equal(sum(is.na(out$sib.sex)), 2)
+})
+
+# =====================================================================
+# a one-sex age distribution must not be usable for the other sex
+# =====================================================================
+# DHS and MICS interview women only, so get_ego_age_distn(only_females = FALSE)
+# on their data returns a female distribution and nothing else, and anything
+# built from it for another sex comes out NA.
+#
+# Note the remedy is NOT a male age distribution: published DHS reports
+# standardise both sexes by the respondents' age distribution, which is
+# only_females = TRUE. Verified against four published tables spanning phases
+# 4 to 8 -- see dev/DHS-VALIDATION-PLAN.md H4.
+
+test_that("get_ego_age_distn warns when asked to split a single-sex sample", {
+  ego <- data.frame(sex = "f", wwgt = 1,
+                    age.cat = c("[15,20)","[20,25)","[25,30)","[30,35)",
+                                "[35,40)","[40,45)","[45,50)"))
+
+  expect_warning(get_ego_age_distn(ego, only_females = FALSE),
+                 "age distribution per respondent sex")
+  # the message has to point at the remedy: published DHS figures standardise
+  # both sexes by the respondents' distribution, i.e. only_females = TRUE
+  w <- tryCatch(get_ego_age_distn(ego, only_females = FALSE),
+                warning = function(w) conditionMessage(w))
+  expect_match(w, "only_females = TRUE")
+})
+
+test_that("no warning when both sexes are present", {
+  ego <- data.frame(
+    sex     = rep(c("f", "m"), each = 7), wwgt = 1,
+    age.cat = rep(c("[15,20)","[20,25)","[25,30)","[30,35)",
+                    "[35,40)","[40,45)","[45,50)"), 2))
+  expect_silent(d <- get_ego_age_distn(ego, only_females = FALSE))
+  # each sex's proportions sum to 1 on their own
+  expect_equal(as.numeric(tapply(d$agegrp_prop, d$sex, sum)), c(1, 1))
+})
+
+test_that("only_females = TRUE is silent on a women-only sample", {
+  ego <- data.frame(sex = "f", wwgt = 1,
+                    age.cat = c("[15,20)","[20,25)","[25,30)","[30,35)",
+                                "[35,40)","[40,45)","[45,50)"))
+  expect_silent(get_ego_age_distn(ego, only_females = TRUE))
+})
+
+test_that("warn.single.sex = FALSE suppresses it, for callers that report it themselves", {
+  ego <- data.frame(sex = "f", wwgt = 1,
+                    age.cat = c("[15,20)","[20,25)","[25,30)","[30,35)",
+                                "[35,40)","[40,45)","[45,50)"))
+  expect_silent(get_ego_age_distn(ego, only_females = FALSE,
+                                  warn.single.sex = FALSE))
+})

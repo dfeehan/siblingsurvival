@@ -38,6 +38,4 @@ through the \code{mm12} band \code{100}--\code{141}.
 Only \code{"42days"} reproduces published MICS figures. On Iraq 2018 it gives 64.4
 pregnancy-related deaths against a published 64, and on Madagascar 2018 136.6
 against a published 137; \code{"2months"} gives 67.7 and 140.4.
-
-See the "Working with MICS sibling history data" vignette.
 }

@@ -10,6 +10,7 @@ prep_nrsim_sib_histories(
   keep_missing = FALSE,
   keep_varmap_only = FALSE,
   weight.scale = 1,
+  death.exposure = c("dhs", "mics"),
   verbose = TRUE
 )
 }
@@ -24,6 +25,10 @@ prep_nrsim_sib_histories(
 
 \item{weight.scale}{divide the weight by this number. Defaults to \code{1}, since
 non-DHS weights are typically already normalized; see Details}
+
+\item{death.exposure}{whether a sibling who died contributes the month of
+death as exposure; \code{"dhs"} (default) counts it, \code{"mics"} stops the
+month before. See \link{get_sib_df}}
 
 \item{verbose}{report detailed summaries?}
 }

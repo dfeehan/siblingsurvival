@@ -513,10 +513,25 @@ male sibling estimates under `only_females = FALSE` are `NA`. That is the honest
 answer — you cannot estimate a visibility adjustment for a sex that was never
 interviewed — but it is now announced rather than silent.
 
-### E4. `adj.factor` and `adj.factor.allage` are global scalars — **open, needs a decision**
+### E4. `adj.factor` and `adj.factor.allage` are global scalars — **resolved 2026-08-25: the factors were removed**
+
+> **Resolved 2026-08-25.** The three questions below were settled by deleting
+> all three adjustment factors rather than by choosing among them.
+> `get_visibility()` no longer computes `adj.factor`, `adj.factor.allage`, or
+> `adj.factor.agespec`, and `aggregate_maternal_estimates()` no longer returns
+> them or their bootstrap intervals. `ego_vis_agg` keeps the underlying
+> visibility summaries — `y.F.bar` and `avg.sib.size` — so anything downstream
+> can build whatever adjustment it wants from those. `warn_uninterviewed_sex()`
+> now detects an uninterviewed sex with `is.na(y.F.bar)` instead of
+> `is.na(adj.factor)`, which is the same test on a column that still exists.
+>
+> This does not change `ind.est` or `agg.est`: the factors were always
+> *reported* alongside the estimates, never applied to them. No DHS or MICS
+> result moves. The analysis below is kept as the record of what the three
+> factors were and why the choice among them was hard.
 
 Pre-existing behaviour, deliberately left alone in the fixes above, but it
-becomes *visible* now that the two-sex path actually runs, so it needs an answer.
+became *visible* once the two-sex path actually ran, so it needed an answer.
 
 `get_visibility()` (`R/get_sibship_visibility.R:121-148`) computes three
 adjustment factors, and two of the three are **scalars over the entire
@@ -622,8 +637,8 @@ Suggested order
 8. ~~**E1–E3**~~ — done; see section E. Two follow-ups land in the *analysis*
    repo, not here: the same missing sex key at `code/R/estimate.R:134`, and the
    changed `get_ego_age_distn(only_females = FALSE)` shape at `:129`/`:135`.
-9. **E4** — decide what `adj.factor` is supposed to be. Needs a judgement about
-   the estimator, not a code change; see section E4 for the three questions.
+9. ~~**E4**~~ — done 2026-08-25; resolved by removing all three adjustment
+   factors rather than choosing among them. See section E4.
 
 
 Context the next session will want

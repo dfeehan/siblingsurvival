@@ -1018,8 +1018,10 @@ Open decisions
    pregnancy-related. Using pregnancy-related throughout maximises comparability
    and is now clearly achievable — but it discards MICS6's better-defined
    maternal measure. Worth stating explicitly either way.
-4. **E4** in `PACKAGE-HANDOFF.md` — whether `adj.factor` is meant to be a global
-   scalar. V5 is adjacent: it resolves which reference population MICS uses.
+4. ~~**E4** in `PACKAGE-HANDOFF.md` — whether `adj.factor` is meant to be a global
+   scalar.~~ Resolved 2026-08-25: all three adjustment factors were removed, so
+   there is nothing left to decide. V5 still stands on its own — it resolves
+   which reference population MICS uses.
 
 
 What will legitimately not reproduce

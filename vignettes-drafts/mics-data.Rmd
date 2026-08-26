@@ -149,7 +149,7 @@ value published in the MICS report:
 | Round | MICS6 | MICS6 | **MICS5** | MICS6 |
 | Female exposure | 0.9999 | 1.0003 | 0.9995 | 0.9966 |
 | Male exposure | 0.9993 | 1.0003 | 0.9994 | 0.9990 |
-| Female all-cause deaths | 1.0007 | 0.9994 | 1.0037 | 0.9867 |
+| Female all-cause deaths | 1.0007 | 0.9994 | 1.0037 | 0.9877 |
 | Male all-cause deaths | 0.9996 | 1.0003 | 1.0015 | 1.0023 |
 | Pregnancy-related deaths | 1.0068 | 0.9967 | 1.0002 | 0.8962 |
 
@@ -173,11 +173,11 @@ published in MICS reports in parentheses:
 
 | | Iraq 2018 | Madagascar 2018 | Zimbabwe 2014 | Zimbabwe 2019 |
 |---|---|---|---|---|
-| All-cause rate, women$^a$ | 1.25 (1.25) | 3.08 (3.1) | 9.98 (9.84) | 6.27 (6.28) |
+| All-cause rate, women$^a$ | 1.25 (1.25) | 3.08 (3.1) | 9.98 (9.84) | 6.28 (6.28) |
 | All-cause rate, men$^a$ | 2.39 (2.39) | 4.03 (4.0) | 9.90 (9.79) | 6.16 (6.09) |
 | Pregnancy-related rate$^a$ | 0.133 (0.13) | 0.650 (0.65) | 0.862 (0.86) | 0.530 (0.59) |
-| $_{35}q_{15}$, women$^b$ | 49.5 (49) | 111.9 (112) | 345.0 (344) | 222.7 (224) |
-| $_{35}q_{15}$, men$^b$ | 85.8 (86) | 148.8 (149) | 356.7 (357) | 218.5 (219) |
+| $_{35}q_{15}$, women$^b$ | 49.5 (49) | 111.9 (112) | 345.0 (344) | 222.8 (224) |
+| $_{35}q_{15}$, men$^b$ | 85.8 (86) | 148.8 (149) | 356.7 (357) | 218.4 (219) |
 
 Here, estimates produced by the package match estimates in the MICS reports quite
 closely.
@@ -240,10 +240,19 @@ band `100`--`141`.
   exposure. This package drops them instead, which is why our exposure totals sit
   within about 0.1% of the published ones rather than exactly on them --- Iraq
   has 107 such siblings, Zimbabwe 2019 has 42, Madagascar only 9.
+* **A decedent's exposure stops the month before death** (`higcm = MM18C - 1`).
+  The DHS reference does the opposite and counts the month of death, so the two
+  cannot both be satisfied at once. `prep_mics_sib_histories()` takes
+  `death.exposure = c("dhs", "mics")` for this, defaulting to `"dhs"` --- which
+  is what the package has always done. Madagascar 2018 is the cleanest test,
+  having almost no unknown-survival siblings to confound it: `"mics"` reproduces
+  its published female exposure of 202,959 **exactly**, where `"dhs"` gives
+  203,010. On Iraq and Zimbabwe the two effects offset and neither setting lands
+  on the published figure.
 * $_{35}q_{15}$ is computed with `1 + 2.4*nmx` in the denominator, i.e. $n_ax =
-  2.6$, although the same file's header documents $n_ax = 2.5$. The difference is
-  at most 0.2 per 1,000 and cannot be resolved against published figures, which
-  are rounded to integers.
+  2.6$, although the same file's header documents $n_ax = 2.5$. The DHS
+  implementation uses the same 2.4 and cites the Guide to DHS Statistics for
+  doing so, so the two sources agree. `q15_to_50()` defaults to it.
 
 ### Zimbabwe 2019
 

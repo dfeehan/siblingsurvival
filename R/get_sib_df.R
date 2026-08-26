@@ -19,10 +19,18 @@
 ##'        rows mean the reported years-since-death and age at death are
 ##'        jointly inconsistent. Note this is *not* a check on whether a sibling
 ##'        died before the respondent was born, which is perfectly possible
+##' @param death.exposure whether a sibling who died contributes the month of
+##'        death as exposure. `"dhs"` (the default) counts it, matching
+##'        `Chap16_AM/AM_rates.do`; `"mics"` stops the month before, matching
+##'        the MICS6 tabulation syntax. The two references genuinely disagree
+##'        here, so it cannot be settled by getting it "right"
 ##' @return a prepped sibling dataset, used by the `prep_*_sib_histories()` functions
 ##'
 get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE, reshape=TRUE,
-                       max.plausible.age=110) {
+                       max.plausible.age=110,
+                       death.exposure=c("dhs", "mics")) {
+
+  death.exposure <- match.arg(death.exposure)
 
   ## these ego columns are carried onto every sibling row
   required.ego <- c('caseid', 'wwgt', 'psu', 'doi', 'sex')
@@ -94,8 +102,18 @@ get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE, reshape=TRUE,
     }
   }
 
+  ## Only 1 (male) and 2 (female) are meaningful. The DHS labels 8 as
+  ## "don't know", and some surveys carry an unlabelled 9 -- Gabon 2000 has 163
+  ## of them. `ifelse(sib.sex == 2, 'f', 'm')` silently made every one of those
+  ## male, which inflated male exposure in 13 of the 43 DHS surveys examined and
+  ## quietly put siblings of unknown sex into the male rates. Anything other
+  ## than 1 or 2 now becomes NA, and finalize_sib_prep() drops it and reports it
+  ## in summ$miss.sex -- which is what the MICS path already relied on
+  ## recode_mics_sib_vars() to arrange.
   sib.dat <- sib.dat %>%
-    mutate(sib.sex = ifelse(sib.sex == 2, 'f', 'm'))
+    mutate(sib.sex = dplyr::case_when(sib.sex == 1 ~ 'm',
+                                      sib.sex == 2 ~ 'f',
+                                      TRUE         ~ NA_character_))
 
 
   ## in some cases, there will be information about how many years ago
@@ -173,14 +191,25 @@ get_sib_df <- function(ego.dat, sib.attrib, verbose=FALSE, reshape=TRUE,
       "them with `subset(sib.dat, (doi - sib.dob)/12 > {max.plausible.age})`."))
   }
 
-  ## make the assumption that
-  ##  (1) sibs who died lived all the way through
-  ##      the month in which they are reported to have died
-  ##  (2) the interview took place on the first of the month
-  ## these assumptions are necessary to get these tables to line up
-  ## with the DHS reports
+  ## How much of the month of death counts as exposure? The two reference
+  ## implementations disagree, so this is an argument rather than an assumption.
+  ##
+  ##  "dhs"  -- a sibling lived all the way through the month she is reported to
+  ##            have died in, so that month is exposure. AM_rates.do:711 sets
+  ##            `last = mm8` and then counts `mexp = last - first + 1`.
+  ##  "mics" -- exposure stops the month *before* death. The MICS6 syntax sets
+  ##            `higcm = MM18C - 1`.
+  ##
+  ## Observation windows here are half-open, [start, end), so "through the month
+  ## of death" is `death + 1` and "up to the month before" is `death`.
+  ##
+  ## The interview is treated as taking place on the first of the month either
+  ## way, which is why `doi` caps the result: both references ignore exposure and
+  ## events in the month of interview.
+  death.month.offset <- switch(death.exposure, dhs = 1L, mics = 0L)
+
   sib.dat$sib.endobs <- pmin(sib.dat$doi,
-                             sib.dat$sib.death.date + 1,
+                             sib.dat$sib.death.date + death.month.offset,
                              na.rm=TRUE)
 
   ## siblings who haven't died get their death dates

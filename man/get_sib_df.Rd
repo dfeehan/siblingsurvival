@@ -9,7 +9,8 @@ get_sib_df(
   sib.attrib,
   verbose = FALSE,
   reshape = TRUE,
-  max.plausible.age = 110
+  max.plausible.age = 110,
+  death.exposure = c("dhs", "mics")
 )
 }
 \arguments{
@@ -28,6 +29,12 @@ implies they would be older than this at the date of interview. Such
 rows mean the reported years-since-death and age at death are
 jointly inconsistent. Note this is \emph{not} a check on whether a sibling
 died before the respondent was born, which is perfectly possible}
+
+\item{death.exposure}{whether a sibling who died contributes the month of
+death as exposure. \code{"dhs"} (the default) counts it, matching
+\code{Chap16_AM/AM_rates.do}; \code{"mics"} stops the month before, matching
+the MICS6 tabulation syntax. The two references genuinely disagree
+here, so it cannot be settled by getting it "right"}
 }
 \value{
 a prepped sibling dataset, used by the \verb{prep_*_sib_histories()} functions

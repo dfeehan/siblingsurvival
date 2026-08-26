@@ -34,14 +34,19 @@ get_sibship_info <- function(sib.dat,
 ##' calculate visibility for each sibship and ego
 ##'
 ##' @param ego.dat The ego dataset (likely produced by [siblingsurvival::prep_dhs_sib_histories])
-##' @param ego.id  String with the name of the column in \code{sib.dat} containing the survey respondent ID
-##' @param sib.dat The long-form sibling dataset (likely produced by [siblingsurvival::prep_dhs_sib_histories])
-##' @param sib.frame.indicator String with the name of the column in \code{sib.dat} containing a 0/1 coded variable indicating whether or not each sib is in the frame population
-##' @param weight string with the name of the column in \code{ego.dat} and \code{sib.dat} containing the sampling weight. Defaults to `wwgt`
-##' @param age string with the name of the column in \code{ego.dat} containing the age group. Defaults to `age.cat`
+##' @param ego.id  String with the name of the column in \code{sib.dat} containing the survey 
+#'                 respondent ID
+##' @param sib.dat The long-form sibling dataset (likely produced by 
+#'                 [siblingsurvival::prep_dhs_sib_histories])
+##' @param sib.frame.indicator String with the name of the column in \code{sib.dat} containing 
+#'                  a 0/1 coded variable indicating whether or not each sib is in the frame population
+##' @param weight string with the name of the column in \code{ego.dat} and \code{sib.dat} containing 
+#'                  the sampling weight. Defaults to `wwgt`
+##' @param age string with the name of the column in \code{ego.dat} containing the age group. Defaults 
+#'                  to `age.cat`
 ##' @return A list with three entries:
 ##'   * `ego_vis` - a tibble with one row per ego and the ego-specific visibilities
-##'   * `ego_vis_agg` - a tibble with summarized adjustment factors
+##'   * `ego_vis_agg` - a tibble with per-(sex, age) visibility summaries
 ##'   * `sib_res` - a tibble with one row per reported sibling, along with
 ##'   tibble with a row for each survey respondent (each unique value of \code{ego.id}),
 ##'   and the number of sibs the respondent reported on the frame, including and not including herself
@@ -112,24 +117,7 @@ get_visibility <- function(ego.dat,
 
 
   ###################################
-  ## calculate summaries + adjustment factors based on the
-  ## ego-specific visibilities
-
-  # weighted harmonic mean
-  wh.mean <- function(x, w) {
-    return(sum(w) / sum(w/x))
-  }
-
-  # TODO comment
-  S.hat <- wh.mean((ego_vis$y.F + 1),
-                   ego_vis$.weight)
-  S.adj.factor <- 1 - (1/S.hat)
-
-  # TODO comment
-  y.F.bar <- weighted.mean(ego_vis$y.F,
-                           ego_vis$.weight)
-  approx.S.hat <- y.F.bar + 1
-  approx.S.adj.factor <- 1 - (1/approx.S.hat)
+  ## calculate summaries based on the ego-specific visibilities
 
   # TODO comment
   ego_vis_agg <- ego_vis %>%
@@ -139,13 +127,7 @@ get_visibility <- function(ego.dat,
               y.F.bar = weighted.mean(y.F, .weight),
               # this is the average sibship size (which will be
               # size-biased)
-              avg.sib.size = weighted.mean(sib.size, .weight)) %>%
-
-    mutate(adj.factor = S.adj.factor,
-           # this is the all-ages approximation
-           adj.factor.allage = approx.S.adj.factor,
-           # this is the age-specific approximation
-           adj.factor.agespec = y.F.bar / (y.F.bar + 1))
+              avg.sib.size = weighted.mean(sib.size, .weight))
 
   #asdr.agg.dat <- asdr.agg.dat %>%
   #  rename(!!sib.sex := .sib.sex,
@@ -169,6 +151,11 @@ get_visibility <- function(ego.dat,
 ##'
 ##' @param ego.dat the ego dataset (probably from [siblingsurvival::prep_dhs_sib_histories])
 ##' @param only_females should only females be used to calculate age distribution? (default: True)
+##' @param warn.single.sex when `only_females = FALSE`, warn if `ego.dat` holds
+##'        only one respondent sex, since the result then cannot standardise
+##'        rates for the other. Set `FALSE` only when the caller reports the
+##'        problem itself, as
+##'        [siblingsurvival::aggregate_maternal_estimates] does
 ##'
 ##' @return dataframe with distribution of respondent ages by 5-year category.
 ##' Columns `age.cat`, `total` and `agegrp_prop`, plus `sex` when
@@ -188,13 +175,67 @@ get_visibility <- function(ego.dat,
 ##' to 1 *within* each sex. This is what
 ##' [siblingsurvival::aggregate_maternal_estimates] needs in order to weight
 ##' each sex's age-specific rates by its own respondents' age structure.
+##'
+##' ## There is no male age distribution in DHS data, and you do not need one
+##'
+##' `only_females = FALSE` splits whatever respondents are in `ego.dat`; it does
+##' not conjure a sex that was never interviewed. DHS sibling histories come from
+##' the women's file, so a DHS `ego.dat` is entirely female and
+##' `only_females = FALSE` returns the female distribution with a `sex` column
+##' attached, and warns.
+##'
+##' It would be reasonable to conclude from `Chap16_AM/AM_rates.do` that this
+##' blocks reproducing a published male rate, since its `get_age_distributions`
+##' takes the men's age distribution from the men's recode (`MR`) file. **In
+##' practice it does not.** Published DHS reports standardise *both* sexes by
+##' the age distribution of the survey respondents --- the women --- which is
+##' exactly what `only_females = TRUE` returns here.
+##'
+##' Checked against four published tables spanning DHS phases 4 to 8:
+##'
+##' | Survey | male rate, this way | published |
+##' |---|---|---|
+##' | Malawi 2000 | 11.064 | 11.1 |
+##' | Rwanda 2005 | 7.393 | 7.39 |
+##' | Rwanda 2014-15 | 2.961 | 2.96 |
+##' | Gambia 2019-20 | 3.133 | 3.13 |
+##'
+##' Standardising men by a male distribution built from the `MR` file instead
+##' gives 11.162, 7.285 and 2.881 for the first three --- further from the
+##' published figures in every case.
 ##' @export
 ##' @md
 get_ego_age_distn <- function(ego.dat,
-                              only_females = TRUE) {
+                              only_females = TRUE,
+                              warn.single.sex = TRUE) {
 
   if(only_females) {
     ego.dat <- ego.dat %>% filter(sex == 'f')
+  }
+
+  ## Asking for a per-sex distribution and getting only one sex back is the
+  ## setup for a silent error: the caller wants to standardise each sex by its
+  ## own respondents, and for the missing sex there is nothing to standardise
+  ## with. Applying the sex that *is* present would attribute one sex's age
+  ## structure to the other. DHS and MICS interview only women, so this is the
+  ## normal case for them, not an exotic one.
+  if (!only_females && warn.single.sex) {
+
+    ego.sexes <- sort(unique(as.character(ego.dat$sex)))
+
+    if (length(ego.sexes) < 2) {
+      warning(glue::glue(
+        "only_females = FALSE asks for one age distribution per respondent sex, ",
+        "but the respondents in ego.dat are all '{paste0(ego.sexes, collapse=\"', '\")}'.\n",
+        "The result therefore covers that sex alone, and any estimate for ",
+        "another sex built from it will be NA rather than wrong.\n",
+        "If you are trying to reproduce published DHS figures, note that they ",
+        "standardise *both* sexes by the age distribution of the survey ",
+        "respondents -- which is what only_females = TRUE returns. Verified ",
+        "against Rwanda 2005 and 2014-15, Gambia 2019-20 and Malawi 2000: the ",
+        "published male rates match that standardisation, not one built from a ",
+        "male age distribution."))
+    }
   }
 
   respondent_age <- ego.dat %>%
@@ -241,7 +282,7 @@ get_ego_age_distn <- function(ego.dat,
 }
 
 
-##' add individual visibility based on sib reprots to ego X sib X cell reports
+##' add individual visibility based on sib reports to ego X sib X cell reports
 ##'
 ##' Takes a dataframe that has a row for each respondent X sib X cell
 ##' and adds individual visibility to it

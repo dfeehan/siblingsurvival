@@ -126,7 +126,7 @@ test_that("aggregate_maternal_estimates: warns and returns NA for an uninterview
   female <- res$point %>% filter(sib.sex == "f")
 
   expect_true(is.na(male$ind.est))
-  expect_true(is.na(male$adj.factor))
+  expect_true(is.na(male$agg.est))
   expect_false(is.na(female$ind.est))
 })
 

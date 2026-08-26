@@ -4,12 +4,18 @@
 \alias{get_ego_age_distn}
 \title{get_ego_age_distribution}
 \usage{
-get_ego_age_distn(ego.dat, only_females = TRUE)
+get_ego_age_distn(ego.dat, only_females = TRUE, warn.single.sex = TRUE)
 }
 \arguments{
 \item{ego.dat}{the ego dataset (probably from \link{prep_dhs_sib_histories})}
 
 \item{only_females}{should only females be used to calculate age distribution? (default: True)}
+
+\item{warn.single.sex}{when \code{only_females = FALSE}, warn if \code{ego.dat} holds
+only one respondent sex, since the result then cannot standardise
+rates for the other. Set \code{FALSE} only when the caller reports the
+problem itself, as
+\link{aggregate_maternal_estimates} does}
 }
 \value{
 dataframe with distribution of respondent ages by 5-year category.
@@ -35,5 +41,33 @@ each respondent sex: the result gains a \code{sex} column, and \code{agegrp_prop
 to 1 \emph{within} each sex. This is what
 \link{aggregate_maternal_estimates} needs in order to weight
 each sex's age-specific rates by its own respondents' age structure.
+\subsection{There is no male age distribution in DHS data, and you do not need one}{
+
+\code{only_females = FALSE} splits whatever respondents are in \code{ego.dat}; it does
+not conjure a sex that was never interviewed. DHS sibling histories come from
+the women's file, so a DHS \code{ego.dat} is entirely female and
+\code{only_females = FALSE} returns the female distribution with a \code{sex} column
+attached, and warns.
+
+It would be reasonable to conclude from \code{Chap16_AM/AM_rates.do} that this
+blocks reproducing a published male rate, since its \code{get_age_distributions}
+takes the men's age distribution from the men's recode (\code{MR}) file. \strong{In
+practice it does not.} Published DHS reports standardise \emph{both} sexes by
+the age distribution of the survey respondents --- the women --- which is
+exactly what \code{only_females = TRUE} returns here.
+
+Checked against four published tables spanning DHS phases 4 to 8:\tabular{lll}{
+   Survey \tab male rate, this way \tab published \cr
+   Malawi 2000 \tab 11.064 \tab 11.1 \cr
+   Rwanda 2005 \tab 7.393 \tab 7.39 \cr
+   Rwanda 2014-15 \tab 2.961 \tab 2.96 \cr
+   Gambia 2019-20 \tab 3.133 \tab 3.13 \cr
+}
+
+
+Standardising men by a male distribution built from the \code{MR} file instead
+gives 11.162, 7.285 and 2.881 for the first three --- further from the
+published figures in every case.
+}
 }
 

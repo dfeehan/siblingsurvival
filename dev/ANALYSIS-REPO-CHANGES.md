@@ -65,6 +65,132 @@ needed for the existing DHS pipeline.
 
 For MICS data `na.action` is **required** and has no default; see C3.
 
+### A0. ⚠⚠ The DHS pregnancy-related count changes, by a lot
+
+**Regenerate every cached DHS result.** This is not a small correction.
+
+`is_preg_related_dhs()` was requiring `mm9` in 2--5 **and** `mm12` in the band
+`100`--`141`. The DHS Program's own tabulation code
+(`DHS-Indicators-Stata`, `Chap16_AM/AM_rates.do:725`) counts `mm9 >= 2 & mm9 <= 6`
+and states that "mm12 is not needed". Code 6 is "between six weeks and two
+months of a delivery" --- inside the two-month window, and the reason this is the
+*pregnancy-related* rather than the *maternal* quantity.
+
+Validated against Rwanda 2010 (`FR259` Table 16.4): the package gave 51.2
+pregnancy-related deaths against a published 91, and now gives 90.7, matching a
+literal replica of the DHS reference in every age group. Exposure and all-cause
+deaths were already exact and do not move.
+
+**The correction is not uniform across surveys**, which matters because the paper
+compares across them. Whether a survey codes postpartum deaths as 5 or 6 is a
+property of its questionnaire, so the old loss ranged from nothing to about 44%:
+
+| Survey | old | corrected | lost before |
+|---|---|---|---|
+| MWIR22FL 1992 | 67.7 | 67.7 | none |
+| BJIR31FL 1996 | 31.7 | 59.3 | 47% |
+| MWIR41FL 2000 | 237.7 | 344.3 | 31% |
+| RWIR53FL 2005 | 109.9 | 180.3 | 39% |
+| RWIR61FL 2010 | 67.3 | 129.3 | 48% |
+| RWIR70FL 2014 | 31.9 | 56.4 | 43% |
+| GMIR81FL 2019 | 68.5 | 71.7 | 4% |
+
+(seven-year window, weighted, all ages 15--49)
+
+`sib.maternal.death.date` does **not** change. Note also that maternal is only
+computable for 5 of the 43 surveys and is itself distorted where a questionnaire
+used only code 6 --- see H1b in `DHS-VALIDATION-PLAN.md`. Pregnancy-related is
+computable for all 43 and is insensitive to that, which is a further reason to
+make it the paper's estimand.
+
+### A0b. Every estimate moves slightly: the event boundary convention changed
+
+`window_intersect()` treated observation windows as `(start, end]`; it now treats
+them as `[start, end)`. The old form disagreed with the exposure calculation at
+the first month of a window --- a death there contributed exposure but could not
+be counted as an event.
+
+Effect is small but systematic and in one direction (a few more deaths counted).
+Three of seven validation surveys were each missing exactly one death, always in
+month `doi - 84`. With this fixed, **all seven reproduce the DHS reference
+exactly**.
+
+Nothing to change in the analysis code, but it is another reason to regenerate
+cached results alongside A0.
+
+If any analysis code builds `sib.dat` by hand rather than via the prep
+functions, note that `end.obs` for a sibling who died must be `death + 1`, not
+`death`. The prep functions already do this.
+
+### A0c. Male rates change slightly in 13 surveys; two data caveats
+
+Three further findings from running all 43 surveys against the DHS reference.
+
+**Male exposure was inflated in 13 of 43 surveys.** `get_sib_df()` turned every
+sex code that was not 2 into male, so "don't know" (8) and an unlabelled 9 both
+became men --- Gabon 2000 has 163 such siblings. Up to 0.7% of male exposure.
+**Female results do not move**, so nothing about pregnancy-related or maternal
+mortality changes; but any adult-male mortality figures should be regenerated.
+
+**Burkina Faso 2003 cannot contribute pregnancy-related estimates at all.** Its
+`mm9` column exists but all 249,540 values are missing, so the count is exactly
+zero. It is the only such survey. The package now warns; previously the zero was
+silent, and a zero rate reads as a finding. **Decide explicitly whether BFIR43FL
+stays in the sample.**
+
+**Gabon 2000 needs `encoding = "latin1"`** --- see B4.
+
+### A0d. Four DHS conventions are now explicit options
+
+All default to what The DHS Program does, so **nothing moves unless you ask**
+--- except the first, which is a correction.
+
+* **Maternal deaths.** `is_maternal_dhs()` now follows the reference exactly
+  (`mm9` 2--5, `mm16` not 1 or 2). Only affects the 5 surveys with `mm16`, and
+  only South Africa 2016 actually changes, by 3 deaths. Not relevant if the
+  paper uses pregnancy-related.
+* **`prmr.accident.recode`** on `add_maternal_deaths()`: applies the 2016 PRMR
+  redefinition (a death during pregnancy reported as violence or accident stops
+  counting). Default `FALSE` = what published tables reflect. **Worth an
+  explicit decision if the paper says anything about post-2016 PRMR
+  comparability.**
+* **`death.exposure = c("dhs", "mics")`** on all three prep functions: whether a
+  sibling who died contributes the month of death. Default `"dhs"`, unchanged
+  behaviour. Relevant if you ever want DHS and MICS on a single convention ---
+  they genuinely differ, and this is the knob.
+* **`nmx_to_nqx()` and `q15_to_50()`** are new exported helpers with `nax`
+  defaulting to 2.6, which is what both DHS and MICS use. **If the analysis
+  repo computes 35q15 anywhere with 2.5, it disagrees with both published
+  sources**; switch to these. Validated against Gambia 2019-20.
+
+### A0e. All-cause adult mortality validates too --- and male rates are reproducible
+
+Independent of the maternal work: the package reproduces published DHS *all-cause*
+adult mortality on five surveys spanning phases 4 to 8. **Exposure matches to the
+person-year in every cell, both sexes** (70 cells); deaths match to rounding.
+
+The useful practical finding is about standardisation. **Published DHS reports
+standardise both sexes by the age distribution of the survey respondents** ---
+i.e. `get_ego_age_distn(only_females = TRUE)` --- not by a sex-specific
+distribution. Male rates come out right this way:
+
+| Survey | ours | published |
+|---|---|---|
+| Malawi 2000 | 11.064 | 11.1 |
+| Rwanda 2005 | 7.393 | 7.39 |
+| Rwanda 2014-15 | 2.961 | 2.96 |
+| Gambia 2019-20 | 3.133 | 3.13 |
+
+So if the analysis reports adult male mortality anywhere, use the respondents'
+age distribution for it. Using a male distribution from the men's `MR` file ---
+which is what the current `AM_rates.do` does --- moves *away* from the published
+figures.
+
+Also note **Rwanda 2010's published summary rows are unreliable**: its
+age-adjusted rates match the crude rates rather than the standardised ones,
+despite the footnote, while its age-specific cells reproduce exactly. Third
+independent sign of trouble in that report. Do not use its totals as a target.
+
 ### A4. Expect the numbers to move slightly
 
 Several fixes on the package side change DHS results, all small but real:
@@ -125,6 +251,21 @@ fixed inside the package, where it silently doubled every bootstrap estimate.
 functions create, and errors with a message naming the available columns if a
 column is not found. The workaround noted in `STATUS.md` can be simplified or
 left as-is; it is no longer load-bearing.
+
+
+B4. Gabon 2000 cannot be read with `read_dta()` defaults
+----
+
+`data/dhs/GAIR41FL.DTA` fails with *"Unable to convert string to the requested
+encoding (invalid byte sequence)"*. It is one of the 43 surveys in
+`out/survey-index.rds`, so whatever the pipeline currently does with it, it is
+not estimating from it.
+
+`haven::read_dta(path, encoding = "latin1")` reads it fine (3,361 variables).
+`"ISO-8859-1"` also works; `"windows-1252"` does not.
+
+Worth checking whether the pipeline is silently skipping it, or erroring, or
+whether the 43 has quietly been 42 all along.
 
 
 C. The MICS plan needs revising

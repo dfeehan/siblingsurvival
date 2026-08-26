@@ -3,8 +3,8 @@
 ##' Called from [siblingsurvival::aggregate_maternal_estimates] when
 ##' `only_females = FALSE`. In most sibling history surveys only women are
 ##' interviewed, so there is no respondent age distribution and no visibility
-##' adjustment for male siblings, and their estimates come out `NA`. That is the
-##' honest answer -- you cannot estimate a visibility adjustment for a sex that
+##' summary for male siblings, and their estimates come out `NA`. That is the
+##' honest answer -- you cannot summarize the visibility of a sex that
 ##' was never interviewed -- but it should not be silent.
 ##'
 ##' @param res the joined estimate dataframe
@@ -14,7 +14,7 @@
 warn_uninterviewed_sex <- function(res, ego.dat) {
 
   unmatched <- res %>%
-    filter(is.na(agegrp_prop) | is.na(adj.factor)) %>%
+    filter(is.na(agegrp_prop) | is.na(y.F.bar)) %>%
     pull(sib.sex) %>%
     unique()
 
@@ -27,7 +27,7 @@ warn_uninterviewed_sex <- function(res, ego.dat) {
       "{paste0(sort(unmatched), collapse=', ')}. ",
       "The respondents in ego.dat are: {paste0(ego.sexes, collapse=', ')}. ",
       "Estimates for those siblings will be NA -- a reference age distribution ",
-      "and a visibility adjustment can only come from respondents of the same ",
+      "and a visibility summary can only come from respondents of the same ",
       "sex, and that sex was not interviewed."))
   }
 
@@ -85,8 +85,11 @@ aggregate_maternal_estimates <- function(estimates,
 
   # get age distribution of respondents
   if (is.null(age_prop)) {
+    ## warn.single.sex is off because warn_uninterviewed_sex() below reports the
+    ## same problem where it actually bites, naming the sibling sexes affected
     age_prop <- get_ego_age_distn(ego.dat,
-                                  only_females)
+                                  only_females,
+                                  warn.single.sex = FALSE)
   }
 
   if (is.null(vis_res)) {
@@ -150,10 +153,7 @@ aggregate_maternal_estimates <- function(estimates,
 
   res <- res %>%
     summarize(ind.est = sum(asdr.hat.ind*agegrp_prop),
-              agg.est = sum(asdr.hat.agg*agegrp_prop),
-              adj.factor = adj.factor[1],
-              adj.factor.allage = adj.factor.allage[1],
-              adj.factor.meanagespec = sum(adj.factor.agespec*agegrp_prop)) %>%
+              agg.est = sum(asdr.hat.agg*agegrp_prop)) %>%
     mutate(ratio.agg.ind = agg.est / ind.est) %>%
     mutate(ratio.ind.agg = ind.est  / agg.est) %>%
     ## `dummy` exists only to give summarize() a single group in the
@@ -173,7 +173,6 @@ aggregate_maternal_estimates <- function(estimates,
           mutate(dummy=1) %>%
           group_by(dummy) %>%
           summarize(across(c(ind.est, agg.est,
-                             adj.factor, adj.factor.allage, adj.factor.meanagespec,
                              ratio.agg.ind,
                              ratio.ind.agg),
                            list( .ci.low = ~ quantile(.x, .025, na.rm=TRUE),
@@ -187,7 +186,6 @@ aggregate_maternal_estimates <- function(estimates,
           mutate(dummy=1) %>%
           group_by(dummy, sib.sex) %>%
           summarize(across(c(ind.est, agg.est,
-                             adj.factor, adj.factor.allage, adj.factor.meanagespec,
                              ratio.agg.ind,
                              ratio.ind.agg),
                            list( .ci.low = ~ quantile(.x, .025, na.rm=TRUE),
@@ -245,10 +243,7 @@ aggregate_maternal_estimates <- function(estimates,
 
     res_boot <- res_boot %>%
       summarize(ind.est = sum(asdr.hat.ind*agegrp_prop),
-                agg.est = sum(asdr.hat.agg*agegrp_prop),
-                adj.factor = adj.factor[1],
-                adj.factor.allage = adj.factor.allage[1],
-                adj.factor.meanagespec = sum(adj.factor.agespec*agegrp_prop)) %>%
+                agg.est = sum(asdr.hat.agg*agegrp_prop)) %>%
       mutate(ratio.agg.ind = agg.est / ind.est) %>%
       mutate(ratio.ind.agg = ind.est  / agg.est)
 

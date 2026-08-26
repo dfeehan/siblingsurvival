@@ -1,67 +1,141 @@
 ##' is each sibling's death pregnancy-related, by DHS coding?
 ##'
-##' The DHS records one coded item, `sib.died.pregnant` (`mm9`), plus a
-##' time-since-delivery band, `sib.time.delivery.death` (`mm12`).
+##' The DHS records this in one coded item, `sib.died.pregnant` (`mm9`):
+##'
+##' | `mm9` | meaning | pregnancy-related | maternal |
+##' |---|---|---|---|
+##' | 2 | died while pregnant | yes | yes |
+##' | 3 | died during delivery | yes | yes |
+##' | 4 | since delivery -- never assigned in practice | yes | yes |
+##' | 5 | within six weeks of a delivery | yes | yes |
+##' | 6 | between six weeks and two months of a delivery | **yes** | no |
+##'
+##' Code 6 is what makes this the **two-month** quantity rather than a 42-day
+##' one, and it is exactly the line The DHS Program draws between this and
+##' [is_maternal_dhs], which stops at code 5.
+##'
+##' No other condition is applied. In particular the time-since-delivery band
+##' `mm12` is *not* used: the reference implementation
+##' (`DHS-Indicators-Stata`, `Chap16_AM/AM_rates.do:725`) counts
+##' `mm9 >= 2 & mm9 <= 6` and nothing else, and its header states plainly that
+##' "mm12 is not needed" -- it is dropped before the roster is reshaped.
+##'
+##' @section Changed in this version:
+##'
+##' This function previously required `mm9` to be 2, 3, 4 or 5 **and**
+##' `mm12` to fall in the band `100`--`141` (0--41 days) or be `997`/`998`.
+##' Both conditions were wrong:
+##'
+##' * excluding code 6 dropped postpartum deaths that the function's own
+##'   documentation described as in scope, and
+##' * the `mm12` band imposed a 42-day cut on a quantity defined over two
+##'   months, and applied a *postpartum* timing test even to deaths that
+##'   occurred during pregnancy or delivery.
+##'
+##' **This changes DHS results, in some surveys substantially.** Which code a
+##' survey uses for postpartum deaths is a property of its questionnaire, so
+##' the old behaviour lost anywhere from none to about 48% of pregnancy-related
+##' deaths depending on the survey. On Rwanda 2010 it gave 51.2 deaths against a
+##' published 91; it now gives 90.7. See the DHS validation plan in the package
+##' repository.
+##'
+##' @section The 2016 PRMR redefinition:
+##'
+##' `AM_rates.do:307-320` carries, **inside a comment block and therefore never
+##' executed**, a rule introduced as "Important for redefinition of Pregnancy
+##' Related Mortality Ratio (PRMR) in surveys from 2016 onwards":
+##'
+##'     If mm9=2, and mm16=1 or 2, recode mm9 to 1
+##'
+##' That is: a death *during pregnancy* that is reported as due to violence or
+##' an accident stops counting as pregnancy-related. The DHS Program documents
+##' the rule (see `blog.dhsprogram.com/mmr-prmr/`) but the code it ships does
+##' not apply it, so published figures produced with that code do not reflect
+##' it either.
+##'
+##' `prmr.accident.recode = TRUE` applies it. The default is `FALSE`, which is
+##' what the shipped reference code does and therefore what reproduces published
+##' tables. It can only bite on the five surveys that carry `mm16` at all.
 ##'
 ##' @param sib_df the prepped sibling dataset
-##' @param na.action how to treat a missing `sib.time.delivery.death` when the
-##'        sibling died after a delivery: `"include"` counts her, `"exclude"`
-##'        does not. See [siblingsurvival::add_maternal_deaths]
+##' @param na.action retained for symmetry with [is_maternal_dhs] and ignored
+##'        here. It used to decide how a missing `mm12` was treated; `mm12` is
+##'        no longer consulted, so it has no effect on this column
+##' @param prmr.accident.recode apply the documented-but-unexecuted 2016 PRMR
+##'        rule, which drops a death during pregnancy (`mm9 = 2`) that is
+##'        reported as violence or an accident. Default `FALSE`, matching the
+##'        reference implementation. See Details
 ##' @return a logical vector, one entry per row of `sib_df`
+##' @md
 ##'
-is_preg_related_dhs <- function(sib_df, na.action) {
+is_preg_related_dhs <- function(sib_df, na.action = NULL,
+                                prmr.accident.recode = FALSE) {
 
-  ## the time-since-delivery band is only informative for deaths *after* a
-  ## delivery; 997 and 998 are the DHS's own "don't know"/"inconsistent" codes,
-  ## which the published DHS calculation counts
-  within.window <- (sib_df$sib.time.delivery.death >= 100 &
-                      sib_df$sib.time.delivery.death <= 141) |
-    sib_df$sib.time.delivery.death %in% c(997, 998)
+  ## AM_rates.do:725 -- `prdeaths_in = 1 if deaths_in == 1 & mm9>=2 & mm9<=6`
+  ## `%in%` gives FALSE for NA, which is what is wanted: an unknown mm9 is not
+  ## a pregnancy-related death
+  res <- sib_df$sib.died.pregnant %in% c(2, 3, 4, 5, 6)
 
-  if (na.action == "include") {
-    within.window <- within.window | is.na(sib_df$sib.time.delivery.death)
+  if (prmr.accident.recode) {
+    ## the commented-out AM_rates.do:314; applies to mm9 = 2 only
+    res <- res & !(sib_df$sib.died.pregnant %in% 2 &
+                     sib_df$sib.died.accident %in% c(1, 2))
   }
 
-  ## 2 = died while pregnant, 3 = died during childbirth,
-  ## 4 = died since a delivery, 5 = died within six weeks of a delivery
-  died.pregnant <- sib_df$sib.died.pregnant %in% c(2, 3, 4, 5)
-
-  res <- died.pregnant & within.window
-  ifelse(is.na(res), FALSE, res)
+  res
 }
 
 
 ##' is each sibling's death maternal, by DHS coding?
 ##'
-##' As [is_preg_related_dhs], but additionally excluding deaths reported as due
-##' to violence or an accident. Only computable when `sib.died.accident` is
-##' present, which is DHS phase 7 and later.
+##' As [is_preg_related_dhs], but stopping at `mm9 = 5` --- the 42-day window ---
+##' and excluding deaths reported as due to violence or an accident (`mm16`).
+##' Only computable when `sib.died.accident` is present, which is DHS phase 7
+##' and later, and in practice only 5 of the 43 surveys with a sibling roster
+##' carry it.
+##'
+##' The rule is the reference implementation's, verbatim
+##' (`DHS-Indicators-Stata`, `Chap16_AM/AM_rates.do:728`):
+##'
+##'     mm9 >= 2 & mm9 <= 5 & mm16 != 1 & mm16 != 2
+##'
+##' Two details that look like edge cases but are not:
+##'
+##' * **A missing `mm16` counts as "not an accident".** `mm16` is *not asked*
+##'   when the death occurred during delivery, so for `mm9 = 3` it is missing by
+##'   design --- in The Gambia 2019-20 all 40 such in-window deaths have `mm16`
+##'   missing and none of the `mm9 = 2` or `mm9 = 5` deaths do. Requiring
+##'   `mm16 == 0` would silently drop every delivery death.
+##' * **`mm9 = 4` is included** even though it is never assigned in practice.
+##'   That matches the reference, which tests a range rather than a set.
+##'
+##' @section Changed in this version:
+##'
+##' This function previously applied the accident exclusion to codes 2 and 5
+##' only, took code 3 unconditionally, and additionally required `mm12` to fall
+##' in the band `100`--`141`. Given the skip pattern above, the first two are
+##' *equivalent* to the reference wherever a survey respects it --- The Gambia
+##' 2019-20 reproduces its published Table 14.3 exactly either way.
+##'
+##' They part company where a survey does not. **South Africa 2016 has 3 deaths
+##' coded `mm9 = 3` with `mm16` reported as violence or an accident**, which the
+##' old rule counted as maternal and the reference does not. The `mm12`
+##' condition is dropped for the same reason it was dropped from
+##' [is_preg_related_dhs]: the reference does not use it.
 ##'
 ##' @param sib_df the prepped sibling dataset
-##' @param na.action see [siblingsurvival::add_maternal_deaths]
+##' @param na.action retained for symmetry and ignored. It used to decide how a
+##'        missing `mm12` was treated; `mm12` is no longer consulted
 ##' @return a logical vector, one entry per row of `sib_df`
+##' @md
 ##'
-is_maternal_dhs <- function(sib_df, na.action) {
+is_maternal_dhs <- function(sib_df, na.action = NULL) {
 
-  within.window <- (sib_df$sib.time.delivery.death >= 100 &
-                      sib_df$sib.time.delivery.death <= 141) |
-    sib_df$sib.time.delivery.death %in% c(997, 998)
+  ## AM_rates.do:728. `mm16 != 1 & mm16 != 2` is TRUE for a missing mm16 in
+  ## Stata, and must stay TRUE here -- see the note about delivery deaths above
+  not.accident <- ! (sib_df$sib.died.accident %in% c(1, 2))
 
-  if (na.action == "include") {
-    within.window <- within.window | is.na(sib_df$sib.time.delivery.death)
-  }
-
-  not.accident <- sib_df$sib.died.accident %in% 0
-
-  ## NB the accident exclusion applies to codes 2 and 5 only, matching the
-  ## behaviour this package has always had
-  died.pregnant <- (sib_df$sib.died.pregnant %in% 3) |
-    (sib_df$sib.died.pregnant %in% 2 & not.accident) |
-    (sib_df$sib.died.pregnant %in% 5 & not.accident) |
-    (sib_df$sib.died.pregnant %in% 4)
-
-  res <- died.pregnant & within.window
-  ifelse(is.na(res), FALSE, res)
+  (sib_df$sib.died.pregnant %in% c(2, 3, 4, 5)) & not.accident
 }
 
 
@@ -87,8 +161,6 @@ is_maternal_dhs <- function(sib_df, na.action) {
 ##' Only `"42days"` reproduces published MICS figures. On Iraq 2018 it gives 64.4
 ##' pregnancy-related deaths against a published 64, and on Madagascar 2018 136.6
 ##' against a published 137; `"2months"` gives 67.7 and 140.4.
-##'
-##' See the "Working with MICS sibling history data" vignette.
 ##'
 ##' @param sib_df the prepped sibling dataset
 ##' @param preg.window width of the postpartum window: `"2months"` (default) or

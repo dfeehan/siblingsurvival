@@ -4,18 +4,55 @@
 \alias{is_maternal_dhs}
 \title{is each sibling's death maternal, by DHS coding?}
 \usage{
-is_maternal_dhs(sib_df, na.action)
+is_maternal_dhs(sib_df, na.action = NULL)
 }
 \arguments{
 \item{sib_df}{the prepped sibling dataset}
 
-\item{na.action}{see \link{add_maternal_deaths}}
+\item{na.action}{retained for symmetry and ignored. It used to decide how a
+missing \code{mm12} was treated; \code{mm12} is no longer consulted}
 }
 \value{
 a logical vector, one entry per row of \code{sib_df}
 }
 \description{
-As \link{is_preg_related_dhs}, but additionally excluding deaths reported as due
-to violence or an accident. Only computable when \code{sib.died.accident} is
-present, which is DHS phase 7 and later.
+As \link{is_preg_related_dhs}, but stopping at \code{mm9 = 5} --- the 42-day window ---
+and excluding deaths reported as due to violence or an accident (\code{mm16}).
+Only computable when \code{sib.died.accident} is present, which is DHS phase 7
+and later, and in practice only 5 of the 43 surveys with a sibling roster
+carry it.
 }
+\details{
+The rule is the reference implementation's, verbatim
+(\code{DHS-Indicators-Stata}, \code{Chap16_AM/AM_rates.do:728}):
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{mm9 >= 2 & mm9 <= 5 & mm16 != 1 & mm16 != 2
+}\if{html}{\out{</div>}}
+
+Two details that look like edge cases but are not:
+\itemize{
+\item \strong{A missing \code{mm16} counts as "not an accident".} \code{mm16} is \emph{not asked}
+when the death occurred during delivery, so for \code{mm9 = 3} it is missing by
+design --- in The Gambia 2019-20 all 40 such in-window deaths have \code{mm16}
+missing and none of the \code{mm9 = 2} or \code{mm9 = 5} deaths do. Requiring
+\code{mm16 == 0} would silently drop every delivery death.
+\item \strong{\code{mm9 = 4} is included} even though it is never assigned in practice.
+That matches the reference, which tests a range rather than a set.
+}
+}
+\section{Changed in this version}{
+
+
+This function previously applied the accident exclusion to codes 2 and 5
+only, took code 3 unconditionally, and additionally required \code{mm12} to fall
+in the band \code{100}--\code{141}. Given the skip pattern above, the first two are
+\emph{equivalent} to the reference wherever a survey respects it --- The Gambia
+2019-20 reproduces its published Table 14.3 exactly either way.
+
+They part company where a survey does not. \strong{South Africa 2016 has 3 deaths
+coded \code{mm9 = 3} with \code{mm16} reported as violence or an accident}, which the
+old rule counted as maternal and the reference does not. The \code{mm12}
+condition is dropped for the same reason it was dropped from
+\link{is_preg_related_dhs}: the reference does not use it.
+}
+

@@ -117,11 +117,18 @@ glimpse(sibdata)
 
 Now we'll do some recoding.
 
-Turn the `sib.sex` variable into more readable values:
+Turn the `sib.sex` variable into more readable values. Only codes 1 and 2 are
+meaningful: the DHS labels 8 as "don't know", and some surveys carry an
+unlabelled 9 as well. Anything else has to become `NA` rather than falling
+through to one of the two categories --- `ifelse(sib.sex == 2, 'f', 'm')` would
+quietly turn every unknown-sex sibling into a man, which is what
+`prep_dhs_sib_histories()` used to do. Gabon 2000 has 163 such siblings.
 
 ```{r}
 sibdata.coded <- sibdata %>%
-  mutate(sib.sex = ifelse(sib.sex == 2, 'f', 'm'))
+  mutate(sib.sex = case_when(sib.sex == 1 ~ 'm',
+                             sib.sex == 2 ~ 'f',
+                             TRUE         ~ NA_character_))
 ```
 
 Next, we need to create a new variable, `sib.endobs`, which has the

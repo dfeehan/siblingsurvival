@@ -18,7 +18,7 @@ warn_uninterviewed_sex(res, ego.dat)
 Called from \link{aggregate_maternal_estimates} when
 \code{only_females = FALSE}. In most sibling history surveys only women are
 interviewed, so there is no respondent age distribution and no visibility
-adjustment for male siblings, and their estimates come out \code{NA}. That is the
-honest answer -- you cannot estimate a visibility adjustment for a sex that
+summary for male siblings, and their estimates come out \code{NA}. That is the
+honest answer -- you cannot summarize the visibility of a sex that
 was never interviewed -- but it should not be silent.
 }
