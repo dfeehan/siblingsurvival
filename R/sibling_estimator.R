@@ -9,6 +9,13 @@
 ##' @param weights String with the name of the column of \code{sib.dat} that has the sampling weight
 ##' @param boot.weights Optional dataframe with bootstrap resampled weights. See Details for more info.
 ##' @param return.boot If TRUE, and if \code{boot.weights} is specified, then return each bootstrap estimate
+##' @param visibility A visibility rule saying how each reported sibling's
+##'        visibility is derived. Defaults to
+##'        [networkreporting::vis_from_clique()], the exact rule this function
+##'        has always applied, so the default changes nothing. See
+##'        [networkreporting::vis_from_donor()] and
+##'        [networkreporting::vis_coalesce()] for the approximating rules that
+##'        non-clique ties need.
 ##' @param discretize.exp Boolean for whether or not expsoure should be discretized. Not yet implemented.
 ##' @return a list with two entries: \code{asdr.ind}, individual visibility asdr estimates; and \code{asdr.agg}, aggregate visibility asdr estimates
 ##'
@@ -33,6 +40,10 @@ sibling_estimator <- function(sib.dat,
                               weights,
                               boot.weights = NULL,
                               return.boot = FALSE,
+                              # how each reported sibling's visibility is derived.
+                              # the default is the exact clique rule, which is what
+                              # this function has always used
+                              visibility = networkreporting::vis_from_clique(),
                               # by default, we report continuous exposure (ie, number of months of exposure)
                               # but the formal results are based on exposed/not exposed; use this setting to
                               # discretize exposure
@@ -79,13 +90,34 @@ sibling_estimator <- function(sib.dat,
 
   cell.vars <- c('time.period', '.sib.sex', 'agelabel', cell.config$covars)
 
-  # add individual visibility weights for the siblings
-  esc.dat <- esc.dat %>%
-    add_esc_ind_vis(ego.id='.ego.id',
-                    sib.dat,
-                    sib.frame.indicator='.sib.in.F',
-                    # column name for individual visibility
-                    varname='ind_vis')
+  ## Apply the visibility rule. The default, vis_from_clique(), reproduces the
+  ## previous hardcoded behaviour exactly -- 1/y.F on frame, 1/(y.F + 1) off it
+  ## -- so nothing about existing estimates moves. Passing another rule is what
+  ## makes visibility a declared modelling choice rather than an assumption
+  ## buried in the estimator.
+  vis.res <- networkreporting::apply_visibility_rule(
+    rule            = visibility,
+    esc.dat         = esc.dat,
+    sib.dat         = sib.dat,
+    ego.id          = '.ego.id',
+    frame.indicator = '.sib.in.F',
+    weights         = '.ego.weight')
+
+  ## esc.dat comes back with y.F attached, which get_ec_reports() reads
+  esc.dat <- vis.res$data
+  ## `ind_vis` is the visibility WEIGHT (the reciprocal of the count), which is
+  ## what get_ec_reports() consumes
+  esc.dat$ind_vis <- vis.res$values$vis_weight
+
+  if (any(is.na(esc.dat$ind_vis))) {
+    n.na <- sum(is.na(esc.dat$ind_vis))
+    stop(glue::glue(
+      "The visibility rule '{visibility$label}' left {n.na} of {nrow(esc.dat)} ",
+      "report(s) without a visibility.\n",
+      "For the clique rule this points at missingness in the frame indicator. ",
+      "For an approximating rule it usually means some alters have no donor ",
+      "cell; wrap the rule in vis_coalesce() with a coarser fallback tier."))
+  }
 
   ## TODO - I think this line sometimes causes a warning
   ## "Column `.ego.id` has different attributes on LHS and RHS of join"
@@ -109,7 +141,19 @@ sibling_estimator <- function(sib.dat,
     boot.weights <- boot.weights %>%
       dplyr::rename(.ego.id = !!sym(ego.id))
 
-    boot.ind.ests <- get_boot_ests_matrix(ec.dat, boot.weights, '.ego.id', cell.vars, 'ind')
+    ## For an estimated visibility rule, the group size moves with the
+    ## replicate, so it has to be refit inside the loop rather than frozen.
+    ## For vis_from_clique() this is NULL and nothing changes -- which is what
+    ## makes the change safe to land: the clique CIs must not move.
+    vis.refit <- networkreporting::make_vis_refit(
+      rule         = visibility,
+      donor.dat    = vis.res$donor.dat,
+      boot.weights = boot.weights,
+      ec.dat       = ec.dat,
+      ego.id       = '.ego.id')
+
+    boot.ind.ests <- get_boot_ests_matrix(ec.dat, boot.weights, '.ego.id', cell.vars, 'ind',
+                                          visibility = visibility, refit = vis.refit)
     boot.agg.ests <- get_boot_ests_matrix(ec.dat, boot.weights, '.ego.id', cell.vars, 'agg')
 
     if (any(is.na(boot.ind.ests$asdr.hat))) {
@@ -213,152 +257,12 @@ sibling_estimator <- function(sib.dat,
 
   }
 
+  ## Provenance travels with the estimate: which rule produced it, how many
+  ## alters each tier resolved, and what share of the deaths and of the exposure
+  ## were approximated. Attached rather than added as a column so that nothing
+  ## downstream that indexes res by name is disturbed.
+  attr(res, "vis_provenance") <- vis.res$provenance
+  res$vis_provenance <- vis.res$provenance
+
   return(res)
 }
-
-##' Fast bootstrap estimation using matrix multiplication
-##'
-##' Replaces the wide-dataframe summarize_at + gather/spread approach with direct
-##' matrix multiplication. For each cell, computes weighted sums across all M bootstrap
-##' replicates simultaneously using BLAS routines, avoiding the creation of 10k-column
-##' intermediate dataframes.
-##'
-##' @param ec_dat ego X cell data from get_ec_reports()
-##' @param boot_weights_df dataframe with .ego.id column and boot_weight_1..M columns
-##' @param ego_id_col name of the ego id column in ec_dat and boot_weights_df
-##' @param cell_vars vector of column names defining cells (age, sex, time period, etc)
-##' @param estimator_type either 'ind' (individual visibility) or 'agg' (aggregate visibility)
-##' @return long-form data frame with one row per cell per bootstrap replicate
-get_boot_ests_matrix <- function(ec_dat, boot_weights_df, ego_id_col, cell_vars, estimator_type) {
-
-  # Build boot weight matrix: rows = respondents, cols = bootstrap replicates
-  boot_col_names <- stringr::str_subset(colnames(boot_weights_df), 'ego.id', negate = TRUE)
-  boot_mat <- as.matrix(boot_weights_df[, boot_col_names, drop = FALSE])
-  boot_ego_ids <- boot_weights_df[[ego_id_col]]
-  M <- ncol(boot_mat)
-
-  # Split ec_dat by cell for vectorized operations within each cell
-  cell_groups <- ec_dat %>% dplyr::group_by(dplyr::across(dplyr::all_of(cell_vars))) %>% dplyr::group_split()
-  cell_keys   <- ec_dat %>% dplyr::group_by(dplyr::across(dplyr::all_of(cell_vars))) %>% dplyr::group_keys()
-
-  purrr::map2_dfr(cell_groups, seq_len(nrow(cell_keys)), function(grp, i) {
-    # Match respondents in this cell to rows in the boot weight matrix
-    row_idx <- match(grp[[ego_id_col]], boot_ego_ids)
-
-    # Rows from boot_mat corresponding to respondents in this cell
-    W <- boot_mat[row_idx, , drop = FALSE]  # N_cell x M
-
-    # Select numerator and denominator vectors based on estimator type
-    if (estimator_type == 'ind') {
-      num_vec   <- grp$y.Dcell.ind
-      denom_vec <- grp$y.Ncell.ind
-    } else {
-      num_vec   <- grp$y.Dcell
-      denom_vec <- grp$y.Ncell
-    }
-
-    # Matrix multiply: length-N_cell vector %*% N_cell x M matrix = length-M vector
-    # This uses BLAS and runs in milliseconds even for large M
-    num.hat   <- as.vector(num_vec   %*% W)
-    denom.hat <- as.vector(denom_vec %*% W)
-
-    estimator_label <- if (estimator_type == 'ind') 'sib_ind' else 'sib_agg'
-
-    data.frame(
-      cell_keys[rep(i, M), , drop = FALSE],
-      boot_idx  = seq_len(M),
-      num.hat   = num.hat,
-      denom.hat = denom.hat,
-      asdr.hat  = num.hat / denom.hat,
-      estimator = estimator_label,
-      stringsAsFactors = FALSE
-    )
-  })
-}
-
-##' helper function for calculating individual visibility estimate from ego X cell data
-##'
-##' @param ec_dat the ego X cell data
-##' @param wgt_var either a string with the name of the column that has sampling weights or a vector with the names of columns with bootstrap weights
-##' @param cell_vars vector of strings with the names of variables to group by (the cells)
-##' @return a tibble with the individual visibility ASDR estimates (not including the respondents' exposures)
-get_ind_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
-
-  res <- ec_dat %>%
-    dplyr::mutate(ind.num.ego   = y.Dcell.ind,
-                  ind.denom.ego = y.Ncell.ind)
-
-  weighted_sum <- function(x, w) { return(sum(x*w)) }
-
-  res2 <- res %>%
-    group_by(across(all_of(cell_vars))) %>%
-    summarize(num.hat   = weighted_sum(x = ind.num.ego,   w = .data[[wgt_var]]),
-              denom.hat = weighted_sum(x = ind.denom.ego,  w = .data[[wgt_var]]),
-              ind.y.F   = weighted_sum(x = y.F,            w = .data[[wgt_var]]),
-              n         = n(),
-              wgt.sum   = weighted_sum(x = 1,              w = .data[[wgt_var]]),
-              .groups   = "drop")
-
-  ## if we have bootstrap weights, reshape and clean things up
-  if(length(wgt_var) > 1) {
-    res3 <- res2 %>%
-      tidyr::pivot_longer(cols = tidyselect::starts_with('boot_weight'),
-                          names_to = 'rawqty',
-                          values_to = 'value') %>%
-      mutate(qty = stringr::str_remove(rawqty, 'boot_weight_\\d+_'),
-             boot_idx = as.integer(stringr::str_remove_all(rawqty, '[^\\d]'))) %>%
-      select(-rawqty) %>%
-      tidyr::pivot_wider(names_from = qty, values_from = value)
-  } else {
-    res3 <- res2
-  }
-
-  res4 <- res3 %>%
-    dplyr::mutate(asdr.hat = num.hat / denom.hat,
-                  estimator='sib_ind')
-
-  return(res4)
-}
-
-##' helper function for calculating aggregate visibility estimate from ego X cell data
-##'
-##' @param ec_dat the ego X cell data
-##' @param wgt_var either a string with the name of the column that has sampling weights or a vector with the names of columns with bootstrap weights
-##' @param cell_vars vector of strings with the names of variables to group by (the cells)
-##' @return a tibble with the individual visibility ASDR estimates (not including the respondents' exposures)
-get_agg_est_from_ec <- function(ec_dat, wgt_var, cell_vars) {
-
-  weighted_sum <- function(x, w) { return(sum(x*w)) }
-
-  res <- ec_dat %>%
-    #dplyr::mutate(.cur.weight = !!sym(wgt_var)) %>%
-    group_by(across(all_of(cell_vars))) %>%
-    summarize(num.hat   = weighted_sum(x = y.Dcell, w = .data[[wgt_var]]),
-              denom.hat = weighted_sum(x = y.Ncell,  w = .data[[wgt_var]]),
-              n         = n(),
-              wgt.sum   = weighted_sum(x = 1,        w = .data[[wgt_var]]),
-              .groups   = "drop")
-
-  ## if we have bootstrap weights, reshape and clean things up
-  if(length(wgt_var) > 1) {
-    res2 <- res %>%
-      tidyr::pivot_longer(cols = tidyselect::starts_with('boot_weight'),
-                          names_to = 'rawqty',
-                          values_to = 'value') %>%
-      mutate(qty = stringr::str_remove(rawqty, 'boot_weight_\\d+_'),
-             boot_idx = as.integer(stringr::str_remove_all(rawqty, '[^\\d]'))) %>%
-      select(-rawqty) %>%
-      tidyr::pivot_wider(names_from = qty, values_from = value)
-  } else {
-    res2 <- res
-  }
-
-  res3 <- res2 %>%
-    mutate(asdr.hat = num.hat / denom.hat,
-           estimator='sib_agg')
-
-  return(res3)
-}
-
-
-

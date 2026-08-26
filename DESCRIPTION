@@ -21,10 +21,8 @@ Suggests:
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-LinkingTo:
-    Rcpp
 Imports:
-    Rcpp, glue, dplyr, rlang, plyr, stringr, tidyr, purrr, forcats, tidyselect
+    networkreporting (>= 0.3.2), glue, dplyr, rlang, plyr, stringr, forcats
 Depends: 
     R (>= 3.5)
 Config/testthat/edition: 3

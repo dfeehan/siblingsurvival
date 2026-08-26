@@ -39,6 +39,15 @@ There is also a third, smaller theme: the analysis repo has accumulated glue
 that exists only because certain package internals are unexported or recompute
 things the caller already has (items C1–C3).
 
+**Added 2026-08-25 — a fourth, structural driver.** Section F records a planned
+move of the estimator spine out of this package and into `networkreporting`, so
+that visibility becomes a declared rule rather than a hardcoded clique
+assumption. It is driven by the Matlab multi-tie study, not by DHS or MICS, and
+it is the only item here whose plan lives in another repo:
+`~/dev/networkreporting/dev/VISIBILITY-PLAN.md`. It changes where half of this
+package's code lives, and **F argues it should be done before, not after, the
+remaining MICS work** — read it before planning anything else large.
+
 
 A. Unblock the analysis pipeline
 ----
@@ -607,10 +616,108 @@ all women, so the answer there is the same. It matters most for the
 `only_females = FALSE` path, which is now reachable for the first time.
 
 
+F. The estimator spine moves to `networkreporting` — **planned, not started**
+----
+
+Written 2026-08-25. Unlike A–E, this item is **not** a defect list, and the work
+does not mostly happen here. The plan lives in the other repo:
+
+> **`~/dev/networkreporting/dev/VISIBILITY-PLAN.md`**
+
+Read that before starting anything in this section.
+
+### What it does
+
+Two phases, driven by the Matlab multi-tie study (`~/Dropbox/matlab-mortality`),
+which collects reports about siblings, households, parents, cousins,
+aunts/uncles, neighbours and acquaintances.
+
+**Phase 0** moves the tie-agnostic estimator spine out of this package and into
+`networkreporting`: `occ.exp` and its `src/`, `cell_config`, `get_esc_reports`,
+`get_ec_reports`, the three estimator helpers in `sibling_estimator.R`, the
+visibility internals in `get_sibship_visibility.R`, `get_ic_reports.R`, and
+`life_table.R`. This package keeps everything that knows about DHS, MICS or
+maternal mortality, gains `Imports: networkreporting`, and re-exports every moved
+public name from a new `R/reexports.R` so no caller breaks. `sibling_estimator()`
+stays, as a wrapper.
+
+**Phase 1** makes visibility a declared object rather than a hardcoded rule.
+`calculate_sib_ind_visibility()`'s `1/y.F` vs `1/(y.F+1)` is a *theorem about
+cliques*, not a definition — it holds because siblingship partitions the
+population and ego is a member of the group she reports about. Households
+satisfy that too; cousins, parents and neighbours do not. The replacement is a
+small family of rules (`vis_from_clique()`, `vis_from_donor()`,
+`vis_coalesce()`) sharing a `fit`/`predict` contract, with `vis_from_clique()`
+as the default so nothing about current behaviour moves.
+
+### Why it touches this package at all
+
+- **Phase 0 is a pure move on this side.** The gate is that
+  `data-raw/dhs-validation/` and `data-raw/mics-validation/` reproduce every
+  published figure unchanged, and that no test's expected value needs editing.
+  If one does, stop.
+- **`get_ego_age_distn()` stays here**, and gets a file of its own. It currently
+  sits in `R/get_sibship_visibility.R` despite having nothing to do with
+  visibility; the split fixes that misfiling as a side effect.
+- **E4 gets a successor.** The three adjustment factors removed on 2026-08-25
+  are reconstructible as `vis_from_donor(statistic = "arithmetic")`. The plan
+  argues the default should be `"harmonic"` instead, since the individual
+  estimator averages `1/v` — see `dev/FUTURE-IMPROVEMENTS.md` item 2.
+- **A bootstrap bug is in scope.** `vis_res` is computed once at
+  `R/maternal_estimators.R:95` and reused across replicates at `:228` and
+  `:238`. For the clique rule that is *correct*. For any rule that estimates
+  visibility from the sample it understates the variance. The fix must be a
+  no-op for the clique rule, which is what makes it safe to land.
+
+### When to do it — before the rest of MICS, not after
+
+The MICS items (B1–B5) and this one are **independent in content**: MICS work is
+prep, maternal classification and varmaps, all of which stay in this package and
+none of which lives in the spine being moved. Neither logically blocks the other.
+
+Independence does not make the order arbitrary, though, and both arguments point
+the same way:
+
+1. **A pure move is cheapest on a quiet tree.** Phase 0 relocates whole files.
+   That conflicts badly with in-flight feature work, and any prep code written in
+   the meantime is written against a layout about to change.
+2. **The verification gate is strongest right now.** Phase 0's gate is that
+   `data-raw/dhs-validation/` *and* `data-raw/mics-validation/` reproduce every
+   published figure unchanged. Both harnesses exist and pass today. Land new work
+   first and you are moving code whose correctness is newer — and if a number
+   shifts you cannot tell whether it was the move or the new code.
+
+An earlier draft of this section said the opposite, on the strength of the
+"Suggested order" list below. See the staleness note there.
+
+### One thing to check early
+
+The plan asserts that `y.DandFcell` — reported deaths of alters coded as being
+*on* the frame — is identically zero, and proposes asserting it as a
+data-quality check. That follows from dead siblings never being on-frame, but it
+has not been verified against real DHS data. If any prep path codes a dead
+sibling as on-frame, the assertion fires on first run. Worth an hour up front.
+
+
 Suggested order
 ----
 
 *(revised 2026-08-20; struck items are done)*
+
+> **Stale as of 2026-08-25 — items 4, 5 and 6 appear to have been completed and
+> are not struck.** Not verified with you, so nothing below is edited; flagged
+> because the list reads as if MICS were still blocked on data access, and it is
+> not. The artifacts in the repo say otherwise:
+>
+> - **4** — `data-raw/mics-data/` holds 17 survey extracts, so access happened.
+>   `data-raw/mics-validation/` is a full harness (`published-targets.csv`,
+>   `spss-syntax-replica.R`, `validate.R`).
+> - **5** — `tests/testthat/helper-simulate-mics.R` and `test_mics.R` exist.
+> - **6** — `prep_mics_sib_histories()` ships, varmaps cover MICS4–7, and
+>   `NEWS.md` carries a full "MICS support" section.
+>
+> **7 (D3)** still looks open: it wants a documentary answer about the DHS
+> questionnaire history, not a code change. Worth re-striking this list.
 
 1. ~~**A1**~~ — no code work needed; the fix is on `origin/main`. The analysis
    repo just needs to reinstall. Optionally cut a first `v0.3.0` tag.
