@@ -1,5 +1,35 @@
 # siblingsurvival 0.3.0.9000 (development)
 
+
+
+## `sibling_estimator()` is now a wrapper over the generic estimator
+
+The estimator pipeline moved to `networkreporting::network_survival_estimator()`,
+and `sibling_estimator()` calls it. **Its signature, its defaults and its output
+are unchanged** -- same argument names, same `sib.age` column, same clique tie by
+default -- and the DHS and MICS validation harnesses reproduce byte-identically.
+
+The estimator was never sibling-specific in anything but naming, so keeping a
+second copy here would have been two versions of one pipeline waiting to drift.
+What the wrapper still does is supply the clique tie (correct for siblings, and
+the generic deliberately has no default), rename `alter.age` back to `sib.age`,
+and make sure a mistyped column is reported in the argument names you actually
+used rather than the generic's.
+
+## A tie may declare `ego.in.group` and its own frame indicator
+
+`sibling_estimator(tie = )` now accepts a `tie_config()` carrying
+`ego.in.group` and `frame.indicator` as well as a structure. Both default to
+undeclared, so nothing about existing calls changes.
+
+* Because this function renames the frame column internally, a tie naming the
+  caller's own spelling is reconciled here rather than downstream, where the
+  tie's name would no longer be found. A tie whose `frame.indicator` disagrees
+  with `sib.frame.indicator` is an error naming both.
+* `ego.in.group` declared in two places that disagree is likewise an error
+  rather than one silently winning, and the resolved value is reported in
+  `res$vis_provenance`.
+
 ## `sibling_estimator()` takes a visibility rule
 
 `sibling_estimator()` gains a `visibility` argument, defaulting to

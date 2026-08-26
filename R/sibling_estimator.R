@@ -22,16 +22,22 @@
 ##'        are, so the default changes nothing.
 ##'
 ##'        **Set this if you are using this function for a tie that is not a
-##'        clique.** It is used for maternal cousins and cousins-plus-siblings
-##'        in the socsim work, and cousinship is not transitive, so the default
-##'        clique rule silently overstates visibility there --- by 1.55x for
-##'        off-frame alters against 1.29x for on-frame ones, measured against
-##'        socsim ground truth. Because a death is always off-frame while
-##'        exposure is a mixture, that differential biases the rate rather than
-##'        cancelling. Declaring `tie_config("group")` makes the clique rule
-##'        refuse rather than mislead.
+##'        clique.** Whether a roster is a clique is a fact about how it was
+##'        built, not something the data reveals: applied to a roster that is
+##'        not one, the clique rule still returns a plausible number. On a
+##'        socsim roster pooling maternal and paternal cousins it overstates
+##'        visibility by 1.089x for off-frame alters against 1.061x for
+##'        on-frame ones, and since a death is always off-frame while exposure
+##'        is a mixture, that differential biases the rate rather than
+##'        cancelling out of it.
+##'
+##'        Worth knowing which way the surprise runs: maternal cousins *alone*
+##'        are a clique, since everyone sharing a maternal grandmother forms an
+##'        equivalence class, and the rule is exact for them. It is the union of
+##'        the two lines that is not.
 ##' @param discretize.exp Boolean for whether or not expsoure should be discretized. Not yet implemented.
 ##' @return a list with two entries: \code{asdr.ind}, individual visibility asdr estimates; and \code{asdr.agg}, aggregate visibility asdr estimates
+##' @seealso [networkreporting::network_survival_estimator()], which this wraps
 ##'
 ##' @section Details:
 ##' If you want estimated sampling variances, you can pass in a data frame \code{boot.weights}.
@@ -68,221 +74,49 @@ sibling_estimator <- function(sib.dat,
                               # discretize exposure
                               discretize.exp=FALSE) {
 
-  ## check up front that the columns we were given actually exist, so that a
-  ## mismatched name (eg sib.id='sib.id' when prep created 'sibid') produces a
-  ## message that names the columns available rather than an opaque tidyselect error
-  requested.cols <- c(ego.id=ego.id,
-                      sib.id=sib.id,
-                      sib.frame.indicator=sib.frame.indicator,
-                      sib.sex=sib.sex,
-                      weights=weights)
-  missing.cols <- requested.cols[! requested.cols %in% names(sib.dat)]
+  ## This is networkreporting::network_survival_estimator() with the sibling
+  ## names and the clique tie filled in. The estimator itself is not
+  ## sibling-specific -- nothing in the pipeline assumes anything about
+  ## siblings, only about a tie -- so it lives there and is called from here,
+  ## rather than existing twice and drifting.
+  ##
+  ## Two things this wrapper is responsible for, and they are the only reasons
+  ## it is more than an alias:
+  ##
+  ##  1. The clique tie. Siblings ARE a clique, so the default is right here,
+  ##     whereas the generic deliberately has no default: applicability cannot
+  ##     be read off the data, and a wrong default would silently bias a rate.
+  ##  2. The output column names. Callers of this function have always got back
+  ##     `sib.age` and their own sex column; the generic returns `alter.age`.
 
-  if (length(missing.cols) > 0) {
-    stop(glue::glue(
-      "Column(s) requested but not found in sib.dat: ",
-      "{paste0(names(missing.cols), \"='\", missing.cols, \"'\", collapse=', ')}.\n",
-      "sib.dat has columns: {paste0(names(sib.dat), collapse=', ')}\n"))
-  }
+  res <- networkreporting::network_survival_estimator(
+    rel.dat         = sib.dat,
+    ego.id          = ego.id,
+    alter.id        = sib.id,
+    frame.indicator = sib.frame.indicator,
+    alter.sex       = sib.sex,
+    cell.config     = cell.config,
+    weights         = weights,
+    boot.weights    = boot.weights,
+    return.boot     = return.boot,
+    visibility      = visibility,
+    tie             = tie,
+    discretize.exp  = discretize.exp,
+    ## so a mismatched column is reported in the names the caller actually used
+    .arg.labels     = c(alter.id        = 'sib.id',
+                        frame.indicator = 'sib.frame.indicator',
+                        alter.sex       = 'sib.sex'),
+    .data.label     = 'sib.dat')
 
-  sib.dat <- sib.dat %>%
-    dplyr::mutate(.ego.id     = !!sym(ego.id),
-                  .sib.id     = !!sym(sib.id),
-                  .sib.in.F   = !!sym(sib.frame.indicator),
-                  .sib.sex    = !!sym(sib.sex),
-                  .ego.weight = !!sym(weights))
-
-  # get ego X sib X cell reports
-  esc.dat <- get_esc_reports(sib.dat=sib.dat,
-                             ego.id='.ego.id',
-                             sib.id='.sib.id',
-                             cell.config)
-
-  # add covariates for the siblings
-  esc.dat <- esc.dat %>%
-    left_join(sib.dat %>% select(.ego.id,
-                                 .sib.id,
-                                 .ego.weight,
-                                 .sib.in.F,
-                                 .sib.sex),
-              by=c('.ego.id', '.sib.id'))
-
-  cell.vars <- c('time.period', '.sib.sex', 'agelabel', cell.config$covars)
-
-  ## Apply the visibility rule. The default, vis_from_clique(), reproduces the
-  ## previous hardcoded behaviour exactly -- 1/y.F on frame, 1/(y.F + 1) off it
-  ## -- so nothing about existing estimates moves. Passing another rule is what
-  ## makes visibility a declared modelling choice rather than an assumption
-  ## buried in the estimator.
-  vis.res <- networkreporting::apply_visibility_rule(
-    rule            = visibility,
-    esc.dat         = esc.dat,
-    sib.dat         = sib.dat,
-    ego.id          = '.ego.id',
-    frame.indicator = '.sib.in.F',
-    weights         = '.ego.weight',
-    tie             = tie)
-
-  ## esc.dat comes back with y.F attached, which get_ec_reports() reads
-  esc.dat <- vis.res$data
-  ## `ind_vis` is the visibility WEIGHT (the reciprocal of the count), which is
-  ## what get_ec_reports() consumes
-  esc.dat$ind_vis <- vis.res$values$vis_weight
-
-  if (any(is.na(esc.dat$ind_vis))) {
-    n.na <- sum(is.na(esc.dat$ind_vis))
-    stop(glue::glue(
-      "The visibility rule '{visibility$label}' left {n.na} of {nrow(esc.dat)} ",
-      "report(s) without a visibility.\n",
-      "For the clique rule this points at missingness in the frame indicator. ",
-      "For an approximating rule it usually means some alters have no donor ",
-      "cell; wrap the rule in vis_coalesce() with a coarser fallback tier."))
-  }
-
-  ## TODO - I think this line sometimes causes a warning
-  ## "Column `.ego.id` has different attributes on LHS and RHS of join"
-  ec.dat <- get_ec_reports(esc.dat,
-                           ego.id='.ego.id',
-                           sib.dat=sib.dat,
-                           sib.frame.indicator='.sib.in.F',
-                           # TODO - eventually, perhaps these should be
-                           # parameters and not hard-coded
-                           cell.vars=cell.vars,
-                           weights='.ego.weight',
-                           ind.vis.var='ind_vis')
-
-  asdr.ind.dat <- get_ind_est_from_ec(ec.dat, '.ego.weight', cell.vars)
-  asdr.agg.dat <- get_agg_est_from_ec(ec.dat, '.ego.weight', cell.vars)
-
-  ## if we want sampling variances...
-  if (! is.null(boot.weights)) {
-    M <- ncol(boot.weights) - 1
-
-    boot.weights <- boot.weights %>%
-      dplyr::rename(.ego.id = !!sym(ego.id))
-
-    ## For an estimated visibility rule, the group size moves with the
-    ## replicate, so it has to be refit inside the loop rather than frozen.
-    ## For vis_from_clique() this is NULL and nothing changes -- which is what
-    ## makes the change safe to land: the clique CIs must not move.
-    vis.refit <- networkreporting::make_vis_refit(
-      rule         = visibility,
-      donor.dat    = vis.res$donor.dat,
-      boot.weights = boot.weights,
-      ec.dat       = ec.dat,
-      ego.id       = '.ego.id')
-
-    boot.ind.ests <- get_boot_ests_matrix(ec.dat, boot.weights, '.ego.id', cell.vars, 'ind',
-                                          visibility = visibility, refit = vis.refit)
-    boot.agg.ests <- get_boot_ests_matrix(ec.dat, boot.weights, '.ego.id', cell.vars, 'agg')
-
-    if (any(is.na(boot.ind.ests$asdr.hat))) {
-      n.na <- sum(is.na(boot.ind.ests$asdr.hat))
-      n.all <- length(boot.ind.ests$asdr.hat)
-      warning(glue::glue("Individual estimates have {n.na} out of {n.all} values missing. These have been removed in the summary statistics. Beware!\n"))
+  ## alter.age -> sib.age, everywhere it appears
+  rename_age <- function(x) {
+    if (is.data.frame(x) && 'alter.age' %in% names(x)) {
+      x <- dplyr::rename(x, sib.age = 'alter.age')
     }
-
-    # get estimated sampling uncertainty for the
-    # individual and aggregate visibility estimates
-    boot.ind.varest <- boot.ind.ests %>%
-      ungroup() %>%
-      group_by(across(all_of(cell.vars))) %>%
-      summarise(asdr.hat.ci.low = quantile(asdr.hat, .025, na.rm=TRUE),
-                asdr.hat.ci.high = quantile(asdr.hat, 0.975, na.rm=TRUE),
-                asdr.hat.median = quantile(asdr.hat, 0.5, na.rm=TRUE),
-                asdr.hat.se = sd(asdr.hat, na.rm=TRUE))
-
-    if (any(is.na(boot.agg.ests$asdr.hat))) {
-      n.na <- sum(is.na(boot.agg.ests$asdr.hat))
-      n.all <- length(boot.agg.ests$asdr.hat)
-      warning(glue::glue("Aggregate estimates have {n.na} out of {n.all} values missing. These have been removed in the summary statistics. Beware!\n"))
-    }
-
-
-    boot.agg.varest <- boot.agg.ests %>%
-      ungroup() %>%
-      group_by(across(all_of(cell.vars))) %>%
-      summarise(asdr.hat.ci.low = quantile(asdr.hat, .025, na.rm=TRUE),
-                asdr.hat.ci.high = quantile(asdr.hat, 0.975, na.rm=TRUE),
-                asdr.hat.median = quantile(asdr.hat, 0.5, na.rm=TRUE),
-                asdr.hat.se = sd(asdr.hat, na.rm=TRUE))
-
-    # and join the estimated sampling uncertainty onto the returned asdrs
-    asdr.ind.dat <- asdr.ind.dat %>%
-      left_join(boot.ind.varest, by=cell.vars)
-
-    asdr.agg.dat <- asdr.agg.dat %>%
-      left_join(boot.agg.varest, by=cell.vars)
-
+    x
   }
-
-
-
-  asdr.ind.dat <- asdr.ind.dat %>%
-    rename(!!sib.sex := .sib.sex,
-           sib.age = agelabel)
-
-  asdr.agg.dat <- asdr.agg.dat %>%
-    rename(!!sib.sex := .sib.sex,
-           sib.age = agelabel)
-
-  ec.dat <- ec.dat %>%
-    rename(!!sib.sex := .sib.sex,
-           !!ego.id := .ego.id,
-           sib.age = agelabel,
-           !!weights := .ego.weight)
-
-  esc.dat <- esc.dat %>%
-    rename(!!sib.sex := .sib.sex,
-           !!ego.id := .ego.id,
-           !!sib.id := .sib.id,
-           sib.age = agelabel,
-           !!sib.frame.indicator := .sib.in.F,
-           !!weights := .ego.weight)
-
-  if(! is.null(cell.config$event.name)) {
-    asdr.ind.dat$event.name <- cell.config$event.name
-    asdr.agg.dat$event.name <- cell.config$event.name
-    ec.dat$event.name <- cell.config$event.name
-    esc.dat$event.name <- cell.config$event.name
-  }
-
-  res <- list(asdr.ind=asdr.ind.dat,
-              asdr.agg=asdr.agg.dat,
-              ec.dat=ec.dat,
-              esc.dat=esc.dat)
-
-  # if the user wants us to return all of the bootstrap estimates
-  # (instead of just the summaries), add them to the results list
-  if (! is.null(boot.weights)) {
-    if(return.boot) {
-
-      boot.ind.ests <- boot.ind.ests %>%
-        rename(!!sib.sex := .sib.sex,
-               sib.age = agelabel)
-
-      boot.agg.ests <- boot.agg.ests %>%
-        rename(!!sib.sex := .sib.sex,
-               sib.age = agelabel)
-
-      if(! is.null(cell.config$event.name)) {
-        boot.ind.ests$event.name <- cell.config$event.name
-        boot.agg.ests$event.name <- cell.config$event.name
-      }
-
-      res$boot.asdr.ind <- boot.ind.ests
-      res$boot.asdr.agg <- boot.agg.ests
-
-    }
-
-  }
-
-  ## Provenance travels with the estimate: which rule produced it, how many
-  ## alters each tier resolved, and what share of the deaths and of the exposure
-  ## were approximated. Attached rather than added as a column so that nothing
-  ## downstream that indexes res by name is disturbed.
-  attr(res, "vis_provenance") <- vis.res$provenance
-  res$vis_provenance <- vis.res$provenance
+  keep <- setdiff(names(res), 'vis_provenance')
+  res[keep] <- lapply(res[keep], rename_age)
 
   return(res)
 }
