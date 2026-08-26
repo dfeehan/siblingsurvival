@@ -236,7 +236,7 @@ test_that("sib.sex: only codes 1 and 2 survive; others are dropped", {
 # Note the remedy is NOT a male age distribution: published DHS reports
 # standardise both sexes by the respondents' age distribution, which is
 # only_females = TRUE. Verified against four published tables spanning phases
-# 4 to 8 -- see DHS-VALIDATION-PLAN.md H4.
+# 4 to 8 -- see dev/DHS-VALIDATION-PLAN.md H4.
 
 test_that("get_ego_age_distn warns when asked to split a single-sex sample", {
   ego <- data.frame(sex = "f", wwgt = 1,

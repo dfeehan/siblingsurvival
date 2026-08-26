@@ -162,8 +162,6 @@ is_maternal_dhs <- function(sib_df, na.action = NULL) {
 ##' pregnancy-related deaths against a published 64, and on Madagascar 2018 136.6
 ##' against a published 137; `"2months"` gives 67.7 and 140.4.
 ##'
-##' See the "Working with MICS sibling history data" vignette.
-##'
 ##' @param sib_df the prepped sibling dataset
 ##' @param preg.window width of the postpartum window: `"2months"` (default) or
 ##'        `"42days"`. See Details

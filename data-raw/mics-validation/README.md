@@ -2,7 +2,7 @@ MICS validation harness
 ====
 
 Checks that `siblingsurvival` reproduces published MICS estimates. See the
-"Validation against published MICS numbers" section of `../../MICS-PLAN.md` for
+"Validation against published MICS numbers" section of `../../dev/MICS-PLAN.md` for
 the reasoning and the staged design; this file covers only how to run it.
 
 **The target is the aggregate-visibility estimator.** `asdr.agg` is

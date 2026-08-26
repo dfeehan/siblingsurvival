@@ -76,8 +76,7 @@ syntax counts \code{MM22 = 1 | MM23 = 1 | (MM24 = 1 & MM25 < 42)} and never read
 the violence (\code{MM26}) or accident (\code{MM27}) items at all, despite the
 footnote in the reports saying those causes are excluded. So the published
 column is a \strong{pregnancy-related} count on a 42-day window. To reproduce it,
-use \code{sib.preg_related.death.date} with \code{preg.window = "42days"}. See the
-vignette "Working with MICS sibling history data".
+use \code{sib.preg_related.death.date} with \code{preg.window = "42days"}.
 \subsection{Choosing \code{na.action}}{
 
 \code{na.action} has \strong{no default for the MICS styles}, because it is a

@@ -13,7 +13,10 @@
   `warn_uninterviewed_sex()` and returns `NA` for the uninterviewed sex; it
   passes `warn.single.sex = FALSE` so the two do not both fire for one cause.
 
-  See `FUTURE-IMPROVEMENTS.md` for what it would take to support this properly.
+  Supporting male age standardisation properly would mean reading a male age
+  distribution from an `MR` or `PR` file -- either supplied by the caller, built
+  by a small helper, or read inside the prep function. None of the three is
+  implemented yet.
 
 ## The DHS conventions are now options, defaulting to what DHS does
 
@@ -255,14 +258,16 @@ behaviour.
 
 ## Documentation
 
-* Added the vignette "Working with MICS sibling history data", covering which
-  MICS rounds carry a usable sibling history, what the MICS prep does that the
-  DHS path does not, and the results of validating the package against the
-  published tables of three MICS6 surveys. It records two conventions that MICS
-  documents leave unstated -- the seven-year reference window is
-  `[doi - 84, doi)`, and age standardisation uses the interviewed women -- and
-  one that is actively mislabelled: the column headed "Maternal Deaths" in table
-  TM.9.3 of MICS reports contains the **pregnancy-related** count.
+* Validating against the published tables of three MICS6 surveys settled two
+  conventions that MICS documents leave unstated -- the seven-year reference
+  window is `[doi - 84, doi)`, and age standardisation uses the interviewed
+  women -- and turned up one that is actively mislabelled: the column headed
+  "Maternal Deaths" in table TM.9.3 of MICS reports contains the
+  **pregnancy-related** count. The function documentation for
+  `add_maternal_deaths()` and `classify_maternal_deaths()` records this.
+
+  Vignettes covering the MICS and DHS data in full are drafted but not yet
+  ready to ship; they live in `vignettes-drafts/` in the source repository.
 
 ## Bug fixes
 

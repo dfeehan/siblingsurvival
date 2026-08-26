@@ -54,8 +54,7 @@
 ##' the violence (`MM26`) or accident (`MM27`) items at all, despite the
 ##' footnote in the reports saying those causes are excluded. So the published
 ##' column is a **pregnancy-related** count on a 42-day window. To reproduce it,
-##' use `sib.preg_related.death.date` with `preg.window = "42days"`. See the
-##' vignette "Working with MICS sibling history data".
+##' use `sib.preg_related.death.date` with `preg.window = "42days"`.
 ##'
 ##' ## Choosing `na.action`
 ##'
