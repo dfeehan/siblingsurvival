@@ -23,6 +23,8 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports:
     networkreporting (>= 0.3.2), glue, dplyr, rlang, plyr, stringr, forcats
+Remotes:
+    dfeehan/networkreporting
 Depends: 
     R (>= 3.5)
 Config/testthat/edition: 3
