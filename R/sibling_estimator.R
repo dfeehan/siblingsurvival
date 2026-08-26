@@ -22,14 +22,19 @@
 ##'        are, so the default changes nothing.
 ##'
 ##'        **Set this if you are using this function for a tie that is not a
-##'        clique.** It is used for maternal cousins and cousins-plus-siblings
-##'        in the socsim work, and cousinship is not transitive, so the default
-##'        clique rule silently overstates visibility there --- by 1.55x for
-##'        off-frame alters against 1.29x for on-frame ones, measured against
-##'        socsim ground truth. Because a death is always off-frame while
-##'        exposure is a mixture, that differential biases the rate rather than
-##'        cancelling. Declaring `tie_config("group")` makes the clique rule
-##'        refuse rather than mislead.
+##'        clique.** Whether a roster is a clique is a fact about how it was
+##'        built, not something the data reveals: applied to a roster that is
+##'        not one, the clique rule still returns a plausible number. On a
+##'        socsim roster pooling maternal and paternal cousins it overstates
+##'        visibility by 1.089x for off-frame alters against 1.061x for
+##'        on-frame ones, and since a death is always off-frame while exposure
+##'        is a mixture, that differential biases the rate rather than
+##'        cancelling out of it.
+##'
+##'        Worth knowing which way the surprise runs: maternal cousins *alone*
+##'        are a clique, since everyone sharing a maternal grandmother forms an
+##'        equivalence class, and the rule is exact for them. It is the union of
+##'        the two lines that is not.
 ##' @param discretize.exp Boolean for whether or not expsoure should be discretized. Not yet implemented.
 ##' @return a list with two entries: \code{asdr.ind}, individual visibility asdr estimates; and \code{asdr.agg}, aggregate visibility asdr estimates
 ##' @seealso [networkreporting::network_survival_estimator()], which this wraps
