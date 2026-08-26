@@ -15,6 +15,7 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0),
     tibble,
+    purrr,
     surveybootstrap,
     tictoc,
     tidyverse
