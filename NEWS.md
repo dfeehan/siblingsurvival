@@ -1,5 +1,39 @@
 # siblingsurvival 0.3.0.9000 (development)
 
+## `sibling_estimator()` takes a visibility rule
+
+`sibling_estimator()` gains a `visibility` argument, defaulting to
+`networkreporting::vis_from_clique()`. **The default is exactly what this
+function has always done** -- `1/y.F` for an on-frame sibling, `1/(y.F + 1)`
+otherwise -- so no existing estimate, interval or published figure moves.
+
+What changes is that the rule is now a stated choice rather than an assumption
+buried in the estimator, and other rules can be passed:
+
+```r
+sibling_estimator(..., visibility = vis_coalesce(
+  vis_from_clique(),                                 # exact where it exists
+  vis_from_donor(match_on = c(.sib.sex = "sex"))))   # approximate elsewhere
+```
+
+The rules themselves live in `networkreporting`; see its *Approximating
+visibility* vignette for what they assume and which way they are wrong.
+
+* The result carries a `vis_provenance` object, both as `res$vis_provenance` and
+  as an attribute. It reports which rule resolved how many siblings, and what
+  share of the deaths and of the exposure were approximated -- two different
+  numbers, both worth having.
+* For a rule estimated from the sample, visibility is now refit inside each
+  bootstrap replicate instead of being frozen. Freezing a sample quantity
+  understates the variance. For the clique rule nothing changes, because there
+  visibility is a function of ego's own reports rather than of who was sampled.
+* The `sibling-estimates` vignette no longer hand-computes
+  `adj.factor = y.F.bar / (y.F.bar + 1)`. It builds the same number with
+  `vis_from_donor(statistic = "arithmetic")`, shows the two agreeing, and then
+  shows what the default `"harmonic"` gives instead -- about 25% smaller on that
+  extract, since the individual estimator averages `1/v` and Jensen puts the
+  harmonic mean below the arithmetic one.
+
 ## The estimator spine now lives in networkreporting
 
 The tie-agnostic half of the estimator moved to `networkreporting`, which this

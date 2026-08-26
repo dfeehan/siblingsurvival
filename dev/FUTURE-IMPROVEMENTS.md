@@ -79,6 +79,19 @@ removing the thing they were about. `ego_vis_agg` still carries `y.F.bar` and
 changes: the factors were reported next to `ind.est`/`agg.est`, never applied
 to them.
 
+**Successor, added 2026-08-25.** A caller who wants one should no longer build
+it by hand. `networkreporting::vis_from_donor(statistic = "arithmetic")` is the
+supported replacement: it estimates the same group size the old factor was
+built from, so `adj.factor` is exactly `(S.hat - 1) / S.hat`. The
+`sibling-estimates` vignette now shows the two agreeing on real data.
+
+Note the default is `statistic = "harmonic"`, not `"arithmetic"`. The individual
+estimator averages `1/v`, so the summary that makes the plug-in unbiased is
+`(E[1/v])^-1`; the old factor used the arithmetic mean, which by Jensen is never
+smaller. Reproducing an older analysis therefore means asking for `"arithmetic"`
+explicitly. On the vignette's DHS extract the harmonic group size runs about
+25% below the arithmetic one, so the choice is not cosmetic.
+
 
 3. Confidence intervals do not match either reference
 ----

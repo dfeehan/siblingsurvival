@@ -14,6 +14,7 @@ sibling_estimator(
   weights,
   boot.weights = NULL,
   return.boot = FALSE,
+  visibility = networkreporting::vis_from_clique(),
   discretize.exp = FALSE
 )
 }
@@ -35,6 +36,14 @@ sibling_estimator(
 \item{boot.weights}{Optional dataframe with bootstrap resampled weights. See Details for more info.}
 
 \item{return.boot}{If TRUE, and if \code{boot.weights} is specified, then return each bootstrap estimate}
+
+\item{visibility}{A visibility rule saying how each reported sibling's
+visibility is derived. Defaults to
+\code{\link[networkreporting:vis_from_clique]{networkreporting::vis_from_clique()}}, the exact rule this function
+has always applied, so the default changes nothing. See
+\code{\link[networkreporting:vis_from_donor]{networkreporting::vis_from_donor()}} and
+\code{\link[networkreporting:vis_coalesce]{networkreporting::vis_coalesce()}} for the approximating rules that
+non-clique ties need.}
 
 \item{discretize.exp}{Boolean for whether or not expsoure should be discretized. Not yet implemented.}
 }

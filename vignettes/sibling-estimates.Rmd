@@ -404,6 +404,57 @@ ego.vis.agg <- ego.vis %>%
   mutate(adj.factor = y.F.bar / (y.F.bar + 1))
 ```
 
+That hand-rolled `adj.factor` is a visibility approximation: it borrows the
+respondents' average sibship size and applies it to the alters. Since that is a
+modelling assumption rather than a calculation, it is better expressed as one.
+`vis_from_donor()` is the supported way to build it, and it makes the two
+choices buried in the line above explicit -- who the donors are, and how their
+visibilities are summarised.
+
+```{r}
+donor.rule <- networkreporting::vis_from_donor(
+  match_on   = c(sib.sex = "sex", sib.age = "age.cat"),
+  statistic  = "arithmetic",   # what adj.factor used; see below
+  min_donors = 1)
+
+donor.cells <- donor.rule$fit(ego.vis, "wwgt")$cells
+
+## S.hat is the estimated group size, so it is y.F.bar + 1, and the historical
+## adjustment factor is (S.hat - 1) / S.hat
+donor.cells <- donor.cells %>%
+  mutate(adj.factor.rule = (.S.hat - 1) / .S.hat)
+
+check <- ego.vis.agg %>%
+  left_join(donor.cells, by = c("sex" = "sib.sex", "age.cat" = "sib.age"))
+
+## the two agree to numerical precision
+all.equal(check$adj.factor, check$adj.factor.rule)
+```
+
+The default is not `"arithmetic"`, though. The individual estimator averages
+`1/v`, so the summary that makes the plug-in unbiased is the *harmonic* mean,
+`(E[1/v])^-1`. By Jensen's inequality the harmonic mean is never larger than the
+arithmetic one, so switching gives a systematically smaller group size -- and
+the gap grows with the variance of sibship size:
+
+```{r}
+harm.cells <- networkreporting::vis_from_donor(
+    match_on   = c(sib.sex = "sex", sib.age = "age.cat"),
+    statistic  = "harmonic",
+    min_donors = 1)$fit(ego.vis, "wwgt")$cells
+
+compare.stat <- donor.cells %>%
+  select(sib.sex, sib.age, S.arithmetic = .S.hat) %>%
+  left_join(harm.cells %>% select(sib.sex, sib.age, S.harmonic = .S.hat),
+            by = c("sib.sex", "sib.age")) %>%
+  mutate(ratio = S.harmonic / S.arithmetic)
+
+compare.stat
+```
+
+Every `ratio` is at or below 1, which is Jensen showing up in the data rather
+than in a footnote.
+
 Make adjusted individual estimates
 
 ```{r}

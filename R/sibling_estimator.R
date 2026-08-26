@@ -9,6 +9,13 @@
 ##' @param weights String with the name of the column of \code{sib.dat} that has the sampling weight
 ##' @param boot.weights Optional dataframe with bootstrap resampled weights. See Details for more info.
 ##' @param return.boot If TRUE, and if \code{boot.weights} is specified, then return each bootstrap estimate
+##' @param visibility A visibility rule saying how each reported sibling's
+##'        visibility is derived. Defaults to
+##'        [networkreporting::vis_from_clique()], the exact rule this function
+##'        has always applied, so the default changes nothing. See
+##'        [networkreporting::vis_from_donor()] and
+##'        [networkreporting::vis_coalesce()] for the approximating rules that
+##'        non-clique ties need.
 ##' @param discretize.exp Boolean for whether or not expsoure should be discretized. Not yet implemented.
 ##' @return a list with two entries: \code{asdr.ind}, individual visibility asdr estimates; and \code{asdr.agg}, aggregate visibility asdr estimates
 ##'
@@ -33,6 +40,10 @@ sibling_estimator <- function(sib.dat,
                               weights,
                               boot.weights = NULL,
                               return.boot = FALSE,
+                              # how each reported sibling's visibility is derived.
+                              # the default is the exact clique rule, which is what
+                              # this function has always used
+                              visibility = networkreporting::vis_from_clique(),
                               # by default, we report continuous exposure (ie, number of months of exposure)
                               # but the formal results are based on exposed/not exposed; use this setting to
                               # discretize exposure
@@ -79,13 +90,34 @@ sibling_estimator <- function(sib.dat,
 
   cell.vars <- c('time.period', '.sib.sex', 'agelabel', cell.config$covars)
 
-  # add individual visibility weights for the siblings
-  esc.dat <- esc.dat %>%
-    add_esc_ind_vis(ego.id='.ego.id',
-                    sib.dat,
-                    sib.frame.indicator='.sib.in.F',
-                    # column name for individual visibility
-                    varname='ind_vis')
+  ## Apply the visibility rule. The default, vis_from_clique(), reproduces the
+  ## previous hardcoded behaviour exactly -- 1/y.F on frame, 1/(y.F + 1) off it
+  ## -- so nothing about existing estimates moves. Passing another rule is what
+  ## makes visibility a declared modelling choice rather than an assumption
+  ## buried in the estimator.
+  vis.res <- networkreporting::apply_visibility_rule(
+    rule            = visibility,
+    esc.dat         = esc.dat,
+    sib.dat         = sib.dat,
+    ego.id          = '.ego.id',
+    frame.indicator = '.sib.in.F',
+    weights         = '.ego.weight')
+
+  ## esc.dat comes back with y.F attached, which get_ec_reports() reads
+  esc.dat <- vis.res$data
+  ## `ind_vis` is the visibility WEIGHT (the reciprocal of the count), which is
+  ## what get_ec_reports() consumes
+  esc.dat$ind_vis <- vis.res$values$vis_weight
+
+  if (any(is.na(esc.dat$ind_vis))) {
+    n.na <- sum(is.na(esc.dat$ind_vis))
+    stop(glue::glue(
+      "The visibility rule '{visibility$label}' left {n.na} of {nrow(esc.dat)} ",
+      "report(s) without a visibility.\n",
+      "For the clique rule this points at missingness in the frame indicator. ",
+      "For an approximating rule it usually means some alters have no donor ",
+      "cell; wrap the rule in vis_coalesce() with a coarser fallback tier."))
+  }
 
   ## TODO - I think this line sometimes causes a warning
   ## "Column `.ego.id` has different attributes on LHS and RHS of join"
@@ -109,7 +141,19 @@ sibling_estimator <- function(sib.dat,
     boot.weights <- boot.weights %>%
       dplyr::rename(.ego.id = !!sym(ego.id))
 
-    boot.ind.ests <- get_boot_ests_matrix(ec.dat, boot.weights, '.ego.id', cell.vars, 'ind')
+    ## For an estimated visibility rule, the group size moves with the
+    ## replicate, so it has to be refit inside the loop rather than frozen.
+    ## For vis_from_clique() this is NULL and nothing changes -- which is what
+    ## makes the change safe to land: the clique CIs must not move.
+    vis.refit <- networkreporting::make_vis_refit(
+      rule         = visibility,
+      donor.dat    = vis.res$donor.dat,
+      boot.weights = boot.weights,
+      ec.dat       = ec.dat,
+      ego.id       = '.ego.id')
+
+    boot.ind.ests <- get_boot_ests_matrix(ec.dat, boot.weights, '.ego.id', cell.vars, 'ind',
+                                          visibility = visibility, refit = vis.refit)
     boot.agg.ests <- get_boot_ests_matrix(ec.dat, boot.weights, '.ego.id', cell.vars, 'agg')
 
     if (any(is.na(boot.ind.ests$asdr.hat))) {
@@ -212,6 +256,13 @@ sibling_estimator <- function(sib.dat,
     }
 
   }
+
+  ## Provenance travels with the estimate: which rule produced it, how many
+  ## alters each tier resolved, and what share of the deaths and of the exposure
+  ## were approximated. Attached rather than added as a column so that nothing
+  ## downstream that indexes res by name is disturbed.
+  attr(res, "vis_provenance") <- vis.res$provenance
+  res$vis_provenance <- vis.res$provenance
 
   return(res)
 }
