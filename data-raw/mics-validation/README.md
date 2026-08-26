@@ -18,12 +18,44 @@ Layout
       mics-data/          .sav files. GITIGNORED. never commit these.
       mics-validation/    this directory. tracked.
         published-targets.csv
+        mics-results.csv  committed baseline -- diff against it after any refactor
         README.md
-        validate.R        (to be written)
+        validate.R
 
 `published-targets.csv` is tracked even though the microdata is not: the
 expected values come from public survey reports, so they are shareable, and
 anyone who obtains the data can reproduce the check.
+
+Running it
+----
+
+    source("data-raw/mics-validation/validate.R")
+
+    validate_mics("ZW2019")   # one survey, full detail, returned in memory
+    validate_mics_all()       # every survey with data, and rewrite the baseline
+
+`mics-results.csv` is the **committed baseline**, and it is tracked for the same
+reason `published-targets.csv` is: it holds no microdata, only numbers derived
+from it, and it is what makes a change detectable. After any refactor, run
+`validate_mics_all()` and `git diff` this directory. An empty diff is the check
+passing.
+
+This mirrors `../dhs-validation/allcause-results.csv`, which is what made the
+estimator-spine move (`networkreporting/dev/VISIBILITY-PLAN.md`) verifiable
+rather than merely plausible. The baseline here was generated from pre-refactor
+code (`1a83faa`) and confirmed byte-identical to post-refactor output, so it
+records values that predate the move.
+
+**Two surveys currently fail, and that is recorded rather than skipped**, so
+that fixing either shows up as a change:
+
+- `MDG2018` — the MICS file omits the respondent's CMC date of birth (`wdob`).
+  Needs the women's file joined via `wm.df` to supply it.
+- `ZW2014` — MICS4/5 layout, so `sibhist_varmap_mics6` maps none of the sibling
+  columns. Needs `varmap = sibhist_varmap_mics4`.
+
+Neither is an estimator problem. `PKPunjab2017` has a target row but no
+directory under `mics-data/`, so it is not attempted at all.
 
 Getting the data
 ----
