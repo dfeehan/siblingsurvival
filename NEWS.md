@@ -1,5 +1,49 @@
 # siblingsurvival 0.3.0.9000 (development)
 
+## The estimator spine now lives in networkreporting
+
+The tie-agnostic half of the estimator moved to `networkreporting`, which this
+package now imports. **Every public name is re-exported, so no existing code
+needs to change** -- `occ.exp()`, `cell_config()`, `make.age.groups()`,
+`make.even.age.groups()`, `make.time.periods()`, `nmx_to_nqx()`, `q15_to_50()`,
+`get_visibility()` and `sib_ic_checks()` all still work when called as
+`siblingsurvival::`, and `library(siblingsurvival)` still attaches them.
+
+If you go looking for one of those functions in `R/` here, that is why it is
+gone: it was moved, not deleted. `R/reexports.R` records where each one went.
+
+* **What moved**: `occ.exp()` and its C++ code, `cell_config()` and the age and
+  time-period helpers, `get_esc_reports()`, `get_ec_reports()`, the three
+  estimator helpers from `sibling_estimator.R`, the visibility internals from
+  `get_sibship_visibility.R`, `get_ic_reports.R` and `life_table.R`.
+* **What stayed**: everything that knows about DHS, MICS or maternal mortality
+  -- the prep functions, varmaps, maternal classification and estimators, and
+  `sibling_estimator()` itself, which is now a thin wrapper over the spine.
+* `get_ego_age_distn()` stayed, and gained a file of its own,
+  `R/get_ego_age_distn.R`. It had been sitting in `R/get_sibship_visibility.R`
+  despite having nothing to do with visibility.
+* This package no longer contains compiled code; `src/` and `LinkingTo: Rcpp`
+  moved with `occ.exp()`. It is worth reinstalling `networkreporting` first,
+  since this package will not load without a build of it that contains the
+  spine.
+* Removed `sib_ic_checks_OLD()`, superseded by `sib_ic_checks()` and never
+  exported.
+
+Behaviour is unchanged, and was checked rather than assumed: no test's expected
+value was edited, no test file was edited at all, and
+`data-raw/dhs-validation/` and `data-raw/mics-validation/` reproduce every
+published figure exactly as before.
+
+The point of the move is that the visibility rule this package applies --
+`1/y.F` for an on-frame sibling, `1/(y.F + 1)` otherwise -- is a theorem about
+*cliques*, not a definition of visibility. It holds because siblingship
+partitions the population into disjoint groups and ego belongs to the group she
+reports about. Households satisfy that too; cousins, parents and neighbours do
+not. Making visibility a declared rule rather than a hardcoded one is the next
+step, and it happens in `networkreporting`. See
+`networkreporting/dev/VISIBILITY-PLAN.md` and section F of
+`dev/PACKAGE-HANDOFF.md`.
+
 ## A single-sex age distribution can no longer be used for another sex
 
 * `get_ego_age_distn(only_females = FALSE)` **warns** when `ego.dat` holds only

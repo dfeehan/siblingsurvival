@@ -1,24 +1,12 @@
 # Suppress R CMD check notes about non-standard evaluation variable bindings.
-# These variables are used as column names in dplyr/data.table operations.
+# These variables are used as column names in dplyr operations.
 utils::globalVariables(c(
-  ".", ":=",
-  ".age.offset", ".agecat", ".ego.id", ".ego.weight", ".end.obs", ".event",
-  ".id", ".ind_vis_weight", ".misscount", ".sib.id", ".sib.in.F", ".sib.sex",
-  ".start.obs", ".time.offset", ".weight", ".y.F",
-  "N.Falpha", "N.Fminusalpha",
-  "age", "age.cat", "agegroup", "agegrp_prop", "agelabel", "agg.est",
-  "asdr.hat", "asdr.hat.agg", "asdr.hat.ind",
-  "boot_idx", "cell", "denom.hat", "dummy",
-  "ind.denom.ego", "ind.est", "ind.num.ego", "ind_vis",
-  "normalized_diff", "num.hat", "occ", "qty",
-  "ratio.agg.ind", "ratio.ind.agg", "rawqty",
-  "sex", "sib.age", "sib.alive", "sib.death.date", "sib.died.accident",
-  "sib.died.pregnant", "sib.dob", "sib.exp", "sib.maternal.death.date", "sib.occ",
-  "sib.preg_related.death.date", "sib.sex", "sib.size", "sib.time.delivery.death",
-  "sibhist_varmap_dhs6", "sibvar", "y.F.bar",
-  "caseid", "doi", "new.varname", "orig.varname", "sibhist_varmap_mics6",
-  "time.period", "total", "value",
-  "wwgt", "y.Dcell", "y.Dcell.ind", "y.F",
-  "y.Falpha.Fminusalpha", "y.Fminusalpha.Falpha",
-  "y.NandFcell", "y.Ncell", "y.Ncell.ind"
+  ":=", ".", ".ego.id", ".ego.weight", ".misscount", ".sib.id", ".sib.in.F",
+  ".sib.sex", "age", "age.cat", "agegrp_prop", "agelabel", "agg.est", "asdr.hat",
+  "asdr.hat.agg", "asdr.hat.ind", "boot_idx", "caseid", "doi", "dummy", "ind_vis",
+  "ind.est", "new.varname", "orig.varname", "ratio.agg.ind", "ratio.ind.agg", "sex",
+  "sib.age", "sib.alive", "sib.death.date", "sib.died.accident", "sib.died.pregnant",
+  "sib.dob", "sib.exp", "sib.maternal.death.date", "sib.occ",
+  "sib.preg_related.death.date", "sib.sex", "sibhist_varmap_dhs6",
+  "sibhist_varmap_mics6", "sibvar", "time.period", "total", "value", "wwgt", "y.F.bar"
 ))
