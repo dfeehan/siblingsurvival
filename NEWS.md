@@ -1,5 +1,20 @@
 # siblingsurvival 0.3.0.9000 (development)
 
+
+## A tie may declare `ego.in.group` and its own frame indicator
+
+`sibling_estimator(tie = )` now accepts a `tie_config()` carrying
+`ego.in.group` and `frame.indicator` as well as a structure. Both default to
+undeclared, so nothing about existing calls changes.
+
+* Because this function renames the frame column internally, a tie naming the
+  caller's own spelling is reconciled here rather than downstream, where the
+  tie's name would no longer be found. A tie whose `frame.indicator` disagrees
+  with `sib.frame.indicator` is an error naming both.
+* `ego.in.group` declared in two places that disagree is likewise an error
+  rather than one silently winning, and the resolved value is reported in
+  `res$vis_provenance`.
+
 ## `sibling_estimator()` takes a visibility rule
 
 `sibling_estimator()` gains a `visibility` argument, defaulting to

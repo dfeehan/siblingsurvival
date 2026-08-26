@@ -112,6 +112,28 @@ sibling_estimator <- function(sib.dat,
   ## Apply the visibility rule. The default, vis_from_clique(), reproduces the
   ## previous hardcoded behaviour exactly -- 1/y.F on frame, 1/(y.F + 1) off it
   ## -- so nothing about existing estimates moves. Passing another rule is what
+  ## A tie may declare its own frame.indicator, naming a column in the CALLER's
+  ## data. By this point that column has been renamed to .sib.in.F, so the two
+  ## are reconciled here rather than downstream, where the tie's name would no
+  ## longer be found. Checking against sib.frame.indicator is the comparison
+  ## that means anything at this level.
+  if (!is.null(tie$frame.indicator) &&
+      !identical(tie$frame.indicator, sib.frame.indicator)) {
+    stop(glue::glue(
+      "conflicting frame indicators.\n",
+      "  tie_config() declares:            '{tie$frame.indicator}'\n",
+      "  sibling_estimator(sib.frame.indicator =) got: '{sib.frame.indicator}'\n\n",
+      "Both name the column saying whether an alter is in the frame ",
+      "population, and they disagree. Set one of them, or set both the same."))
+  }
+  if (!is.null(tie$frame.indicator)) {
+    ## re-point it at the internal name the rename produced
+    tie <- networkreporting::tie_config(structure       = tie$structure,
+                                        name            = tie$name,
+                                        ego.in.group    = tie$ego.in.group,
+                                        frame.indicator = '.sib.in.F')
+  }
+
   ## makes visibility a declared modelling choice rather than an assumption
   ## buried in the estimator.
   vis.res <- networkreporting::apply_visibility_rule(

@@ -258,3 +258,46 @@ test_that("occurrences are split by frame status, and the death side is empty", 
   expect_equal(ec$y.DandFcell + ec$y.DandnotFcell, ec$y.Dcell)
   expect_equal(ec$y.NandFcell + ec$y.NandnotFcell, ec$y.Ncell)
 })
+
+# ---------------------------------------------------------------------------
+# Settings that belong to the tie
+# ---------------------------------------------------------------------------
+test_that("a tie may name the frame indicator, using the caller's own column name", {
+  # sibling_estimator renames the frame column internally, so a tie naming the
+  # caller's spelling has to be reconciled here rather than downstream
+  res <- est_with(tie = networkreporting::tie_config(
+                    "clique", name = "siblings",
+                    frame.indicator = "sib_in_frame"))
+
+  ind <- res$asdr.ind %>% filter(sib.age == "[45,50)")
+  expect_equal(ind$asdr.hat, 4/29)
+})
+
+test_that("a tie naming a different frame indicator is an error", {
+  expect_error(
+    est_with(tie = networkreporting::tie_config(
+               "clique", name = "siblings", frame.indicator = "something_else")),
+    "conflicting frame indicators")
+})
+
+test_that("a tie may declare ego.in.group, and it reaches the estimate", {
+  # ego.in.group = FALSE drops ego from the group, so every visibility falls by
+  # one and the individual estimate moves. The point is that it is reachable and
+  # recorded, not that it is the right choice for siblings.
+  res <- est_with(tie = networkreporting::tie_config(
+                    "clique", name = "siblings", ego.in.group = FALSE))
+
+  expect_false(res$vis_provenance$ego_in_group)
+  expect_true(any(grepl("NOT a member", res$vis_provenance$assumptions)))
+
+  # and the default is untouched
+  expect_true(est_with()$vis_provenance$ego_in_group)
+})
+
+test_that("declaring ego.in.group in two places that disagree is an error", {
+  expect_error(
+    est_with(rule = networkreporting::vis_from_clique(ego.in.group = TRUE),
+             tie  = networkreporting::tie_config("clique", name = "siblings",
+                                                 ego.in.group = FALSE)),
+    "conflicting values for 'ego.in.group'")
+})
