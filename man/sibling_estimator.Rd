@@ -15,6 +15,7 @@ sibling_estimator(
   boot.weights = NULL,
   return.boot = FALSE,
   visibility = networkreporting::vis_from_clique(),
+  tie = networkreporting::tie_config("clique", name = "siblings"),
   discretize.exp = FALSE
 )
 }
@@ -44,6 +45,22 @@ has always applied, so the default changes nothing. See
 \code{\link[networkreporting:vis_from_donor]{networkreporting::vis_from_donor()}} and
 \code{\link[networkreporting:vis_coalesce]{networkreporting::vis_coalesce()}} for the approximating rules that
 non-clique ties need.}
+
+\item{tie}{What kind of tie the reports are about, as a
+\code{\link[networkreporting:tie_config]{networkreporting::tie_config()}}. Defaults to
+\code{tie_config("clique", name = "siblings")}, which is what siblings
+are, so the default changes nothing.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{   **Set this if you are using this function for a tie that is not a
+   clique.** It is used for maternal cousins and cousins-plus-siblings
+   in the socsim work, and cousinship is not transitive, so the default
+   clique rule silently overstates visibility there --- by 1.55x for
+   off-frame alters against 1.29x for on-frame ones, measured against
+   socsim ground truth. Because a death is always off-frame while
+   exposure is a mixture, that differential biases the rate rather than
+   cancelling. Declaring `tie_config("group")` makes the clique rule
+   refuse rather than mislead.
+}\if{html}{\out{</div>}}}
 
 \item{discretize.exp}{Boolean for whether or not expsoure should be discretized. Not yet implemented.}
 }

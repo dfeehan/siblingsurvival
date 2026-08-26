@@ -16,6 +16,20 @@
 ##'        [networkreporting::vis_from_donor()] and
 ##'        [networkreporting::vis_coalesce()] for the approximating rules that
 ##'        non-clique ties need.
+##' @param tie What kind of tie the reports are about, as a
+##'        [networkreporting::tie_config()]. Defaults to
+##'        `tie_config("clique", name = "siblings")`, which is what siblings
+##'        are, so the default changes nothing.
+##'
+##'        **Set this if you are using this function for a tie that is not a
+##'        clique.** It is used for maternal cousins and cousins-plus-siblings
+##'        in the socsim work, and cousinship is not transitive, so the default
+##'        clique rule silently overstates visibility there --- by 1.55x for
+##'        off-frame alters against 1.29x for on-frame ones, measured against
+##'        socsim ground truth. Because a death is always off-frame while
+##'        exposure is a mixture, that differential biases the rate rather than
+##'        cancelling. Declaring `tie_config("group")` makes the clique rule
+##'        refuse rather than mislead.
 ##' @param discretize.exp Boolean for whether or not expsoure should be discretized. Not yet implemented.
 ##' @return a list with two entries: \code{asdr.ind}, individual visibility asdr estimates; and \code{asdr.agg}, aggregate visibility asdr estimates
 ##'
@@ -44,6 +58,11 @@ sibling_estimator <- function(sib.dat,
                               # the default is the exact clique rule, which is what
                               # this function has always used
                               visibility = networkreporting::vis_from_clique(),
+                              # what kind of tie these reports are about. siblings are
+                              # a clique, which is why the clique rule is exact here.
+                              # override for cousins and other non-clique ties.
+                              tie = networkreporting::tie_config('clique',
+                                                                 name = 'siblings'),
                               # by default, we report continuous exposure (ie, number of months of exposure)
                               # but the formal results are based on exposed/not exposed; use this setting to
                               # discretize exposure
@@ -101,7 +120,8 @@ sibling_estimator <- function(sib.dat,
     sib.dat         = sib.dat,
     ego.id          = '.ego.id',
     frame.indicator = '.sib.in.F',
-    weights         = '.ego.weight')
+    weights         = '.ego.weight',
+    tie             = tie)
 
   ## esc.dat comes back with y.F attached, which get_ec_reports() reads
   esc.dat <- vis.res$data
