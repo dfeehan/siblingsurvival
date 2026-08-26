@@ -19,7 +19,6 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/maternal-estimates.html">Estimating maternal mortality rates from sibling history data</a></li>
-    <li><a class="dropdown-item" href="../articles/mics-data.html">Working with MICS sibling history data</a></li>
     <li><a class="dropdown-item" href="../articles/preparing-data.html">Preparing DHS data</a></li>
     <li><a class="dropdown-item" href="../articles/sibling-estimates.html">Estimating death rates from sibling history data</a></li>
   </ul></li>
@@ -45,7 +44,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_ego_age_distn</span><span class="op">(</span><span class="va">ego.dat</span>, only_females <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_ego_age_distn</span><span class="op">(</span><span class="va">ego.dat</span>, only_females <span class="op">=</span> <span class="cn">TRUE</span>, warn.single.sex <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -58,6 +57,14 @@
 
 <dt id="arg-only-females">only_females<a class="anchor" aria-label="anchor" href="#arg-only-females"></a></dt>
 <dd><p>should only females be used to calculate age distribution? (default: True)</p></dd>
+
+
+<dt id="arg-warn-single-sex">warn.single.sex<a class="anchor" aria-label="anchor" href="#arg-warn-single-sex"></a></dt>
+<dd><p>when <code>only_females = FALSE</code>, warn if <code>ego.dat</code> holds
+only one respondent sex, since the result then cannot standardise
+rates for the other. Set <code>FALSE</code> only when the caller reports the
+problem itself, as
+<a href="aggregate_maternal_estimates.html">aggregate_maternal_estimates</a> does</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -80,7 +87,26 @@ summing to 1 across age groups.</p>
 each respondent sex: the result gains a <code>sex</code> column, and <code>agegrp_prop</code> sums
 to 1 <em>within</em> each sex. This is what
 <a href="aggregate_maternal_estimates.html">aggregate_maternal_estimates</a> needs in order to weight
-each sex's age-specific rates by its own respondents' age structure.</p>
+each sex's age-specific rates by its own respondents' age structure.</p><div class="section">
+<h3 id="there-is-no-male-age-distribution-in-dhs-data-and-you-do-not-need-one">There is no male age distribution in DHS data, and you do not need one<a class="anchor" aria-label="anchor" href="#there-is-no-male-age-distribution-in-dhs-data-and-you-do-not-need-one"></a></h3>
+
+
+<p><code>only_females = FALSE</code> splits whatever respondents are in <code>ego.dat</code>; it does
+not conjure a sex that was never interviewed. DHS sibling histories come from
+the women's file, so a DHS <code>ego.dat</code> is entirely female and
+<code>only_females = FALSE</code> returns the female distribution with a <code>sex</code> column
+attached, and warns.</p>
+<p>It would be reasonable to conclude from <code>Chap16_AM/AM_rates.do</code> that this
+blocks reproducing a published male rate, since its <code>get_age_distributions</code>
+takes the men's age distribution from the men's recode (<code>MR</code>) file. <strong>In
+practice it does not.</strong> Published DHS reports standardise <em>both</em> sexes by
+the age distribution of the survey respondents — the women — which is
+exactly what <code>only_females = TRUE</code> returns here.</p>
+<p>Checked against four published tables spanning DHS phases 4 to 8:</p><table class="table table"><tr><td>Survey</td><td>male rate, this way</td><td>published</td></tr><tr><td>Malawi 2000</td><td>11.064</td><td>11.1</td></tr><tr><td>Rwanda 2005</td><td>7.393</td><td>7.39</td></tr><tr><td>Rwanda 2014-15</td><td>2.961</td><td>2.96</td></tr><tr><td>Gambia 2019-20</td><td>3.133</td><td>3.13</td></tr></table><p>Standardising men by a male distribution built from the <code>MR</code> file instead
+gives 11.162, 7.285 and 2.881 for the first three — further from the
+published figures in every case.</p>
+</div>
+
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

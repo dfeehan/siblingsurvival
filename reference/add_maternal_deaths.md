@@ -10,6 +10,7 @@ add_maternal_deaths(
   style = c("dhs", "mics6", "mics4"),
   na.action = NULL,
   preg.window = c("2months", "42days"),
+  prmr.accident.recode = FALSE,
   keep_missing = FALSE,
   verbose = TRUE
 )
@@ -42,6 +43,14 @@ add_maternal_deaths(
   has always done) or `"42days"`, which is what published MICS tables
   report. Ignored for `style = "dhs"`, which already applies a 42-day
   cut. See Details
+
+- prmr.accident.recode:
+
+  DHS style only: apply the 2016 PRMR redefinition, which drops a death
+  during pregnancy (`mm9 = 2`) reported as violence or an accident.
+  Default `FALSE`, matching the reference implementation, which
+  documents the rule but does not execute it. See
+  [is_preg_related_dhs](http://dennisfeehan.org/siblingsurvival/reference/is_preg_related_dhs.md)
 
 - keep_missing:
 
@@ -84,8 +93,7 @@ and never reads the violence (`MM26`) or accident (`MM27`) items at all,
 despite the footnote in the reports saying those causes are excluded. So
 the published column is a **pregnancy-related** count on a 42-day
 window. To reproduce it, use `sib.preg_related.death.date` with
-`preg.window = "42days"`. See the vignette "Working with MICS sibling
-history data".
+`preg.window = "42days"`.
 
 ### Choosing `na.action`
 
@@ -102,10 +110,12 @@ Madagascar 2018, so the choice is usually immaterial – but not always,
 and it only ever moves the maternal column, never the pregnancy-related
 one.
 
-For `style = "dhs"`, `na.action` defaults to `"include"`, which is what
-this package has always done: a missing `sib.time.delivery.death` was
-treated as falling in the window. That default is kept so existing
-results do not move.
+**`na.action` no longer does anything under `style = "dhs"`.** It
+governed how a missing `sib.time.delivery.death` (`mm12`) was treated,
+and `mm12` is no longer consulted by either DHS column — the reference
+implementation states that "mm12 is not needed" and drops it. The
+argument is kept so existing DHS call sites keep working, and still
+applies to both MICS columns.
 
 ## Examples
 

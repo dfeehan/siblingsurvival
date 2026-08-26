@@ -98,7 +98,7 @@ prepped <- prep_dhs_sib_histories(model_dhs_dat,
 #> Adding pregnancy-related/maternal death info
 #> 
 #> ...sib.died.accident column not found; only pregnancy-related deaths can be identified here
-#> Identified 251 pregnancy-related death(s) (style = 'dhs', na.action = 'include').
+#> Identified 335 pregnancy-related death(s) (style = 'dhs', na.action = 'include').
 #> 638 out of 35082 (1.82%) reports about sibs have unknown survival status.
 #> 602 out of 35082 (1.72%) reports about sibs have unknown sex.
 #> Removing reported sibs missing survival status or sex.
@@ -287,7 +287,8 @@ ex_ests <- sibling_estimator(sib.dat = ex.sib,
                              weights='wwgt')               # column with the respondents' sampling weights
 
 names(ex_ests)
-#> [1] "asdr.ind" "asdr.agg" "ec.dat"   "esc.dat"
+#> [1] "asdr.ind"       "asdr.agg"       "ec.dat"         "esc.dat"       
+#> [5] "vis_provenance"
 ```
 
 `sibling_estimator` returns a list with the results. We’ll focus on
@@ -302,12 +303,12 @@ ex_ests$asdr.ind
 #> # A tibble: 10 × 11
 #>    time.period  sib.sex sib.age num.hat denom.hat ind.y.F     n wgt.sum asdr.hat
 #>    <chr>        <chr>   <chr>     <dbl>     <dbl>   <dbl> <int>   <dbl>    <dbl>
-#>  1 7yr_beforei… f       [15,20)  15.5      7724.   11401.  6864   6798. 0.00200 
-#>  2 7yr_beforei… f       [20,25)   9.46     7932.   11401.  6864   6798. 0.00119 
-#>  3 7yr_beforei… f       [25,30)   7.17     6980.   11401.  6864   6798. 0.00103 
-#>  4 7yr_beforei… f       [30,35)  12.9      5549.   11401.  6864   6798. 0.00233 
+#>  1 7yr_beforei… f       [15,20)  17.8      7724.   11401.  6864   6798. 0.00230 
+#>  2 7yr_beforei… f       [20,25)  13.3      7932.   11401.  6864   6798. 0.00167 
+#>  3 7yr_beforei… f       [25,30)  18.8      6980.   11401.  6864   6798. 0.00269 
+#>  4 7yr_beforei… f       [30,35)  16.5      5549.   11401.  6864   6798. 0.00297 
 #>  5 7yr_beforei… f       [35,40)   5.94     4336.   11401.  6864   6798. 0.00137 
-#>  6 7yr_beforei… f       [40,45)   1.63     2746.   11401.  6864   6798. 0.000594
+#>  6 7yr_beforei… f       [40,45)   2.56     2746.   11401.  6864   6798. 0.000933
 #>  7 7yr_beforei… f       [45,50)   0        1752.   11401.  6864   6798. 0       
 #>  8 7yr_beforei… f       [50,55)   0.758     987.   11401.  6864   6798. 0.000768
 #>  9 7yr_beforei… f       [55,60)   0         422.   11401.  6864   6798. 0       
@@ -323,12 +324,12 @@ ex_ests$asdr.agg
 #> # A tibble: 10 × 10
 #>    time.period   sib.sex sib.age num.hat denom.hat     n wgt.sum asdr.hat
 #>    <chr>         <chr>   <chr>     <dbl>     <dbl> <int>   <dbl>    <dbl>
-#>  1 7yr_beforeint f       [15,20)  29.2      14696.  6864   6798. 0.00199 
-#>  2 7yr_beforeint f       [20,25)  24.1      15949.  6864   6798. 0.00151 
-#>  3 7yr_beforeint f       [25,30)  18.2      14467.  6864   6798. 0.00126 
-#>  4 7yr_beforeint f       [30,35)  22.8      11597.  6864   6798. 0.00197 
+#>  1 7yr_beforeint f       [15,20)  35.6      14696.  6864   6798. 0.00242 
+#>  2 7yr_beforeint f       [20,25)  34.2      15949.  6864   6798. 0.00215 
+#>  3 7yr_beforeint f       [25,30)  32.8      14467.  6864   6798. 0.00227 
+#>  4 7yr_beforeint f       [30,35)  28.3      11597.  6864   6798. 0.00244 
 #>  5 7yr_beforeint f       [35,40)  12.8       8852.  6864   6798. 0.00144 
-#>  6 7yr_beforeint f       [40,45)   2.61      5321.  6864   6798. 0.000491
+#>  6 7yr_beforeint f       [40,45)   3.54      5321.  6864   6798. 0.000666
 #>  7 7yr_beforeint f       [45,50)   0         3066.  6864   6798. 0       
 #>  8 7yr_beforeint f       [50,55)   0.758     1573.  6864   6798. 0.000482
 #>  9 7yr_beforeint f       [55,60)   0          609.  6864   6798. 0       
@@ -397,11 +398,10 @@ mmrate <- aggregate_maternal_estimates(ex_ests, ex.ego, ex.sib)
 #> Joining with `by = join_by(.ego.id, .weight, sex)`
 #> Joining with `by = join_by(time.period, sib.sex, sib.age, event.name)`
 mmrate
-#> # A tibble: 1 × 7
-#>   ind.est agg.est adj.factor adj.factor.allage adj.factor.meanagespec
-#>     <dbl>   <dbl>      <dbl>             <dbl>                  <dbl>
-#> 1 0.00138 0.00143      0.430             0.577                  0.573
-#> # ℹ 2 more variables: ratio.agg.ind <dbl>, ratio.ind.agg <dbl>
+#> # A tibble: 1 × 4
+#>   ind.est agg.est ratio.agg.ind ratio.ind.agg
+#>     <dbl>   <dbl>         <dbl>         <dbl>
+#> 1 0.00193 0.00188         0.977          1.02
 ```
 
 ## Variance estimates
@@ -452,7 +452,7 @@ bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu
 #> dplyr::select(data, !!!enquos(x)) # Splice list of quosures
 #> This warning is displayed once every 8 hours.
 toc()
-#> running bootstrap: 0.735 sec elapsed
+#> running bootstrap: 0.722 sec elapsed
 ```
 
 The result, `bootweights`, is a dataframe that has a row for each survey
@@ -490,7 +490,7 @@ ex_boot_ests <- sibling_estimator(sib.dat = ex.sib,
                                   return.boot=TRUE,                # when TRUE, return all of the resampled estimates (not just summaries)
                                   weights='wwgt')
 toc()
-#> calculating estimates with bootstrap: 4.34 sec elapsed
+#> calculating estimates with bootstrap: 4.612 sec elapsed
 ```
 
 Finally, let’s plot the estimated death rates along with their sampling

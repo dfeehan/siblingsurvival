@@ -19,7 +19,6 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/maternal-estimates.html">Estimating maternal mortality rates from sibling history data</a></li>
-    <li><a class="dropdown-item" href="../articles/mics-data.html">Working with MICS sibling history data</a></li>
     <li><a class="dropdown-item" href="../articles/preparing-data.html">Preparing DHS data</a></li>
     <li><a class="dropdown-item" href="../articles/sibling-estimates.html">Estimating death rates from sibling history data</a></li>
   </ul></li>
@@ -50,6 +49,7 @@
 <span>  style <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"dhs"</span>, <span class="st">"mics6"</span>, <span class="st">"mics4"</span><span class="op">)</span>,</span>
 <span>  na.action <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  preg.window <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2months"</span>, <span class="st">"42days"</span><span class="op">)</span>,</span>
+<span>  prmr.accident.recode <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  keep_missing <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -82,6 +82,14 @@ does not. <strong>Required for the MICS styles</strong>; see Details</p></dd>
 default, and what this package has always done) or <code>"42days"</code>, which
 is what published MICS tables report. Ignored for <code>style = "dhs"</code>,
 which already applies a 42-day cut. See Details</p></dd>
+
+
+<dt id="arg-prmr-accident-recode">prmr.accident.recode<a class="anchor" aria-label="anchor" href="#arg-prmr-accident-recode"></a></dt>
+<dd><p>DHS style only: apply the 2016 PRMR
+redefinition, which drops a death during pregnancy (<code>mm9 = 2</code>)
+reported as violence or an accident. Default <code>FALSE</code>, matching the
+reference implementation, which documents the rule but does not
+execute it. See <a href="is_preg_related_dhs.html">is_preg_related_dhs</a></p></dd>
 
 
 <dt id="arg-keep-missing">keep_missing<a class="anchor" aria-label="anchor" href="#arg-keep-missing"></a></dt>
@@ -120,8 +128,7 @@ syntax counts <code>MM22 = 1 | MM23 = 1 | (MM24 = 1 &amp; MM25 &lt; 42)</code> a
 the violence (<code>MM26</code>) or accident (<code>MM27</code>) items at all, despite the
 footnote in the reports saying those causes are excluded. So the published
 column is a <strong>pregnancy-related</strong> count on a 42-day window. To reproduce it,
-use <code>sib.preg_related.death.date</code> with <code>preg.window = "42days"</code>. See the
-vignette "Working with MICS sibling history data".</p><div class="section">
+use <code>sib.preg_related.death.date</code> with <code>preg.window = "42days"</code>.</p><div class="section">
 <h3 id="choosing-na-action">Choosing <code>na.action</code><a class="anchor" aria-label="anchor" href="#choosing-na-action"></a></h3>
 
 
@@ -135,9 +142,11 @@ window. In three MICS6 surveys examined this affected 5 of 38 such deaths in
 Iraq 2018 and none at all in Zimbabwe 2019 or Madagascar 2018, so the choice
 is usually immaterial – but not always, and it only ever moves the maternal
 column, never the pregnancy-related one.</p>
-<p>For <code>style = "dhs"</code>, <code>na.action</code> defaults to <code>"include"</code>, which is what this
-package has always done: a missing <code>sib.time.delivery.death</code> was treated as
-falling in the window. That default is kept so existing results do not move.</p>
+<p><strong><code>na.action</code> no longer does anything under <code>style = "dhs"</code>.</strong> It governed how a
+missing <code>sib.time.delivery.death</code> (<code>mm12</code>) was treated, and <code>mm12</code> is no
+longer consulted by either DHS column — the reference implementation states
+that "mm12 is not needed" and drops it. The argument is kept so existing DHS
+call sites keep working, and still applies to both MICS columns.</p>
 </div>
 
     </div>

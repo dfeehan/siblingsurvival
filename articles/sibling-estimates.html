@@ -34,7 +34,6 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/maternal-estimates.html">Estimating maternal mortality rates from sibling history data</a></li>
-    <li><a class="dropdown-item" href="../articles/mics-data.html">Working with MICS sibling history data</a></li>
     <li><a class="dropdown-item" href="../articles/preparing-data.html">Preparing DHS data</a></li>
     <li><a class="dropdown-item" href="../articles/sibling-estimates.html">Estimating death rates from sibling history data</a></li>
   </ul>
@@ -62,7 +61,7 @@
                         <h4 data-toc-skip class="author">Dennis M.
 Feehan</h4>
             
-            <h4 data-toc-skip class="date">2026-08-22</h4>
+            <h4 data-toc-skip class="date">2026-08-26</h4>
       
 
       <div class="d-none name"><code>sibling-estimates.Rmd</code></div>
@@ -252,7 +251,7 @@ plan to produce death rate estimates for. This means we need to specify
 the time period and age groups that we’ll be using. We’ll use the helper
 function <code>cell_config</code> to do this:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cell_config.html">cell_config</a></span><span class="op">(</span>age.groups<span class="op">=</span><span class="st">'5yr'</span>, </span>
+<code class="sourceCode R"><span><span class="va">cc</span> <span class="op">&lt;-</span> <span class="fu"><a href="http://dennisfeehan.org/networkreporting/reference/cell_config.html" class="external-link">cell_config</a></span><span class="op">(</span>age.groups<span class="op">=</span><span class="st">'5yr'</span>, </span>
 <span>                  time.periods<span class="op">=</span><span class="st">'7yr_beforeinterview'</span>,</span>
 <span>                  start.obs<span class="op">=</span><span class="st">'sib.dob'</span>,    <span class="co"># date of birth</span></span>
 <span>                  end.obs<span class="op">=</span><span class="st">'sib.endobs'</span>,   <span class="co"># either the date respondent was interviewed (if sib is alive) or date of death (if sib is dead)</span></span>
@@ -296,7 +295,8 @@ histories for us.</p>
 <span>                             weights<span class="op">=</span><span class="st">'wwgt'</span><span class="op">)</span>               <span class="co"># column with the respondents' sampling weights</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ex_ests</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "asdr.ind" "asdr.agg" "ec.dat"   "esc.dat"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "asdr.ind"       "asdr.agg"       "ec.dat"         "esc.dat"       </span></span>
+<span><span class="co">#&gt; [5] "vis_provenance"</span></span></code></pre></div>
 <p><code>sibling_estimator</code> returns a list with the results. We’ll
 focus on <code>asdr.ind</code>, which has the individual visibility
 estimates, and <code>asdr.agg</code>, which has the aggregate visibility
@@ -309,12 +309,12 @@ estimates.</p>
 <span><span class="co">#&gt; $ time.period <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "7yr_beforeint"<span style="color: #949494;">, </span>"7yr_beforeint"<span style="color: #949494;">, </span>"7yr_beforeint"<span style="color: #949494;">, </span>"7yr_be…</span></span>
 <span><span class="co">#&gt; $ sib.sex     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"m"<span style="color: #949494;">, </span>"m"…</span></span>
 <span><span class="co">#&gt; $ sib.age     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "[15,20)"<span style="color: #949494;">, </span>"[20,25)"<span style="color: #949494;">, </span>"[25,30)"<span style="color: #949494;">, </span>"[30,35)"<span style="color: #949494;">, </span>"[35,40)"<span style="color: #949494;">, </span>"[4…</span></span>
-<span><span class="co">#&gt; $ num.hat     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 40.632794<span style="color: #949494;">, </span>58.452102<span style="color: #949494;">, </span>37.335533<span style="color: #949494;">, </span>35.027380<span style="color: #949494;">, </span>27.127385<span style="color: #949494;">, </span>19.…</span></span>
+<span><span class="co">#&gt; $ num.hat     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 40.632794<span style="color: #949494;">, </span>58.452102<span style="color: #949494;">, </span>37.335533<span style="color: #949494;">, </span>35.027380<span style="color: #949494;">, </span>26.419868<span style="color: #949494;">, </span>20.…</span></span>
 <span><span class="co">#&gt; $ denom.hat   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 7724.0549<span style="color: #949494;">, </span>7931.6173<span style="color: #949494;">, </span>6980.3260<span style="color: #949494;">, </span>5548.5989<span style="color: #949494;">, </span>4336.3677<span style="color: #949494;">, </span>274…</span></span>
 <span><span class="co">#&gt; $ ind.y.F     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 11400.964<span style="color: #949494;">, </span>11400.964<span style="color: #949494;">, </span>11400.964<span style="color: #949494;">, </span>11400.964<span style="color: #949494;">, </span>11400.964<span style="color: #949494;">, </span>114…</span></span>
 <span><span class="co">#&gt; $ n           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> 6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864…</span></span>
 <span><span class="co">#&gt; $ wgt.sum     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 6798.047<span style="color: #949494;">, </span>6798.047<span style="color: #949494;">, </span>6798.047<span style="color: #949494;">, </span>6798.047<span style="color: #949494;">, </span>6798.047<span style="color: #949494;">, </span>6798.047…</span></span>
-<span><span class="co">#&gt; $ asdr.hat    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 0.005260552<span style="color: #949494;">, </span>0.007369506<span style="color: #949494;">, </span>0.005348680<span style="color: #949494;">, </span>0.006312833<span style="color: #949494;">, </span>0.0062…</span></span>
+<span><span class="co">#&gt; $ asdr.hat    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 0.005260552<span style="color: #949494;">, </span>0.007369506<span style="color: #949494;">, </span>0.005348680<span style="color: #949494;">, </span>0.006312833<span style="color: #949494;">, </span>0.0060…</span></span>
 <span><span class="co">#&gt; $ estimator   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "sib_ind"<span style="color: #949494;">, </span>"sib_ind"<span style="color: #949494;">, </span>"sib_ind"<span style="color: #949494;">, </span>"sib_ind"<span style="color: #949494;">, </span>"sib_ind"<span style="color: #949494;">, </span>"si…</span></span></code></pre></div>
 <p>And here are the aggregate visibility estimates</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
@@ -324,11 +324,11 @@ estimates.</p>
 <span><span class="co">#&gt; $ time.period <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "7yr_beforeint"<span style="color: #949494;">, </span>"7yr_beforeint"<span style="color: #949494;">, </span>"7yr_beforeint"<span style="color: #949494;">, </span>"7yr_be…</span></span>
 <span><span class="co">#&gt; $ sib.sex     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"f"<span style="color: #949494;">, </span>"m"<span style="color: #949494;">, </span>"m"…</span></span>
 <span><span class="co">#&gt; $ sib.age     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "[15,20)"<span style="color: #949494;">, </span>"[20,25)"<span style="color: #949494;">, </span>"[25,30)"<span style="color: #949494;">, </span>"[30,35)"<span style="color: #949494;">, </span>"[35,40)"<span style="color: #949494;">, </span>"[4…</span></span>
-<span><span class="co">#&gt; $ num.hat     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 80.640472<span style="color: #949494;">, </span>108.425029<span style="color: #949494;">, </span>66.546631<span style="color: #949494;">, </span>61.344200<span style="color: #949494;">, </span>46.548261<span style="color: #949494;">, </span>33…</span></span>
+<span><span class="co">#&gt; $ num.hat     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 80.640472<span style="color: #949494;">, </span>108.425029<span style="color: #949494;">, </span>66.546631<span style="color: #949494;">, </span>61.344200<span style="color: #949494;">, </span>45.840744<span style="color: #949494;">, </span>33…</span></span>
 <span><span class="co">#&gt; $ denom.hat   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 14696.0833<span style="color: #949494;">, </span>15949.0545<span style="color: #949494;">, </span>14466.8583<span style="color: #949494;">, </span>11597.0465<span style="color: #949494;">, </span>8851.6251<span style="color: #949494;">,</span>…</span></span>
 <span><span class="co">#&gt; $ n           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> 6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864<span style="color: #949494;">, </span>6864…</span></span>
 <span><span class="co">#&gt; $ wgt.sum     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 6798.047<span style="color: #949494;">, </span>6798.047<span style="color: #949494;">, </span>6798.047<span style="color: #949494;">, </span>6798.047<span style="color: #949494;">, </span>6798.047<span style="color: #949494;">, </span>6798.047…</span></span>
-<span><span class="co">#&gt; $ asdr.hat    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 0.005487208<span style="color: #949494;">, </span>0.006798210<span style="color: #949494;">, </span>0.004599937<span style="color: #949494;">, </span>0.005289640<span style="color: #949494;">, </span>0.0052…</span></span>
+<span><span class="co">#&gt; $ asdr.hat    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 0.005487208<span style="color: #949494;">, </span>0.006798210<span style="color: #949494;">, </span>0.004599937<span style="color: #949494;">, </span>0.005289640<span style="color: #949494;">, </span>0.0051…</span></span>
 <span><span class="co">#&gt; $ estimator   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "sib_agg"<span style="color: #949494;">, </span>"sib_agg"<span style="color: #949494;">, </span>"sib_agg"<span style="color: #949494;">, </span>"sib_agg"<span style="color: #949494;">, </span>"sib_agg"<span style="color: #949494;">, </span>"si…</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -407,7 +407,7 @@ resamples.)</p>
 <span><span class="co">#&gt; dplyr::select(data, !!!enquos(x)) # Splice list of quosures</span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">This warning is displayed once every 8 hours.</span></span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html" class="external-link">toc</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; running bootstrap: 0.721 sec elapsed</span></span></code></pre></div>
+<span><span class="co">#&gt; running bootstrap: 0.661 sec elapsed</span></span></code></pre></div>
 <p>The result, <code>bootweights</code>, is a dataframe that has a row
 for each survey respondent, a column for the survey respondent’s ID, and
 then <code>num.boot.reps</code> columns containing survey weights that
@@ -439,7 +439,7 @@ when <code>bootweights</code> has 1000 resamples.)</p>
 <span>                                  return.boot<span class="op">=</span><span class="cn">TRUE</span>,                <span class="co"># when TRUE, return all of the resampled estimates (not just summaries)</span></span>
 <span>                                  weights<span class="op">=</span><span class="st">'wwgt'</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html" class="external-link">toc</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; calculating estimates with bootstrap: 7.899 sec elapsed</span></span></code></pre></div>
+<span><span class="co">#&gt; calculating estimates with bootstrap: 8.749 sec elapsed</span></span></code></pre></div>
 <p>Finally, let’s plot the estimated death rates along with their
 sampling uncertainty:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
@@ -476,7 +476,7 @@ bootstrap reps on a 2018 MBP</p>
 <span><span class="co">#ic.bootweights &lt;- bootweights</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html" class="external-link">tic</a></span><span class="op">(</span><span class="st">"Internal consistency checks"</span><span class="op">)</span></span>
-<span><span class="va">ic.checks</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sib_ic_checks.html">sib_ic_checks</a></span><span class="op">(</span><span class="va">ex_boot_ests</span><span class="op">$</span><span class="va">esc.dat</span>,</span>
+<span><span class="va">ic.checks</span> <span class="op">&lt;-</span> <span class="fu"><a href="http://dennisfeehan.org/networkreporting/reference/sib_ic_checks.html" class="external-link">sib_ic_checks</a></span><span class="op">(</span><span class="va">ex_boot_ests</span><span class="op">$</span><span class="va">esc.dat</span>,</span>
 <span>                           ego.dat<span class="op">=</span><span class="va">ex.ego</span>,</span>
 <span>                           ego.id<span class="op">=</span><span class="st">'caseid'</span>,</span>
 <span>                           sib.id<span class="op">=</span><span class="st">'sibid'</span>,</span>
@@ -485,7 +485,7 @@ bootstrap reps on a 2018 MBP</p>
 <span>                           ego.cell.vars<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'age.cat'</span>, <span class="st">'sex'</span><span class="op">)</span>,</span>
 <span>                           boot.weights<span class="op">=</span><span class="va">ic.bootweights</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html" class="external-link">toc</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Internal consistency checks: 0.711 sec elapsed</span></span>
+<span><span class="co">#&gt; Internal consistency checks: 0.577 sec elapsed</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ic.checks</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "ic.summ"      "ic.boot.ests"</span></span></code></pre></div>
@@ -586,8 +586,66 @@ checks:</p>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Use `summarise(.groups = "drop_last")` to silence this message.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Use `summarise(.by = c(sex, age.cat))` for per-operation grouping</span></span>
 <span><span class="co">#&gt;   (`?dplyr::dplyr_by`) instead.</span></span></code></pre></div>
-<p>Make adjusted individual estimates</p>
+<p>That hand-rolled <code>adj.factor</code> is a visibility
+approximation: it borrows the respondents’ average sibship size and
+applies it to the alters. Since that is a modelling assumption rather
+than a calculation, it is better expressed as one.
+<code>vis_from_donor()</code> is the supported way to build it, and it
+makes the two choices buried in the line above explicit – who the donors
+are, and how their visibilities are summarised.</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">donor.rule</span> <span class="op">&lt;-</span> <span class="fu">networkreporting</span><span class="fu">::</span><span class="fu"><a href="http://dennisfeehan.org/networkreporting/reference/vis_from_donor.html" class="external-link">vis_from_donor</a></span><span class="op">(</span></span>
+<span>  match_on   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>sib.sex <span class="op">=</span> <span class="st">"sex"</span>, sib.age <span class="op">=</span> <span class="st">"age.cat"</span><span class="op">)</span>,</span>
+<span>  statistic  <span class="op">=</span> <span class="st">"arithmetic"</span>,   <span class="co"># what adj.factor used; see below</span></span>
+<span>  min_donors <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">donor.cells</span> <span class="op">&lt;-</span> <span class="va">donor.rule</span><span class="op">$</span><span class="fu">fit</span><span class="op">(</span><span class="va">ego.vis</span>, <span class="st">"wwgt"</span><span class="op">)</span><span class="op">$</span><span class="va">cells</span></span>
+<span></span>
+<span><span class="co">## S.hat is the estimated group size, so it is y.F.bar + 1, and the historical</span></span>
+<span><span class="co">## adjustment factor is (S.hat - 1) / S.hat</span></span>
+<span><span class="va">donor.cells</span> <span class="op">&lt;-</span> <span class="va">donor.cells</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>adj.factor.rule <span class="op">=</span> <span class="op">(</span><span class="va">.S.hat</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span> <span class="op">/</span> <span class="va">.S.hat</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">check</span> <span class="op">&lt;-</span> <span class="va">ego.vis.agg</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">donor.cells</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sex"</span> <span class="op">=</span> <span class="st">"sib.sex"</span>, <span class="st">"age.cat"</span> <span class="op">=</span> <span class="st">"sib.age"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## the two agree to numerical precision</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span><span class="va">check</span><span class="op">$</span><span class="va">adj.factor</span>, <span class="va">check</span><span class="op">$</span><span class="va">adj.factor.rule</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>The default is not <code>"arithmetic"</code>, though. The individual
+estimator averages <code>1/v</code>, so the summary that makes the
+plug-in unbiased is the <em>harmonic</em> mean,
+<code>(E[1/v])^-1</code>. By Jensen’s inequality the harmonic mean is
+never larger than the arithmetic one, so switching gives a
+systematically smaller group size – and the gap grows with the variance
+of sibship size:</p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">harm.cells</span> <span class="op">&lt;-</span> <span class="fu">networkreporting</span><span class="fu">::</span><span class="fu"><a href="http://dennisfeehan.org/networkreporting/reference/vis_from_donor.html" class="external-link">vis_from_donor</a></span><span class="op">(</span></span>
+<span>    match_on   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>sib.sex <span class="op">=</span> <span class="st">"sex"</span>, sib.age <span class="op">=</span> <span class="st">"age.cat"</span><span class="op">)</span>,</span>
+<span>    statistic  <span class="op">=</span> <span class="st">"harmonic"</span>,</span>
+<span>    min_donors <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="fu">fit</span><span class="op">(</span><span class="va">ego.vis</span>, <span class="st">"wwgt"</span><span class="op">)</span><span class="op">$</span><span class="va">cells</span></span>
+<span></span>
+<span><span class="va">compare.stat</span> <span class="op">&lt;-</span> <span class="va">donor.cells</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">sib.sex</span>, <span class="va">sib.age</span>, S.arithmetic <span class="op">=</span> <span class="va">.S.hat</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">harm.cells</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">sib.sex</span>, <span class="va">sib.age</span>, S.harmonic <span class="op">=</span> <span class="va">.S.hat</span><span class="op">)</span>,</span>
+<span>            by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sib.sex"</span>, <span class="st">"sib.age"</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>ratio <span class="op">=</span> <span class="va">S.harmonic</span> <span class="op">/</span> <span class="va">S.arithmetic</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">compare.stat</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 7 × 5</span></span></span>
+<span><span class="co">#&gt;   sib.sex sib.age S.arithmetic S.harmonic ratio</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> f       [15,20)         2.02       1.54 0.763</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> f       [20,25)         2.33       1.77 0.756</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> f       [25,30)         2.58       1.92 0.744</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> f       [30,35)         2.64       1.96 0.741</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> f       [35,40)         2.58       1.92 0.745</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> f       [40,45)         2.36       1.75 0.740</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> f       [45,50)         2.22       1.60 0.721</span></span></code></pre></div>
+<p>Every <code>ratio</code> is at or below 1, which is Jensen showing up
+in the data rather than in a footnote.</p>
+<p>Make adjusted individual estimates</p>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">adj.agg.ests</span> <span class="op">&lt;-</span> <span class="va">ex_ests</span><span class="op">$</span><span class="va">asdr.agg</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">ego.vis.agg</span>,</span>
 <span>            by<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'sib.sex'</span><span class="op">=</span><span class="st">'sex'</span>, <span class="st">'sib.age'</span><span class="op">=</span><span class="st">'age.cat'</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -595,7 +653,7 @@ checks:</p>
 <span>         estimator <span class="op">=</span> <span class="st">'sib_agg_adj'</span>,</span>
 <span>         asdr.hat <span class="op">=</span> <span class="va">asdr.hat</span> <span class="op">*</span> <span class="va">adj.factor</span><span class="op">)</span></span></code></pre></div>
 <p>And plot a comparison</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">compare</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span><span class="va">ex_ests</span><span class="op">$</span><span class="va">asdr.ind</span>, <span class="va">ex_ests</span><span class="op">$</span><span class="va">asdr.agg</span>, <span class="va">adj.agg.ests</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">compare</span><span class="op">)</span> <span class="op">+</span></span>
@@ -605,7 +663,7 @@ checks:</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_grid.html" class="external-link">facet_grid</a></span><span class="op">(</span><span class="va">.</span> <span class="op">~</span> <span class="va">sib.sex</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_log10</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">'sibling estimators, 7yr before survey'</span><span class="op">)</span></span></code></pre></div>
-<p><img src="sibling-estimates_files/figure-html/unnamed-chunk-25-1.png" class="r-plt" alt="" width="700"></p>
+<p><img src="sibling-estimates_files/figure-html/unnamed-chunk-27-1.png" class="r-plt" alt="" width="700"></p>
 <!--
 ## TODO
 

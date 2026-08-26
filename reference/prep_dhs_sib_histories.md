@@ -13,6 +13,7 @@ prep_dhs_sib_histories(
   keep_missing = FALSE,
   keep_varmap_only = FALSE,
   weight.scale = 1e+06,
+  death.exposure = c("dhs", "mics"),
   verbose = TRUE
 )
 ```
@@ -51,6 +52,12 @@ prep_dhs_sib_histories(
 
   divide the women's weight by this number. Defaults to `1e6`, which is
   correct for the DHS; see Details
+
+- death.exposure:
+
+  whether a sibling who died contributes the month of death as exposure;
+  `"dhs"` (default) counts it, `"mics"` stops the month before. See
+  [get_sib_df](http://dennisfeehan.org/siblingsurvival/reference/get_sib_df.md)
 
 - verbose:
 

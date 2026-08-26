@@ -19,7 +19,6 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/maternal-estimates.html">Estimating maternal mortality rates from sibling history data</a></li>
-    <li><a class="dropdown-item" href="../articles/mics-data.html">Working with MICS sibling history data</a></li>
     <li><a class="dropdown-item" href="../articles/preparing-data.html">Preparing DHS data</a></li>
     <li><a class="dropdown-item" href="../articles/sibling-estimates.html">Estimating death rates from sibling history data</a></li>
   </ul></li>
@@ -49,24 +48,10 @@
 
       <dl><dt>
 
-          <code><a href="add_esc_ind_vis.html">add_esc_ind_vis()</a></code>
-
-        </dt>
-        <dd>add individual visibility based on sib reprots to ego X sib X cell reports</dd>
-
-        <dt>
-
           <code><a href="add_maternal_deaths.html">add_maternal_deaths()</a></code>
 
         </dt>
         <dd>add pregnancy-related and maternal death info to a sibling dataset</dd>
-
-        <dt>
-
-          <code><a href="agenames.html">agenames()</a></code>
-
-        </dt>
-        <dd>make labels for age groups</dd>
 
         <dt>
 
@@ -91,20 +76,6 @@
 
         <dt>
 
-          <code><a href="calculate_sib_ind_visibility.html">calculate_sib_ind_visibility()</a></code>
-
-        </dt>
-        <dd>given a sib dataset, calculate individual visibility weight for each sib</dd>
-
-        <dt>
-
-          <code><a href="cell_config.html">cell_config()</a></code>
-
-        </dt>
-        <dd>Specify the cells (age groups, time period) to produce estimates for</dd>
-
-        <dt>
-
           <code><a href="check_mics_varmap.html">check_mics_varmap()</a></code>
 
         </dt>
@@ -116,20 +87,6 @@
 
         </dt>
         <dd>report varmap columns that are missing from a dataset</dd>
-
-        <dt>
-
-          <code><a href="cpp_compute_occ_exp.html">cpp_compute_occ_exp()</a></code>
-
-        </dt>
-        <dd>cpp_compute_occ_exp</dd>
-
-        <dt>
-
-          <code><a href="cpp_compute_occ_exp2.html">cpp_compute_occ_exp2()</a></code>
-
-        </dt>
-        <dd>cpp_compute_occ_exp</dd>
 
         <dt>
 
@@ -154,27 +111,6 @@
 
         <dt>
 
-          <code><a href="get_agg_est_from_ec.html">get_agg_est_from_ec()</a></code>
-
-        </dt>
-        <dd>helper function for calculating aggregate visibility estimate from ego X cell data</dd>
-
-        <dt>
-
-          <code><a href="get_boot_ests_matrix.html">get_boot_ests_matrix()</a></code>
-
-        </dt>
-        <dd>Fast bootstrap estimation using matrix multiplication</dd>
-
-        <dt>
-
-          <code><a href="get_ec_reports.html">get_ec_reports()</a></code>
-
-        </dt>
-        <dd>get ego X cell reports</dd>
-
-        <dt>
-
           <code><a href="get_ego_age_distn.html">get_ego_age_distn()</a></code>
 
         </dt>
@@ -189,45 +125,10 @@
 
         <dt>
 
-          <code><a href="get_esc_reports.html">get_esc_reports()</a></code>
-
-        </dt>
-        <dd>Get ego X sibling X cell reports</dd>
-
-        <dt>
-
-          <code><a href="get_ic_reports.html">get_ic_reports()</a></code>
-
-        </dt>
-        <dd>get a dataset with reports used for internal-consistency checks</dd>
-
-        <dt>
-
-          <code><a href="get_ind_est_from_ec.html">get_ind_est_from_ec()</a></code>
-
-        </dt>
-        <dd>helper function for calculating individual visibility estimate from ego X cell data</dd>
-
-        <dt>
-
           <code><a href="get_sib_df.html">get_sib_df()</a></code>
 
         </dt>
         <dd>helper to prep the sib dataset</dd>
-
-        <dt>
-
-          <code><a href="get_sibship_info.html">get_sibship_info()</a></code>
-
-        </dt>
-        <dd>calculate number of sibs on frame for each respondent</dd>
-
-        <dt>
-
-          <code><a href="get_visibility.html">get_visibility()</a></code>
-
-        </dt>
-        <dd>calculate visibility for each sibship and ego</dd>
 
         <dt>
 
@@ -259,27 +160,6 @@
 
         <dt>
 
-          <code><a href="make.age.groups.html">make.age.groups()</a></code>
-
-        </dt>
-        <dd>make an age.groups object</dd>
-
-        <dt>
-
-          <code><a href="make.even.age.groups.html">make.even.age.groups()</a></code>
-
-        </dt>
-        <dd>make an age.groups object with evenly-sized intervals</dd>
-
-        <dt>
-
-          <code><a href="make.time.periods.html">make.time.periods()</a></code>
-
-        </dt>
-        <dd>make a time.periods object</dd>
-
-        <dt>
-
           <code><a href="mics_asked_maternity_questions.html">mics_asked_maternity_questions()</a></code>
 
         </dt>
@@ -291,13 +171,6 @@
 
         </dt>
         <dd>Model DHS dataset</dd>
-
-        <dt>
-
-          <code><a href="occ.exp.html">occ.exp()</a></code>
-
-        </dt>
-        <dd>tabulate occurrences and exposures</dd>
 
         <dt>
 
@@ -333,20 +206,6 @@
 
         </dt>
         <dd>the reproductive age groups used for maternal mortality estimates</dd>
-
-        <dt>
-
-          <code><a href="sib_ic_checks.html">sib_ic_checks()</a></code>
-
-        </dt>
-        <dd>get calculate internal consistency checks for sibling reports</dd>
-
-        <dt>
-
-          <code><a href="sib_ic_checks_OLD.html">sib_ic_checks_OLD()</a></code>
-
-        </dt>
-        <dd>get calculate internal consistency checks for sibling reports</dd>
 
         <dt>
 
@@ -445,13 +304,6 @@
 
         </dt>
         <dd>warn when a sibling sex has no matching respondents</dd>
-
-        <dt>
-
-          <code><a href="window_intersect.html">window_intersect()</a></code>
-
-        </dt>
-        <dd>window_intersect</dd>
       </dl></div>
   </main></div>
 

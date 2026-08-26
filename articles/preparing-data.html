@@ -34,7 +34,6 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/maternal-estimates.html">Estimating maternal mortality rates from sibling history data</a></li>
-    <li><a class="dropdown-item" href="../articles/mics-data.html">Working with MICS sibling history data</a></li>
     <li><a class="dropdown-item" href="../articles/preparing-data.html">Preparing DHS data</a></li>
     <li><a class="dropdown-item" href="../articles/sibling-estimates.html">Estimating death rates from sibling history data</a></li>
   </ul>
@@ -62,7 +61,7 @@
                         <h4 data-toc-skip class="author">Dennis M.
 Feehan</h4>
             
-            <h4 data-toc-skip class="date">2026-08-22</h4>
+            <h4 data-toc-skip class="date">2026-08-26</h4>
       
 
       <div class="d-none name"><code>preparing-data.Rmd</code></div>
@@ -229,10 +228,19 @@ wide-form sibling data into long format for analysis:</p>
 <span><span class="co">#&gt; $ sib.death.year          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span>…</span></span>
 <span><span class="co">#&gt; $ alternum                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "01"<span style="color: #949494;">, </span>"01"<span style="color: #949494;">, </span>"01"<span style="color: #949494;">, </span>"01"<span style="color: #949494;">, </span>"01"<span style="color: #949494;">, </span>"01"<span style="color: #949494;">, </span>"01"<span style="color: #949494;">, </span>"01"…</span></span></code></pre></div>
 <p>Now we’ll do some recoding.</p>
-<p>Turn the <code>sib.sex</code> variable into more readable values:</p>
+<p>Turn the <code>sib.sex</code> variable into more readable values.
+Only codes 1 and 2 are meaningful: the DHS labels 8 as “don’t know”, and
+some surveys carry an unlabelled 9 as well. Anything else has to become
+<code>NA</code> rather than falling through to one of the two categories
+— <code>ifelse(sib.sex == 2, 'f', 'm')</code> would quietly turn every
+unknown-sex sibling into a man, which is what
+<code><a href="../reference/prep_dhs_sib_histories.html">prep_dhs_sib_histories()</a></code> used to do. Gabon 2000 has 163
+such siblings.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sibdata.coded</span> <span class="op">&lt;-</span> <span class="va">sibdata</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>sib.sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">sib.sex</span> <span class="op">==</span> <span class="fl">2</span>, <span class="st">'f'</span>, <span class="st">'m'</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>sib.sex <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/case-and-replace-when.html" class="external-link">case_when</a></span><span class="op">(</span><span class="va">sib.sex</span> <span class="op">==</span> <span class="fl">1</span> <span class="op">~</span> <span class="st">'m'</span>,</span>
+<span>                             <span class="va">sib.sex</span> <span class="op">==</span> <span class="fl">2</span> <span class="op">~</span> <span class="st">'f'</span>,</span>
+<span>                             <span class="cn">TRUE</span>         <span class="op">~</span> <span class="cn">NA_character_</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Next, we need to create a new variable, <code>sib.endobs</code>,
 which has the date (as a century month code, CMC) when we stopped
 observing each sibling. Generally, this date is either the time that the

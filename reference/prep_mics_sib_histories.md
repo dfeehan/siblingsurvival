@@ -22,6 +22,7 @@ prep_mics_sib_histories(
   preg.window = c("2months", "42days"),
   keep_missing = FALSE,
   keep_varmap_only = FALSE,
+  death.exposure = c("dhs", "mics"),
   verbose = TRUE
 )
 ```
@@ -104,6 +105,12 @@ prep_mics_sib_histories(
 - keep_varmap_only:
 
   should we only keep ego variables mentioned in the varmap?
+
+- death.exposure:
+
+  whether a sibling who died contributes the month of death as exposure;
+  `"dhs"` (default) counts it, `"mics"` stops the month before. See
+  [get_sib_df](http://dennisfeehan.org/siblingsurvival/reference/get_sib_df.md)
 
 - verbose:
 

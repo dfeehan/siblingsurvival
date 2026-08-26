@@ -2,6 +2,320 @@
 
 ## siblingsurvival 0.3.0.9000 (development)
 
+### `sibling_estimator()` is now a wrapper over the generic estimator
+
+The estimator pipeline moved to
+[`networkreporting::network_survival_estimator()`](http://dennisfeehan.org/networkreporting/reference/network_survival_estimator.md),
+and
+[`sibling_estimator()`](http://dennisfeehan.org/siblingsurvival/reference/sibling_estimator.md)
+calls it. **Its signature, its defaults and its output are unchanged** –
+same argument names, same `sib.age` column, same clique tie by default –
+and the DHS and MICS validation harnesses reproduce byte-identically.
+
+The estimator was never sibling-specific in anything but naming, so
+keeping a second copy here would have been two versions of one pipeline
+waiting to drift. What the wrapper still does is supply the clique tie
+(correct for siblings, and the generic deliberately has no default),
+rename `alter.age` back to `sib.age`, and make sure a mistyped column is
+reported in the argument names you actually used rather than the
+generic’s.
+
+### A tie may declare `ego.in.group` and its own frame indicator
+
+`sibling_estimator(tie = )` now accepts a `tie_config()` carrying
+`ego.in.group` and `frame.indicator` as well as a structure. Both
+default to undeclared, so nothing about existing calls changes.
+
+- Because this function renames the frame column internally, a tie
+  naming the caller’s own spelling is reconciled here rather than
+  downstream, where the tie’s name would no longer be found. A tie whose
+  `frame.indicator` disagrees with `sib.frame.indicator` is an error
+  naming both.
+- `ego.in.group` declared in two places that disagree is likewise an
+  error rather than one silently winning, and the resolved value is
+  reported in `res$vis_provenance`.
+
+### `sibling_estimator()` takes a visibility rule
+
+[`sibling_estimator()`](http://dennisfeehan.org/siblingsurvival/reference/sibling_estimator.md)
+gains a `visibility` argument, defaulting to
+[`networkreporting::vis_from_clique()`](http://dennisfeehan.org/networkreporting/reference/vis_from_clique.md).
+**The default is exactly what this function has always done** – `1/y.F`
+for an on-frame sibling, `1/(y.F + 1)` otherwise – so no existing
+estimate, interval or published figure moves.
+
+What changes is that the rule is now a stated choice rather than an
+assumption buried in the estimator, and other rules can be passed:
+
+``` r
+
+sibling_estimator(..., visibility = vis_coalesce(
+  vis_from_clique(),                                 # exact where it exists
+  vis_from_donor(match_on = c(.sib.sex = "sex"))))   # approximate elsewhere
+```
+
+The rules themselves live in `networkreporting`; see its *Approximating
+visibility* vignette for what they assume and which way they are wrong.
+
+- The result carries a `vis_provenance` object, both as
+  `res$vis_provenance` and as an attribute. It reports which rule
+  resolved how many siblings, and what share of the deaths and of the
+  exposure were approximated – two different numbers, both worth having.
+- For a rule estimated from the sample, visibility is now refit inside
+  each bootstrap replicate instead of being frozen. Freezing a sample
+  quantity understates the variance. For the clique rule nothing
+  changes, because there visibility is a function of ego’s own reports
+  rather than of who was sampled.
+- The `sibling-estimates` vignette no longer hand-computes
+  `adj.factor = y.F.bar / (y.F.bar + 1)`. It builds the same number with
+  `vis_from_donor(statistic = "arithmetic")`, shows the two agreeing,
+  and then shows what the default `"harmonic"` gives instead – about 25%
+  smaller on that extract, since the individual estimator averages `1/v`
+  and Jensen puts the harmonic mean below the arithmetic one.
+
+### The estimator spine now lives in networkreporting
+
+The tie-agnostic half of the estimator moved to `networkreporting`,
+which this package now imports. **Every public name is re-exported, so
+no existing code needs to change** –
+[`occ.exp()`](http://dennisfeehan.org/networkreporting/reference/occ.exp.md),
+[`cell_config()`](http://dennisfeehan.org/networkreporting/reference/cell_config.md),
+[`make.age.groups()`](http://dennisfeehan.org/networkreporting/reference/make.age.groups.md),
+[`make.even.age.groups()`](http://dennisfeehan.org/networkreporting/reference/make.even.age.groups.md),
+[`make.time.periods()`](http://dennisfeehan.org/networkreporting/reference/make.time.periods.md),
+[`nmx_to_nqx()`](http://dennisfeehan.org/networkreporting/reference/nmx_to_nqx.md),
+[`q15_to_50()`](http://dennisfeehan.org/networkreporting/reference/q15_to_50.md),
+[`get_visibility()`](http://dennisfeehan.org/networkreporting/reference/get_visibility.md)
+and
+[`sib_ic_checks()`](http://dennisfeehan.org/networkreporting/reference/sib_ic_checks.md)
+all still work when called as `siblingsurvival::`, and
+[`library(siblingsurvival)`](http://dennisfeehan.org/siblingsurvival/)
+still attaches them.
+
+If you go looking for one of those functions in `R/` here, that is why
+it is gone: it was moved, not deleted. `R/reexports.R` records where
+each one went.
+
+- **What moved**:
+  [`occ.exp()`](http://dennisfeehan.org/networkreporting/reference/occ.exp.md)
+  and its C++ code,
+  [`cell_config()`](http://dennisfeehan.org/networkreporting/reference/cell_config.md)
+  and the age and time-period helpers, `get_esc_reports()`,
+  `get_ec_reports()`, the three estimator helpers from
+  `sibling_estimator.R`, the visibility internals from
+  `get_sibship_visibility.R`, `get_ic_reports.R` and `life_table.R`.
+- **What stayed**: everything that knows about DHS, MICS or maternal
+  mortality – the prep functions, varmaps, maternal classification and
+  estimators, and
+  [`sibling_estimator()`](http://dennisfeehan.org/siblingsurvival/reference/sibling_estimator.md)
+  itself, which is now a thin wrapper over the spine.
+- [`get_ego_age_distn()`](http://dennisfeehan.org/siblingsurvival/reference/get_ego_age_distn.md)
+  stayed, and gained a file of its own, `R/get_ego_age_distn.R`. It had
+  been sitting in `R/get_sibship_visibility.R` despite having nothing to
+  do with visibility.
+- This package no longer contains compiled code; `src/` and
+  `LinkingTo: Rcpp` moved with
+  [`occ.exp()`](http://dennisfeehan.org/networkreporting/reference/occ.exp.md).
+  It is worth reinstalling `networkreporting` first, since this package
+  will not load without a build of it that contains the spine.
+- Removed `sib_ic_checks_OLD()`, superseded by
+  [`sib_ic_checks()`](http://dennisfeehan.org/networkreporting/reference/sib_ic_checks.md)
+  and never exported.
+
+Behaviour is unchanged, and was checked rather than assumed: no test’s
+expected value was edited, no test file was edited at all, and
+`data-raw/dhs-validation/` and `data-raw/mics-validation/` reproduce
+every published figure exactly as before.
+
+The point of the move is that the visibility rule this package applies –
+`1/y.F` for an on-frame sibling, `1/(y.F + 1)` otherwise – is a theorem
+about *cliques*, not a definition of visibility. It holds because
+siblingship partitions the population into disjoint groups and ego
+belongs to the group she reports about. Households satisfy that too;
+cousins, parents and neighbours do not. Making visibility a declared
+rule rather than a hardcoded one is the next step, and it happens in
+`networkreporting`. See `networkreporting/dev/VISIBILITY-PLAN.md` and
+section F of `dev/PACKAGE-HANDOFF.md`.
+
+### A single-sex age distribution can no longer be used for another sex
+
+- `get_ego_age_distn(only_females = FALSE)` **warns** when `ego.dat`
+  holds only one respondent sex. DHS and MICS interview women only, so
+  the result covers women alone, and using it to age-standardise male
+  rates would attribute women’s age structure to men. The message says
+  where a male distribution would have to come from instead: the DHS
+  men’s `MR` file or the household `PR` file, neither of which this
+  package reads.
+
+  [`aggregate_maternal_estimates()`](http://dennisfeehan.org/siblingsurvival/reference/aggregate_maternal_estimates.md)
+  already warned through
+  [`warn_uninterviewed_sex()`](http://dennisfeehan.org/siblingsurvival/reference/warn_uninterviewed_sex.md)
+  and returns `NA` for the uninterviewed sex; it passes
+  `warn.single.sex = FALSE` so the two do not both fire for one cause.
+
+  Supporting male age standardisation properly would mean reading a male
+  age distribution from an `MR` or `PR` file – either supplied by the
+  caller, built by a small helper, or read inside the prep function.
+  None of the three is implemented yet.
+
+### The DHS conventions are now options, defaulting to what DHS does
+
+Four places where this package and The DHS Program’s tabulation code
+differed. Each is now explicit rather than baked in, and each defaults
+to the DHS behaviour.
+
+- **[`is_maternal_dhs()`](http://dennisfeehan.org/siblingsurvival/reference/is_maternal_dhs.md)
+  now follows the reference rule exactly**: `mm9` 2–5 with `mm16` not 1
+  or 2. It previously applied the cause exclusion to codes 2 and 5 only,
+  took code 3 unconditionally, and additionally required `mm12` to fall
+  in the band `100`–`141`.
+
+  Given that `mm16` is never asked for a death during delivery, the old
+  and new rules are *equivalent* wherever a survey respects that skip
+  pattern — The Gambia 2019-20 reproduces its published Table 14.3
+  either way. They differ only where one does not: **South Africa 2016
+  has 3 deaths coded `mm9 = 3` with `mm16` reported as violence or an
+  accident.** With this change, all five surveys that carry `mm16` now
+  match the reference exactly.
+
+- **`add_maternal_deaths(prmr.accident.recode = )`** applies the 2016
+  PRMR redefinition, under which a death *during pregnancy* reported as
+  violence or an accident stops counting as pregnancy-related. The DHS
+  Program documents the rule but the code it ships carries it inside a
+  comment block and never executes it, so published figures do not
+  reflect it. Defaults to `FALSE`, which is what reproduces published
+  tables.
+
+- **`death.exposure = c("dhs", "mics")`** on the three
+  `prep_*_sib_histories()` functions and on
+  [`get_sib_df()`](http://dennisfeehan.org/siblingsurvival/reference/get_sib_df.md).
+  The two references genuinely disagree about whether a sibling who died
+  contributes the month of death as exposure: DHS counts it
+  (`AM_rates.do:711` sets `last = mm8`), MICS stops the month before
+  (`higcm = MM18C - 1`). The default is `"dhs"`, which is what the
+  package has always done.
+
+  On Madagascar 2018 — the one validation survey with almost no
+  unknown-survival siblings to confound it — `"mics"` reproduces the
+  published female exposure of 202,959 **exactly**, against 203,010
+  under `"dhs"`.
+
+- **[`nmx_to_nqx()`](http://dennisfeehan.org/networkreporting/reference/nmx_to_nqx.md)
+  and
+  [`q15_to_50()`](http://dennisfeehan.org/networkreporting/reference/q15_to_50.md)**
+  are new, exported, and take `nax` as an argument. The default of 2.6
+  is what both the DHS and MICS implementations use, i.e. a denominator
+  of `1 + 2.4 * nmx`; `AM_rates.do:1084` cites the Guide to DHS
+  Statistics for preferring it to the textbook 2.5. The package
+  previously had no life table at all, so this constant was retyped
+  wherever it was needed. Validated against The Gambia 2019-20 Table
+  14.2: 113.51 and 124.37 against published 114 and 124, where
+  `nax = 2.5` would give 113.
+
+### Breaking: an unrecognised sibling sex code is no longer treated as male
+
+- **[`get_sib_df()`](http://dennisfeehan.org/siblingsurvival/reference/get_sib_df.md)
+  did `ifelse(sib.sex == 2, 'f', 'm')`, so every code that was not 2
+  became male.** The DHS labels 8 as “don’t know” and some surveys carry
+  an unlabelled 9 — Gabon 2000 has 163 of them. Anything other than 1 or
+  2 is now `NA`, which
+  [`finalize_sib_prep()`](http://dennisfeehan.org/siblingsurvival/reference/finalize_sib_prep.md)
+  drops and reports in `summ$miss.sex`.
+
+  This inflated **male** exposure in 13 of 43 DHS surveys, by up to
+  0.7%, and put siblings of unknown sex into the male rates. **Female
+  results are unaffected**, so nothing to do with pregnancy-related or
+  maternal mortality moves. It went unnoticed because every female
+  quantity matched the reference exactly while the male ones did not.
+
+  The MICS path already handled this in
+  [`recode_mics_sib_vars()`](http://dennisfeehan.org/siblingsurvival/reference/recode_mics_sib_vars.md);
+  the guard now lives in the shared code so both paths are covered.
+
+- [`add_maternal_deaths()`](http://dennisfeehan.org/siblingsurvival/reference/add_maternal_deaths.md)
+  **warns when the source column is entirely missing**, rather than
+  reporting exactly zero pregnancy-related deaths. Burkina Faso 2003 has
+  an `mm9` column in which all 249,540 values are missing; the resulting
+  zero looks like a mortality finding rather than a survey that never
+  coded the module.
+
+### Breaking: events on a window boundary are now counted consistently
+
+- **`window_intersect()` in `src/compute_occ_exp.cpp` now treats windows
+  as `[start, end)` rather than `(start, end]`.** This changes every
+  estimate slightly, in the direction of counting a small number of
+  previously-dropped deaths.
+
+  The two forms are both consistent partitions, so neither
+  double-counts. But the right-open form disagreed with the exposure
+  calculation at the *first* month of an observation window: a death in
+  that month contributed a month of exposure yet could not be counted as
+  an event, so the numerator and denominator disagreed about whether
+  that month was in the window.
+
+  Found by validating against The DHS Program’s own tabulation code:
+  three of seven surveys spanning DHS phases 2–8 were each missing a
+  death, always one that occurred in month `doi - 84` exactly. With the
+  fix, **all seven surveys reproduce the reference exactly** – exposure,
+  all-cause deaths and pregnancy-related deaths, both sexes.
+
+  It also puts an event falling exactly on an age-group boundary into
+  the later group, which is what `floor((death - dob)/width)` does and
+  what both the DHS and MICS reference implementations assume.
+
+  MICS results move only marginally, and toward the published values:
+  Zimbabwe 2019’s female all-cause rate goes from 6.27 to 6.28 against a
+  published 6.28.
+
+  Note for anyone constructing `sib.dat` by hand: observation windows
+  being left-closed means a sibling observed through the month of death
+  needs `end.obs = death + 1`. That is what
+  [`prep_dhs_sib_histories()`](http://dennisfeehan.org/siblingsurvival/reference/prep_dhs_sib_histories.md)
+  and
+  [`prep_mics_sib_histories()`](http://dennisfeehan.org/siblingsurvival/reference/prep_mics_sib_histories.md)
+  already produce.
+
+### Breaking: the DHS pregnancy-related definition is fixed
+
+- **[`is_preg_related_dhs()`](http://dennisfeehan.org/siblingsurvival/reference/is_preg_related_dhs.md)
+  now counts `mm9` 2 through 6, and no longer consults `mm12`. This
+  changes DHS results, in some surveys substantially.**
+
+  The DHS Program publishes the code behind its own report tables
+  (`DHS-Indicators-Stata`, `Chap16_AM/AM_rates.do`, whose header states
+  it “agrees exactly with DHS procedures, except for confidence
+  intervals”). It counts a pregnancy-related death as
+  `mm9 >= 2 & mm9 <= 6`, and its header says plainly that “mm12 is not
+  needed”. This package was requiring `mm9` in 2–5 **and** `mm12` in the
+  band `100`–`141`. Both conditions were wrong:
+
+  - `mm9 = 6` is “between six weeks and two months of a delivery”, which
+    is inside the two-month window this column is documented to measure.
+    Excluding it dropped genuine pregnancy-related deaths.
+  - the `mm12` band imposed a 42-day cut on a two-month quantity, and
+    applied a *postpartum* timing test even to deaths during pregnancy
+    or delivery.
+
+  Verified against Rwanda 2010 (`FR259` Table 16.4): the package
+  previously reported 51.2 pregnancy-related deaths against a published
+  91, and now reports 90.7, matching a literal replica of the DHS
+  reference in every age group. Exposure and all-cause deaths already
+  matched to the person-year and are unchanged.
+
+  **The size of the change varies by survey**, because whether
+  postpartum deaths are coded 5 or 6 is a property of the questionnaire.
+  Across seven surveys spanning DHS phases 2–8 the old behaviour lost
+  between 0% and 48% of pregnancy-related deaths. Any cached DHS results
+  should be regenerated.
+
+  `sib.maternal.death.date` is **not** affected: maternal is `mm9` 2–5
+  by design, which is exactly the 42-day cut, and the package already
+  had that right.
+
+- `na.action` no longer has any effect on the DHS pregnancy-related
+  column, since the `mm12` value it governed is no longer consulted. It
+  still applies to `sib.maternal.death.date` and to both MICS columns.
+
 ### MICS support
 
 - [`add_maternal_deaths()`](http://dennisfeehan.org/siblingsurvival/reference/add_maternal_deaths.md)
@@ -165,15 +479,19 @@
 
 ### Documentation
 
-- Added the vignette “Working with MICS sibling history data”, covering
-  which MICS rounds carry a usable sibling history, what the MICS prep
-  does that the DHS path does not, and the results of validating the
-  package against the published tables of three MICS6 surveys. It
-  records two conventions that MICS documents leave unstated – the
-  seven-year reference window is `[doi - 84, doi)`, and age
-  standardisation uses the interviewed women – and one that is actively
+- Validating against the published tables of three MICS6 surveys settled
+  two conventions that MICS documents leave unstated – the seven-year
+  reference window is `[doi - 84, doi)`, and age standardisation uses
+  the interviewed women – and turned up one that is actively
   mislabelled: the column headed “Maternal Deaths” in table TM.9.3 of
-  MICS reports contains the **pregnancy-related** count.
+  MICS reports contains the **pregnancy-related** count. The function
+  documentation for
+  [`add_maternal_deaths()`](http://dennisfeehan.org/siblingsurvival/reference/add_maternal_deaths.md)
+  and `classify_maternal_deaths()` records this.
+
+  Vignettes covering the MICS and DHS data in full are drafted but not
+  yet ready to ship; they live in `vignettes-drafts/` in the source
+  repository.
 
 ### Bug fixes
 
@@ -207,9 +525,9 @@
   her death. The damage is masked whenever MICS supplies its own imputed
   CMC dates, so it only bites on surveys that ship none.
 - Fixed
-  [`cell_config()`](http://dennisfeehan.org/siblingsurvival/reference/cell_config.md),
+  [`cell_config()`](http://dennisfeehan.org/networkreporting/reference/cell_config.md),
   which rejected a custom `time.periods` object built by
-  [`make.time.periods()`](http://dennisfeehan.org/siblingsurvival/reference/make.time.periods.md)
+  [`make.time.periods()`](http://dennisfeehan.org/networkreporting/reference/make.time.periods.md)
   – the documented usage, and how `age.groups` already behaved. The
   non-character branch called `stop("No time periods specified.")`
   unconditionally, so only the three built-in strings worked. This
@@ -314,10 +632,9 @@
   [`prep_dhs_sib_histories()`](http://dennisfeehan.org/siblingsurvival/reference/prep_dhs_sib_histories.md).
 - Improved bootstrap performance in
   [`sibling_estimator()`](http://dennisfeehan.org/siblingsurvival/reference/sibling_estimator.md)
-  via matrix multiplication
-  ([`get_boot_ests_matrix()`](http://dennisfeehan.org/siblingsurvival/reference/get_boot_ests_matrix.md)),
-  replacing a wide-dataframe approach and achieving substantial
-  speed-ups for large bootstrap replicate counts.
+  via matrix multiplication (`get_boot_ests_matrix()`), replacing a
+  wide-dataframe approach and achieving substantial speed-ups for large
+  bootstrap replicate counts.
 
 ### Bug fixes
 
@@ -329,21 +646,16 @@
   remained grouped by `.ego.id`. This residual grouping propagated
   through `pivot_wider` and
   [`purrr::map_dfr`](https://purrr.tidyverse.org/reference/map_dfr.html)
-  into
-  [`get_ec_reports()`](http://dennisfeehan.org/siblingsurvival/reference/get_ec_reports.md),
-  where a subsequent `group_by(across(all_of(...)))` failed because
-  dplyr 1.0.x evaluates
+  into `get_ec_reports()`, where a subsequent
+  `group_by(across(all_of(...)))` failed because dplyr 1.0.x evaluates
   [`across()`](https://dplyr.tidyverse.org/reference/across.html) in a
   mutate context that cannot select already-active grouping variables.
   Fixed by adding `.groups = "drop"` to the `summarise` in
-  [`occ.exp()`](http://dennisfeehan.org/siblingsurvival/reference/occ.exp.md)
-  and
-  [`get_ec_reports()`](http://dennisfeehan.org/siblingsurvival/reference/get_ec_reports.md),
-  and adding a defensive
+  [`occ.exp()`](http://dennisfeehan.org/networkreporting/reference/occ.exp.md)
+  and `get_ec_reports()`, and adding a defensive
   [`ungroup()`](https://dplyr.tidyverse.org/reference/group_by.html)
-  before the `group_by` in
-  [`get_ec_reports()`](http://dennisfeehan.org/siblingsurvival/reference/get_ec_reports.md).
-  The bug was most visible when calling
+  before the `group_by` in `get_ec_reports()`. The bug was most visible
+  when calling
   [`sibling_estimator()`](http://dennisfeehan.org/siblingsurvival/reference/sibling_estimator.md)
   inside
   [`purrr::imap_dfr()`](https://purrr.tidyverse.org/reference/map_dfr.html).

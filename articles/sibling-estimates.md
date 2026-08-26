@@ -250,7 +250,8 @@ ex_ests <- sibling_estimator(sib.dat = ex.sib,
                              weights='wwgt')               # column with the respondents' sampling weights
 
 names(ex_ests)
-#> [1] "asdr.ind" "asdr.agg" "ec.dat"   "esc.dat"
+#> [1] "asdr.ind"       "asdr.agg"       "ec.dat"         "esc.dat"       
+#> [5] "vis_provenance"
 ```
 
 `sibling_estimator` returns a list with the results. We’ll focus on
@@ -267,12 +268,12 @@ glimpse(ex_ests$asdr.ind)
 #> $ time.period <chr> "7yr_beforeint", "7yr_beforeint", "7yr_beforeint", "7yr_be…
 #> $ sib.sex     <chr> "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "m", "m"…
 #> $ sib.age     <chr> "[15,20)", "[20,25)", "[25,30)", "[30,35)", "[35,40)", "[4…
-#> $ num.hat     <dbl> 40.632794, 58.452102, 37.335533, 35.027380, 27.127385, 19.…
+#> $ num.hat     <dbl> 40.632794, 58.452102, 37.335533, 35.027380, 26.419868, 20.…
 #> $ denom.hat   <dbl> 7724.0549, 7931.6173, 6980.3260, 5548.5989, 4336.3677, 274…
 #> $ ind.y.F     <dbl> 11400.964, 11400.964, 11400.964, 11400.964, 11400.964, 114…
 #> $ n           <int> 6864, 6864, 6864, 6864, 6864, 6864, 6864, 6864, 6864, 6864…
 #> $ wgt.sum     <dbl> 6798.047, 6798.047, 6798.047, 6798.047, 6798.047, 6798.047…
-#> $ asdr.hat    <dbl> 0.005260552, 0.007369506, 0.005348680, 0.006312833, 0.0062…
+#> $ asdr.hat    <dbl> 0.005260552, 0.007369506, 0.005348680, 0.006312833, 0.0060…
 #> $ estimator   <chr> "sib_ind", "sib_ind", "sib_ind", "sib_ind", "sib_ind", "si…
 ```
 
@@ -286,11 +287,11 @@ glimpse(ex_ests$asdr.agg)
 #> $ time.period <chr> "7yr_beforeint", "7yr_beforeint", "7yr_beforeint", "7yr_be…
 #> $ sib.sex     <chr> "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "m", "m"…
 #> $ sib.age     <chr> "[15,20)", "[20,25)", "[25,30)", "[30,35)", "[35,40)", "[4…
-#> $ num.hat     <dbl> 80.640472, 108.425029, 66.546631, 61.344200, 46.548261, 33…
+#> $ num.hat     <dbl> 80.640472, 108.425029, 66.546631, 61.344200, 45.840744, 33…
 #> $ denom.hat   <dbl> 14696.0833, 15949.0545, 14466.8583, 11597.0465, 8851.6251,…
 #> $ n           <int> 6864, 6864, 6864, 6864, 6864, 6864, 6864, 6864, 6864, 6864…
 #> $ wgt.sum     <dbl> 6798.047, 6798.047, 6798.047, 6798.047, 6798.047, 6798.047…
-#> $ asdr.hat    <dbl> 0.005487208, 0.006798210, 0.004599937, 0.005289640, 0.0052…
+#> $ asdr.hat    <dbl> 0.005487208, 0.006798210, 0.004599937, 0.005289640, 0.0051…
 #> $ estimator   <chr> "sib_agg", "sib_agg", "sib_agg", "sib_agg", "sib_agg", "si…
 ```
 
@@ -383,7 +384,7 @@ bootweights <- surveybootstrap::rescaled.bootstrap.weights(survey.design = ~ psu
 #> dplyr::select(data, !!!enquos(x)) # Splice list of quosures
 #> This warning is displayed once every 8 hours.
 toc()
-#> running bootstrap: 0.721 sec elapsed
+#> running bootstrap: 0.661 sec elapsed
 ```
 
 The result, `bootweights`, is a dataframe that has a row for each survey
@@ -421,7 +422,7 @@ ex_boot_ests <- sibling_estimator(sib.dat = ex.sib,
                                   return.boot=TRUE,                # when TRUE, return all of the resampled estimates (not just summaries)
                                   weights='wwgt')
 toc()
-#> calculating estimates with bootstrap: 7.899 sec elapsed
+#> calculating estimates with bootstrap: 8.749 sec elapsed
 ```
 
 Finally, let’s plot the estimated death rates along with their sampling
@@ -479,7 +480,7 @@ ic.checks <- sib_ic_checks(ex_boot_ests$esc.dat,
                            ego.cell.vars=c('age.cat', 'sex'),
                            boot.weights=ic.bootweights)
 toc()
-#> Internal consistency checks: 0.711 sec elapsed
+#> Internal consistency checks: 0.577 sec elapsed
 
 names(ic.checks)
 #> [1] "ic.summ"      "ic.boot.ests"
@@ -594,6 +595,71 @@ ego.vis.agg <- ego.vis %>%
 #>   (`?dplyr::dplyr_by`) instead.
 ```
 
+That hand-rolled `adj.factor` is a visibility approximation: it borrows
+the respondents’ average sibship size and applies it to the alters.
+Since that is a modelling assumption rather than a calculation, it is
+better expressed as one. `vis_from_donor()` is the supported way to
+build it, and it makes the two choices buried in the line above explicit
+– who the donors are, and how their visibilities are summarised.
+
+``` r
+
+donor.rule <- networkreporting::vis_from_donor(
+  match_on   = c(sib.sex = "sex", sib.age = "age.cat"),
+  statistic  = "arithmetic",   # what adj.factor used; see below
+  min_donors = 1)
+
+donor.cells <- donor.rule$fit(ego.vis, "wwgt")$cells
+
+## S.hat is the estimated group size, so it is y.F.bar + 1, and the historical
+## adjustment factor is (S.hat - 1) / S.hat
+donor.cells <- donor.cells %>%
+  mutate(adj.factor.rule = (.S.hat - 1) / .S.hat)
+
+check <- ego.vis.agg %>%
+  left_join(donor.cells, by = c("sex" = "sib.sex", "age.cat" = "sib.age"))
+
+## the two agree to numerical precision
+all.equal(check$adj.factor, check$adj.factor.rule)
+#> [1] TRUE
+```
+
+The default is not `"arithmetic"`, though. The individual estimator
+averages `1/v`, so the summary that makes the plug-in unbiased is the
+*harmonic* mean, `(E[1/v])^-1`. By Jensen’s inequality the harmonic mean
+is never larger than the arithmetic one, so switching gives a
+systematically smaller group size – and the gap grows with the variance
+of sibship size:
+
+``` r
+
+harm.cells <- networkreporting::vis_from_donor(
+    match_on   = c(sib.sex = "sex", sib.age = "age.cat"),
+    statistic  = "harmonic",
+    min_donors = 1)$fit(ego.vis, "wwgt")$cells
+
+compare.stat <- donor.cells %>%
+  select(sib.sex, sib.age, S.arithmetic = .S.hat) %>%
+  left_join(harm.cells %>% select(sib.sex, sib.age, S.harmonic = .S.hat),
+            by = c("sib.sex", "sib.age")) %>%
+  mutate(ratio = S.harmonic / S.arithmetic)
+
+compare.stat
+#> # A tibble: 7 × 5
+#>   sib.sex sib.age S.arithmetic S.harmonic ratio
+#>   <chr>   <fct>          <dbl>      <dbl> <dbl>
+#> 1 f       [15,20)         2.02       1.54 0.763
+#> 2 f       [20,25)         2.33       1.77 0.756
+#> 3 f       [25,30)         2.58       1.92 0.744
+#> 4 f       [30,35)         2.64       1.96 0.741
+#> 5 f       [35,40)         2.58       1.92 0.745
+#> 6 f       [40,45)         2.36       1.75 0.740
+#> 7 f       [45,50)         2.22       1.60 0.721
+```
+
+Every `ratio` is at or below 1, which is Jensen showing up in the data
+rather than in a footnote.
+
 Make adjusted individual estimates
 
 ``` r
@@ -621,4 +687,4 @@ ggplot(compare) +
   ggtitle('sibling estimators, 7yr before survey')
 ```
 
-![](sibling-estimates_files/figure-html/unnamed-chunk-25-1.png)
+![](sibling-estimates_files/figure-html/unnamed-chunk-27-1.png)

@@ -3,10 +3,9 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   maternal-estimates: maternal-estimates.html
-  mics-data: mics-data.html
   preparing-data: preparing-data.html
   sibling-estimates: sibling-estimates.html
-last_built: 2026-08-22T05:10Z
+last_built: 2026-08-26T21:46Z
 urls:
   reference: http://dennisfeehan.org/siblingsurvival/reference
   article: http://dennisfeehan.org/siblingsurvival/articles

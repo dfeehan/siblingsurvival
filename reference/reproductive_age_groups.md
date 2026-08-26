@@ -23,7 +23,7 @@ a character vector with the seven 5-year age group labels covering ages
 ## Details
 
 The labels match the ones produced by `cut(..., right=FALSE)` and by
-[make.even.age.groups](http://dennisfeehan.org/siblingsurvival/reference/make.even.age.groups.md),
+[make.even.age.groups](http://dennisfeehan.org/networkreporting/reference/make.even.age.groups.md),
 which is what both the ego age categories (`age.cat`) and the estimate
 age groups (`sib.age`) use.
 

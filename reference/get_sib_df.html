@@ -23,7 +23,6 @@ prep_mics_sib_histories."></head><body>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/maternal-estimates.html">Estimating maternal mortality rates from sibling history data</a></li>
-    <li><a class="dropdown-item" href="../articles/mics-data.html">Working with MICS sibling history data</a></li>
     <li><a class="dropdown-item" href="../articles/preparing-data.html">Preparing DHS data</a></li>
     <li><a class="dropdown-item" href="../articles/sibling-estimates.html">Estimating death rates from sibling history data</a></li>
   </ul></li>
@@ -56,7 +55,8 @@ prep_mics_sib_histories."></head><body>
 <span>  <span class="va">sib.attrib</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  reshape <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  max.plausible.age <span class="op">=</span> <span class="fl">110</span></span>
+<span>  max.plausible.age <span class="op">=</span> <span class="fl">110</span>,</span>
+<span>  death.exposure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"dhs"</span>, <span class="st">"mics"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -88,6 +88,14 @@ implies they would be older than this at the date of interview. Such
 rows mean the reported years-since-death and age at death are
 jointly inconsistent. Note this is <em>not</em> a check on whether a sibling
 died before the respondent was born, which is perfectly possible</p></dd>
+
+
+<dt id="arg-death-exposure">death.exposure<a class="anchor" aria-label="anchor" href="#arg-death-exposure"></a></dt>
+<dd><p>whether a sibling who died contributes the month of
+death as exposure. <code>"dhs"</code> (the default) counts it, matching
+<code>Chap16_AM/AM_rates.do</code>; <code>"mics"</code> stops the month before, matching
+the MICS6 tabulation syntax. The two references genuinely disagree
+here, so it cannot be settled by getting it "right"</p></dd>
 
 </dl></div>
     <div class="section level2">

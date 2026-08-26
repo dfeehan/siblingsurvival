@@ -44,7 +44,7 @@ aggregate_maternal_estimates(
 - vis_res:
 
   optional, the visibility results from
-  [get_visibility](http://dennisfeehan.org/siblingsurvival/reference/get_visibility.md).
+  [get_visibility](http://dennisfeehan.org/networkreporting/reference/get_visibility.md).
   Computed internally when `NULL` (the default); pass it in to avoid
   recomputing it; see Details
 

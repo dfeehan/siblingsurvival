@@ -33,7 +33,7 @@ sibling_summ(sib.dat, ego.id, sib.id, sib.frame.indicator, cell.config)
 - cell.config:
 
   An object containing the configuration of cells; see
-  [`cell_config`](http://dennisfeehan.org/siblingsurvival/reference/cell_config.md)
+  [`cell_config`](http://dennisfeehan.org/networkreporting/reference/cell_config.md)
   for more information
 
 ## Value
