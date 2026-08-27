@@ -61,7 +61,7 @@
                         <h4 data-toc-skip class="author">Dennis M.
 Feehan</h4>
             
-            <h4 data-toc-skip class="date">2026-08-26</h4>
+            <h4 data-toc-skip class="date">2026-08-27</h4>
       
 
       <div class="d-none name"><code>maternal-estimates.Rmd</code></div>
@@ -470,7 +470,7 @@ resamples.)</p>
 <span><span class="co">#&gt; dplyr::select(data, !!!enquos(x)) # Splice list of quosures</span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">This warning is displayed once every 8 hours.</span></span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html" class="external-link">toc</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; running bootstrap: 0.722 sec elapsed</span></span></code></pre></div>
+<span><span class="co">#&gt; running bootstrap: 0.725 sec elapsed</span></span></code></pre></div>
 <p>The result, <code>bootweights</code>, is a dataframe that has a row
 for each survey respondent, a column for the survey respondent’s ID, and
 then <code>num.boot.reps</code> columns containing survey weights that
@@ -502,7 +502,7 @@ when <code>bootweights</code> has 1000 resamples.)</p>
 <span>                                  return.boot<span class="op">=</span><span class="cn">TRUE</span>,                <span class="co"># when TRUE, return all of the resampled estimates (not just summaries)</span></span>
 <span>                                  weights<span class="op">=</span><span class="st">'wwgt'</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html" class="external-link">toc</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; calculating estimates with bootstrap: 4.612 sec elapsed</span></span></code></pre></div>
+<span><span class="co">#&gt; calculating estimates with bootstrap: 4.587 sec elapsed</span></span></code></pre></div>
 <p>Finally, let’s plot the estimated death rates along with their
 sampling uncertainty:</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
