@@ -132,9 +132,12 @@ test_that("aggregate_maternal_estimates: warns and returns NA for an uninterview
 
 test_that("aggregate_maternal_estimates: only_females=TRUE does not warn about males", {
   est <- make_ests(agg_ego_female)
+  ## scoped to the warning this test is about: an unrelated warning from a
+  ## dependency (e.g. tibble under R-devel) should not fail it
   expect_no_warning(
     aggregate_maternal_estimates(est, agg_ego_female, agg_sib,
-                                 only_females = TRUE))
+                                 only_females = TRUE),
+    message = "No respondent information")
 })
 
 # =====================================================================
