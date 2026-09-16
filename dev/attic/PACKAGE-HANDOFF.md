@@ -662,7 +662,7 @@ as the default so nothing about current behaviour moves.
 - **E4 gets a successor.** The three adjustment factors removed on 2026-08-25
   are reconstructible as `vis_from_donor(statistic = "arithmetic")`. The plan
   argues the default should be `"harmonic"` instead, since the individual
-  estimator averages `1/v` — see `dev/FUTURE-IMPROVEMENTS.md` item 2.
+  estimator averages `1/v` — see the closed `adj.factor` item in `../FUTURE-IMPROVEMENTS.md`.
 - **A bootstrap bug is in scope.** `vis_res` is computed once at
   `R/maternal_estimators.R:95` and reused across replicates at `:228` and
   `:238`. For the clique rule that is *correct*. For any rule that estimates

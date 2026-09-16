@@ -180,7 +180,7 @@ factors, though the reference-population question it raised is still open) and t
 resolve those too, or may show that `only_females = FALSE` is answering a
 question DHS does not ask.
 
-> **DEFERRED**, and now tracked as item 1 in `FUTURE-IMPROVEMENTS.md`.
+> **DEFERRED**, and now tracked as the male age standardisation item in `../FUTURE-IMPROVEMENTS.md`.
 >
 > Settled: the package cannot produce a male age distribution from a DHS
 > `ego.dat`, because DHS interviews only women.
@@ -196,7 +196,7 @@ question DHS does not ask.
 > the two do not both fire for the same cause.
 >
 > Open: whether to read an MR/PR file, accept an external distribution, or ship
-> a helper. See `FUTURE-IMPROVEMENTS.md`.
+> a helper. See `../FUTURE-IMPROVEMENTS.md`.
 
 ### H5 The observation window --- resolved by reading, still confirm numerically
 
@@ -467,7 +467,7 @@ raises, which previously asserted the opposite.
 **Still open, but much smaller:** if you want a male rate standardised the way
 the *current* `AM_rates.do` does it --- rather than the way the reports appear to
 have been --- that still needs an `MR` or `PR` file. Tracked as item 1 in
-`FUTURE-IMPROVEMENTS.md`, now correctly scoped as a nice-to-have rather than a
+`../FUTURE-IMPROVEMENTS.md`, now correctly scoped as a nice-to-have rather than a
 blocker.
 
 ### H4 (original text, kept for the record) --- structural, documented

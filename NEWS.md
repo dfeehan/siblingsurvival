@@ -106,7 +106,7 @@ reports about. Households satisfy that too; cousins, parents and neighbours do
 not. Making visibility a declared rule rather than a hardcoded one is the next
 step, and it happens in `networkreporting`. See
 `networkreporting/dev/VISIBILITY-PLAN.md` and section F of
-`dev/PACKAGE-HANDOFF.md`.
+`dev/attic/PACKAGE-HANDOFF.md`.
 
 ## A single-sex age distribution can no longer be used for another sex
 
