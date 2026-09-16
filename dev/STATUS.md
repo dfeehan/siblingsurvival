@@ -73,7 +73,7 @@ Where things live
     data/                 7 DHS varmaps, 4 MICS varmaps, model_dhs_dat, ex.ego/ex.sib
     tests/testthat/       11 files, incl. helper-simulate.R and helper-simulate-mics.R
     vignettes/            sibling-estimates, maternal-estimates, preparing-data
-    vignettes-drafts/     dhs-data, mics-data -- written, not yet shipped
+    vignettes-drafts/     dhs-data, mics-data, recoding-decisions -- written, not shipped
     data-raw/             varmap generation + the two validation harnesses
     notes/                mics-maternal-mortality-reference.md, and a DHS syntax zip
     dev/                  this file, FUTURE-IMPROVEMENTS.md, attic/
@@ -82,9 +82,12 @@ Where things live
 `dhs-data.Rmd` and `mics-data.Rmd` carry the substance of the two closed
 validation plans in user-facing form — which surveys can be used, the file
 quirks, what reproduces and what does not, and the maternal/pregnancy-related
-distinction. They are build-ignored and their chunks are `eval = FALSE`, because
-they need registration-gated microdata. Moving them into `vignettes/` is an open
-item; see `FUTURE-IMPROVEMENTS.md`.
+distinction. `recoding-decisions.Rmd` (added 2026-09-16) is the reference
+statement of every recoding convention needed to match published DHS and MICS
+figures, written instrument-first so it is usable without this package. All
+three are build-ignored and their chunks are `eval = FALSE`, because they need
+registration-gated microdata. Moving them into `vignettes/` is an open item; see
+`FUTURE-IMPROVEMENTS.md`.
 
 `notes/mics-maternal-mortality-reference.md` is the sourced methods reference the
 MICS work was built on — verbatim questionnaires, real `mm.sav` dictionaries,
@@ -140,7 +143,7 @@ Short, and none of them blocks anything. They are in
   `preg.window` default, a delivery death reported as an accident, the now-inert
   `na.action` under `style = "dhs"`, and whether Burkina Faso 2003 belongs in an
   analysis sample.
-* **Housekeeping** — ship the two draft vignettes, a `model_mics_dat` if a
+* **Housekeeping** — ship the three draft vignettes, a `model_mics_dat` if a
   redistributable extract ever exists, and cut a first tag.
 
 **Stale local branches.** `dhstest`, `mics`, `visibility-phase0`,

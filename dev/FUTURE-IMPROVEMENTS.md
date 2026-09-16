@@ -46,17 +46,25 @@ drifting.
   rather than this one.
 
 
-2. Ship the two draft vignettes
+2. Ship the three draft vignettes
 ----
 
 **Status: open, and the cheapest real improvement on this list.**
 
-`vignettes-drafts/dhs-data.Rmd` and `vignettes-drafts/mics-data.Rmd` are written.
-Between them they carry the user-facing half of both validation rounds: which
-surveys can be used and how to tell, the file quirks (Gabon 2000's encoding, the
-`mm.sav` name collision in MICS3, country customisation), what reproduces against
-published tables and what does not, the maternal versus pregnancy-related
-distinction, and the two published tables that are unreliable.
+`vignettes-drafts/` holds `dhs-data.Rmd`, `mics-data.Rmd` and
+`recoding-decisions.Rmd`, all written. Between them they carry the user-facing
+half of both validation rounds: which surveys can be used and how to tell, the
+file quirks (Gabon 2000's encoding, the `mm.sav` name collision in MICS3,
+country customisation), what reproduces against published tables and what does
+not, the maternal versus pregnancy-related distinction, and the two published
+tables that are unreliable.
+
+`recoding-decisions.Rmd` (added 2026-09-16) is the one most worth shipping. It
+states every recoding convention needed to reproduce a published DHS or MICS
+figure, organised around the questionnaire variables rather than around this
+package's functions, so it is usable by someone working in Stata, SPSS or
+Python. It is the only place the conventions are set out in one piece; the other
+two now overlap it and could be trimmed to point at it.
 
 They sit in `vignettes-drafts/`, which is build-ignored, so none of that reaches
 a user. They are `eval = FALSE` throughout because the data is
